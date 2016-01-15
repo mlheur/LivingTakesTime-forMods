@@ -1,0 +1,104 @@
+==== MENU ====
+Option IDs start line 95
+Default values are defined on line 158
+MCM Pages defined on 563
+Test for Mods is in OnPageReset() starting line 601
+MCM Layout starts on 731
+Toggles are managed on 1011
+Slider changes start at line 1265, the defaults here should match defaults at 2180
+Slider values are accepted at line 1724
+Descriptions start at line 2011
+Default times need to be added in RTT_Menu line 2180
+
+Layout isn't quite right, maybe use the help text on page load?
+
+;;;; CFCloakID = AddSliderOption("Cloaks", ReadingTakesTime.cfCloakTime, "${1} hour(s)")
+;;;; CFStickID = AddSliderOption("Walking stick", ReadingTakesTime.cfStickTime, "${0} Minute(s)")
+;;;; CFTorchID = AddSliderOption("Torch", ReadingTakesTime.cfTorchTime, "${0} Minute(s)")
+;;;; CFCookpotID = AddSliderOption("Cooking Pot", ReadingTakesTime.cfCookpotTime, "${1} hour(s)")
+;;;; CFBackpackID = AddSliderOption("Backpacks", ReadingTakesTime.cfBackpackTime, "${1} hour(s)")
+;;;; CFBeddingID = AddSliderOption("Bedding", ReadingTakesTime.cfBeddingTime, "${1} hour(s)")
+;;;; CFSmallTentID = AddSliderOption("Small tents", ReadingTakesTime.cfSmallTentTime, "${1} hour(s)")
+;;;; CFLargeTentID = AddSliderOption("Large tents", ReadingTakesTime.cfLargeTentTime, "${1} hour(s)")
+;;;; CFHatchetID = AddSliderOption("Tools", ReadingTakesTime.cfHatchetTime, "${0} Minute(s)")
+;;;; CFArrowsID = AddSliderOption("Arrows", ReadingTakesTime.cfArrowsTime, "${1} hour(s)")
+
+;;;; CFLinenID = AddSliderOption("Linen wrap", ReadingTakesTime.cfLinenTime, "${0} Minute(s)")
+;;;; CFFurID = AddSliderOption("Fur plate", ReadingTakesTime.cfFurTime, "${1} hour(s)")
+;;;; CFLaceID = AddSliderOption("Hide lace", ReadingTakesTime.cfLaceTime, "${0} Minute(s)")
+;;;; CFTanRackID = AddSliderOption("Tanning rack", ReadingTakesTime.cfTanRackTime, "${0} Minute(s)")
+;;;; CFMortarID = AddSliderOption("Mortar and pestle", ReadingTakesTime.cfMortarTime, "${1} hour(s)")
+;;;; CFEnchID = AddSliderOption("Enchanting supplies", ReadingTakesTime.cfEnchTime, "${1} hour(s)")
+
+;;;; CFFirecraftImprovesID = AddToggleOption( "Firecraft Improves", ReadingTakesTime.cfFirecraftImproves )
+;;;; CFMakeTinderID = AddSliderOption("Make Tinder", ReadingTakesTime.cfMakeTinderTime, "${0} Minute(s)")
+;;;; CFMakeKindlingID = AddSliderOption("Make Kindling", ReadingTakesTime.cfMakeKindlingTime, "${0} Minute(s)")
+;;;; CFAddTinderID = AddSliderOption("Add Tinder", ReadingTakesTime.cfAddTinderTime, "${0} Minute(s)")
+;;;; CFAddKindlingID = AddSliderOption("Add Kindling", ReadingTakesTime.cfAddKindlingTime, "${0} Minute(s)")
+;;;; CFLightFireID = AddSliderOption("Sparking the Fire", ReadingTakesTime.cfLightFireTime, "${0} Minute(s)")
+;;;; CFAddFuelID = AddSliderOption("Stoking the Fire", ReadingTakesTime.cfAddFuelTime, "${0} Minute(s)")
+
+==== MAIN ====
+Declarations start at line 140
+Main calculations are done starting line 363 in in ItemAdded().
+Frostfall crafting checks are done on line 407
+Gathering list of items starts 870 Init_CF_Items().
+Frostfall crafting Check_CF_Craft() on 1096
+Workbench is determined in StartFurniture() on 794, this can be used to figure out the books for fire lighting and should also catch Frostfall's snowberry extract
+
+; -- Campfire by Chesko
+Int CF_Prefix = 0
+; Camping Gear
+Float Property cfCloakTime Auto
+Float Property cfStickTime Auto
+Float Property cfTorchTime Auto
+Float Property cfCookpotTime Auto
+Float Property cfBackpackTime Auto
+Float Property cfBeddingTime Auto  ; Used for bedrolls, rough bedding takes less.
+Float Property cfSmallTentTime Auto
+Float Property cfLargeTentTime Auto
+Float Property cfHatchetTime Auto
+Float Property cfArrowsTime Auto
+Bool CF_Split_Pack = False
+Bool CF_Split_Amulet = False
+
+;Form[] CF_Items_Cloaks
+;Form   CF_Items_Stick
+;Form   CF_Items_Torch ; x1 BUild and x0.5 for Destroy
+Form   CF_Items_Cookpot
+Form[] CF_Items_Backpacks
+Form   CF_Items_RoughBedding
+Form[] CF_Items_SmallTents
+Form[] CF_Items_LargeTents
+Form   CF_Items_Hatchet
+
+; Materials
+Float Property cfLinenTime Auto
+Float Property cfFurTime Auto
+Float Property cfLaceTime Auto
+Float Property cfTanRackTime Auto
+Float Property cfMortarTime Auto
+Float Property cfEnchTime Auto
+Form CF_Items_Linen
+Form CF_Items_FurPlate
+Form CF_Items_Lace
+Form CF_Items_TanRack
+Form CF_Items_Mortar
+Form CF_Items_Ench
+
+; Firecraft
+Form CF_Fire_Firecraft ; _Camp_PerkRank_Firecraft [GLOB:240473E5]
+Bool Property cfFirecraftImproves Auto
+Float Property cfMakeTinderTime Auto
+Float Property cfMakeKindlingTime Auto
+Float Property cfAddTinderTime Auto
+Float Property cfAddKindlingTime Auto
+Float Property cfLightFireTime Auto
+Float Property cfAddFuelTime Auto
+; The following forms are when making tinder/kinlding/fuel for later addition
+Form CF_Fire_Tinder ; Paper, Shavings
+Form CF_Fire_Kindling ; 
+
+
+==== FROSTFALL ====
+_Frost_WaterPotion "Snowberry Extract" [ALCH:2501D430]
