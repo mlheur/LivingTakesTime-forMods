@@ -1,6 +1,7 @@
 Scriptname LTT_PlayerAlias extends ReferenceAlias Conditional
 
-LTTfM Property LTT Auto  
+LTT_Base Property LTT Auto
+Alias Property PlayerAlias Auto
 
 Event OnItemAdded (Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akSourceContainer)
 	LTT.ItemAdded (akBaseItem, aiItemCount, akItemReference, akSourceContainer)

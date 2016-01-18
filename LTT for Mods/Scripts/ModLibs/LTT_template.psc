@@ -44,14 +44,14 @@ float ActionHours = 1.0
 ; Load any forms and init any variables needed when the mod is first added to
 ; LTT unless true is returned, the mod will be considered not usable and none of
 ; the handlers will be called
-bool function Load
+bool function Load()
 	bLoaded = true
 	return bLoaded
 endfunction
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Free up anything required if the player tries to uninstall LTT
-bool function Unload
+bool function Unload()
 	bLoaded = false
 	return true
 endfunction
@@ -74,7 +74,7 @@ endfunction
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Called by LTT's MCM handler
-bool function ShowPage
+bool function ShowPage()
 	return false
 endfunction
 

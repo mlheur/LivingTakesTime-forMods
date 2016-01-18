@@ -60,13 +60,11 @@ Form	CF_GlobFirecraftRank	; _Camp_PerkRank_Firecraft [GLOB:240473E5]
 Form[]	CF_FormTinder		; Paper, WOod Shavings
 Form	CF_FormKindling		; Kindling
 
-;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;
+function ItemAdded( Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akContainer )
+endfunction
+
+function ItemRemoved( form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akContainer )
+endfunction
 
 Function Init_CF_Items()
 	DebugMode( "Initializing Campfire Items" );

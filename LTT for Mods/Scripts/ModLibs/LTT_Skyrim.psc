@@ -1,242 +1,141 @@
-scriptname LTT extends Quest
+scriptname LTT_Skyrim extends LTT_ModBase 
+
+LTT_Base Property LTT Auto
+string	LTT_Name		= "Living TakeS Time" AutoReadOnly
+string	LTT_ESP			= "Skyrim.esm" AutoReadonly
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Credits
-;	- Akezhar for proviiding the original Living Takes Time (RTT) mod
-;	- dragonsong/unuroboros for providing the first iteration of
-;	  compatibility between RTT and Hunterborn, Frostfall & others, and the
-;	  starting point for this mod
-;	- Chesko for all his awesome mods and continuing dedication to skyrim
-;	- SkyUI team for MCM and just being great modders
-;	- SKSE team everything they've allowed modders to do.
-; Disclaimer
-;	Share, re-use, re-make or steal this mod. Just don't be dick about it.
-; Changes
-;	mlheur | v0.0-alpha | Initial release based on Hunterborn's misc addon.
+; Variables
+
+;;;;;;;;;;
+; While Crafting
+bool	LTT_WhileCrafting	= true
+
+;;;;;
+; Wearables
+float	LTT_CraftHeadHrs	= 2.0
+float	LTT_CraftBodyHrs	= 6.0
+float	LTT_CraftHandHrs	= 3.0
+float	LTT_CraftFeetHrs	= 3.0
+float	LTT_CraftShieldHrs	= 4.0
+float	LTT_CraftJewlryHrs	= 1.0
+
+;;;;;
+; One handed weapon values
+float	LTT_CraftOneHanded	= 4.0
+float	LTT_CraftSwordHrs	= CraftOneHanded
+float	LTT_CrattWAxeHrs	= CraftOneHanded
+float	LTT_CraftMaceHrs	= CraftOneHanded
+float	LTT_CraftDaggerHrs	= CraftOneHanded * 0.5
+
+;;;;;
+; Two handed weapon values
+float	LTT_CraftTwoHanded	= 5.0
+float	LTT_CraftGSwordHrs	= CraftTwoHanded
+float	LTT_CraftBAxeHrs	= CraftTwoHanded
+float	LTT_CraftWHamrHrs	= CraftTwoHanded
+float	LTT_CraftStaffHrs	= CraftTwoHanded * 0.4
+
+;;;;;
+; Ranged weapon values
+float	LTT_CraftBowHrs		= CraftOneHanded
+float	LTT_CraftAmmoHrs	= CraftOneHanded * 0.5
+
+;;;;;
+; Misc item values
+float	LTT_CraftMiscHrs	= 1.0
+
+;;;;;
+; While Improving Craftables
+float	LTT_ImproveWeaponHrs	= 1.0
+float	LTT_ImproveArmorHrs	= 1.0
+float	LTT_EnchantItemHrs	= 1.0
+float	LTT_BrewPotionHrs	= 1.0
+
+;;;;;;;;;;
+; While Looting
+bool	LTT_WhileLooting	= true
+bool	LTT_LootInCombat	= false
+float	LTT_LootMult		= 1.0
+float	LTT_LootLighArmMins	= 15.0
+float	LTT_LootHeavyArmMins	= 45.0
+bool	LTT_PickPockInCombat	= false
+float	LTT_PickPockMult	= 1.0
+bool	LTT_LockPickInCombat	= false
+float	LTT_LockPickMult	= 1.0
+
+;;;;;;;;;;
+; While Training or Leveling
+bool	LTT_WhileTraining	= true
+bool	LTT_WhileLeveling	= true
+bool	LTT_LevelInCombat	= false
+float	LTT_TrainingMult	= 1.0
+float	LTT_TrainingHrs		= 2.0
+float	LTT_LevelingMul		= 1.0
+float	LTT_LevelingHrs		= 1.0
+
+;;;;;;;;;;
+; While Preparing (UI Menus)
+bool	LTT_WhilePreparing	= true ; disabling this disable all the below
+bool	LTT_WhileInvMenyu	= true
+bool	LTT_WhileMagicMenu	= true
+bool	LTT_WhileJournalMenu	= true
+bool	LTT_WhileMapMenu	= true
+bool	LTT_WhileEating		= true
+bool	LTT_InvInCombat		= false
+bool	LTT_MagicInCombat	= false
+bool	LTT_JournalInCombat	= false
+bool	LTT_MapInCombat		= false
+bool	LTT_EatInCombat		= false
+float	LTT_InvMult		= 1.0
+float	LTT_MagicMult		= 1.0
+float	LTT_JournalMult		= 1.0
+float	LTT_MapMult		= 1.0
+float	LTT_EatMins		= 5.0
+float	LTT_BarterMult		= 1.0
+float	LTT_GiftMult		= 1.0
+
+;;;;;;;;;;
+; While Reading
+int	prop_WhileReading		= -1
+int	prop_ReadInCombat		= -1
+int	prop_ReadTimeMult		= -1
+int	prop_ReadIncreasesSpeech	= -1
+int	prop_SpeechIncreaseMult		= -1
+int	prop_SpellLearnHrs		= -1
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Functions
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Moving mod related code to external files to cut the size of this one
-import LTT_Common
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Variable Declarations
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Properties passed from ESP
-FormList Property LTT_FL_msgTimePassed Auto ; Form list for 1st/3rd person messages when time passes
-FormList Property LTT_FL_msgInCombat Auto ; Form list for 1st/3rd person messages when a task is blocked due to combat
-GlobalVariable Property TimeScale Auto ; the game's timescale
-GlobalVariable Property GameHour Auto ; the game's current time
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; LTT Related Properties
-bool	LTT_Active		= false
-bool	LTT_Paused		= false
-int	LTT_PauseKey		= -1
-bool	LTT_FirstPersonMsgs	= false
-bool	LTT_UserDebug		= false
-
-;;;;;;;;;;;;;;;;;;;;
-; State tracker IDs
-int	stateMenu		= -1
-int	stateLooting		= -1
-int	stateCrafting		= -1
-int	stateCraftingStation	= -1
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; LTT Internal Functions
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Property Getters
-;;;;;;;;;;;;;;;;;;;;
-int function GetVersion()
-	return LTT_Version
-endfunction
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Event Handlers
-;;;;;;;;;;;;;;;;;;;;
-event OnInit()
-	; Init version info
-	LTT_Version = _addProp( "LTT_Version", GetVersion() as string, "$LTT_Version", "$HLP_Version" ) as int
-	LTT_VerString = _addProp( "LTT_VerString", _verString(), "$LTT_VerString", "$HLP_VerString" ) as string
-
-	; Init states
-	stateMenu = LTT_addState( "Menu" )
-	stateLooting = LTT_addState( "Looting" )
-	stateCrafting = LTT_addState( "Crafting" )
-	stateCraftingStateion = LTT_addState( "Crafting Station" )
-	statePickpocketing = LTT_addState( "Pickpocketing" )
-
-	; init Reading properties
-	LTT_WhileReading = _addProp( "LTT_WhileReading", LTT_WhileReading, "$LTT_WhileReading", "$HLP_WhileReading" ) as bool
-	ReadInCombat = _addProp( "ReadInCombat" ), ReadInCombat, "$ReadInCombat", "$HLP_ReadInCombat" ) as bool
+event OnGameRelaod()
+	LTT = LTT_getBase() ; from LTT_Factory
+	LDH = LTT.getLDH()
+	modID = LDH.addMod( self, LTT_Name, LTT_ESP, 0xf )
+	if modID < 0 ; We couldn't be added to the Mod table.
+		return
+	endif
 	
+	; init Reading properties
+	prop_WhileReading = LDH.addBoolProp( "LTT_WhileReading", true, "$LTT_WhileReading", "$HLP_WhileReading", 0 )
+	prop_ReadInCombat = LDH.addBoolProp( "LTT_ReadInCombat", ReadInCombat, "$LTT_ReadInCombat", "$HLP_ReadInCombat", 2 )
+	prop_ReadTimeMult = LDH.addFloatProp( "LTT_ReadTimeMult", 1.0, "$LTT_ReadTimeMult", "$HLP_ReadTimeMult", 4, 0.0, 10.0 )
+	prop_ReadIncreasesSpeech = LDH.addBoolProp( "LTT_ReadIncreaseSpeech", false, "$LTT_ReadIncreaseSpeech", "$HLP_ReadIncreasesSpeech", 4 )
+	prop_SpeechIncreaseMult = LDH.addFloatProp( "LTT_SpeechIncreasMult", 1.0, "$LTT_SpeechIncreaseMult", "$HLP_SpeechIncreaseMult", 6, 0.0, 10.0 )
+	prop_SpellLearnHrs = LDH.addFloatProp( "LTT_SpellLearnHrs", 2.0, "$LTT_SpellLearnHrs", "$HLP_SpellLearnHrs", 8, 0.0, 24.0 )
 endevent
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Manage changes to crafting
-
-;;;;;;;;;;;;;;;;;;;;
-; start using a crafting furniture
-function StartFurniture(ObjectReference akFurniture)
-	int ID = LTT_getLastStation()
-	while ( 1 ) ; will exit when ID gets to -1
-		if akFurnitur.HasKeywordString(LTT_getStation(ID))
-			LTT_setState( stateCraftingStation, LTT_getStationName(ID) )
-			return
-		endif
-		ID -= 1
-	endwhile
-endfunction
-
-;;;;;;;;;;;;;;;;;;;;
-; stop using a crafting furniture
-function StopFurniture(ObjectReference akFurniture)
-	LTT_setState( stateCraftingStation, "" )
-endfunction
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-Function InitStats(Bool Active)
-	_isModActive = Active
-	openEat = Game.QueryStat("Food Eaten")
-	openSpell = Game.QueryStat("Spells Learned")
-	openArmorsImproved = Game.QueryStat("Armor Improved")
-	openWeaponsImproved = Game.QueryStat("Weapons Improved")
-	openEnchantings = Game.QueryStat("Magic Items Made")
-	openPotions = Game.QueryStat("Potions Mixed")
-	openPoisons = Game.QueryStat("Poisons Mixed")
-	UnregisterForTrackedStatsEvent()
-EndFunction
-
-Bool Function TimeCalc(Float PassedTime)
-	If Suspended || PassedTime <= 0
-		Return true
-	EndIf
-
-	DebugMode("TimeCalc PassedTime = " + PassedTime)
-	Float Time = GameHour.GetValue()
-	Int Std = Math.Floor(Time)
-	Time = Time - Std
-	Time = Time + (PassedTime)
-	Time = Time + Std
-	Int Hours = Math.Floor(PassedTime)
-	Int Minutes =  Math.Floor((PassedTime - Hours)*100*3/5)
-	DebugMode("hours = " + Hours + " ; minutes = " + minutes + " ; showMessageThreshold = " + showMessageThreshold + " ; showMessage = " + showMessage)
-	If showMessage && (Hours > 0 || Minutes >= showMessageThreshold)
-		RTT_Message.Show(Hours,Minutes)
-	EndIf
-	GameHour.SetValue(Time)
-	return true
-EndFunction
-
-Float Function ExpertiseMultiplier(String Skill)
-	if (!expertiseReducesTime)
-		return 1
-	endif
-	Float SkillPoints = Game.GetPlayer().GetActorValue(Skill)
-	if (SkillPoints<0)
-		SkillPoints = 0
-	elseif (SkillPoints>150)
-		SkillPoints = 150
-	endif
-	return (100-(SkillPoints/2))/100
-EndFunction
-
-Function SkillIncrease(String Skill, Float Increase)
-	ActorValueInfo aVI = ActorValueInfo.GetActorValueInfobyName(Skill)
-	aVI.AddSkillExperience(Increase)
-EndFunction
-
-Function CloseInCombat()
-	If Suspended
-		Return
-	EndIf
-	CloseBook = True
-	if(showMessage)
-		;RTT_CantRead.Show()
-		Debug.Notification("$I can't do that while in combat!")
-	endif
-	while (Utility.IsInMenuMode())
-		Input.TapKey(15)
-		Utility.WaitMenuMode(0.15)
-	endwhile
-EndFunction
-
-;;;
-; For performance reasons, use any excuse to exit this large function early as early as possible.
-;;;
-Function ItemAdded (Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akSourceContainer)
-
-	
-	;;;;;;;;;;;
-	;;;;;;;;;;;
-	;;;;;;;;;;;
-	;;;;;;;;;;;
-	;;;;;;;;;;;
-
-	If Suspended || !_isModActive || UI.IsMenuOpen("Console") || akBaseItem == none
-		DebugMode("--ItemAdded: Mod inactive, added by console, or not an item")
-		Return
-	EndIf
-	DebugMode("++ItemAdded"\
-		+"( akBaseItem="+akBaseItem\
-		+", aiItemCount="+aiItemCount\
-		+", akItemReference="+akItemReference\
-		+", akSourceContainer="+akSourceContainer\
-		+")"\
-	)
-
-	If (!looting && !crafting) || akSourceContainer ;if items come from a container they're not crafted and we should skip, this fixes problems with jaggarfeld and such
-		DebugMode( "--ItemAdded: item taken or not crafted and not looted" )
-		Return
-	EndIf
-
-	; Declare local variables
-	float t = 0
-	float PassedTime = 0
-	int ItemType = akBaseItem.GetType()
-	int ItemPrefix = GetFormPrefix(akBaseItem)
-	int ItemName = akBaseItem.GetName()
-	DebugMode("Derived"\
-		+": ItemType="+ItemType\
-		+"; ItemPrefix="+ItemPrefix\
-		+"; ItemName="+ItemName\
-		+")"\
-	)
-	DebugMode( "Flags"\
-		+": _is_FF_Active="+_is_FF_Active\
-		+"; _is_CF_Active="+_is_CF_Active\
-		+"; _is_FF3_Active="+_is_FF_Active\
-		+"; _is_RN_Active="+_is_RN_Active\
-		+"; _is_HB_Active="+_is_HB_Active\
-		+"; _is_WL_Active="+_is_WL_Active\
-		+"; _is_LC_Active="+_is_LC_Active\
-	)
-
-	; Do this before ignoring tiny objects,
-	; becuase lighting a fire in Campfire is AddItem(book)
-	; and the book weighs more than 0.01
-	If !ItemHandled && crafting_furniture == "cf_campfire" && type == 27 && prefix == CF_Prefix
-		DebugMode("I think we're lighting a fire")
-		if CF_HandleFirepit( akBaseItem )
-			DebugMode("--ItemAdded: Handled Campfire Firepit")
-			return
-		endif
-	endif
-
+;///////////////////////////////////////////////////////////////////////////////
+// called when an item is added to player's inventory - normally looted or
+// crafted. Returns... If this is not handled and should be passed on to the
+// next mod, return a negative value ; otherwise, return the number of hours
+// passed, even 0.0 if the task was free.
+/;
+float function ItemAdded( form Item, int Prefix, int Type, int Count, form Source )
 	; Ignore tiny objects. Like Fork of Damnation. *HUGE SIGH*
 	; ... Except ammo, which is weightless for most people without patches. :p
-	If akBaseItem.GetWeight() < 0.01 && ItemType != 42
+	if Item.GetWeight() < 0.01 && Type != 42
 		DebugMode("--ItemAdded: Ignoring tiny objects")
-		Return
+		return 0.0
 	EndIf
 
 	If looting
@@ -262,31 +161,7 @@ Function ItemAdded (Form akBaseItem, int aiItemCount, ObjectReference akItemRefe
 		Return
 	EndIf
 
-	;
-	; Begin handlers for external mods
-	;
-	if _is_CF_active && HandleCampfireMod(akBaseItem, type, aiItemCount)
-		DebugMode("--ItemAdded: Handled by Campfire")
-		return
-	elseif _is_FF3_active && HandleFrostfall3Mod(akBaseItem, type, aiItemCount)
-		DebugMode("--ItemAdded: Handled by Frostfall >= 3.x")
-		return
-	elseif _is_FF_active && Check_FF_Craft(akBaseItem, ItemTime, aiItemCount)
-		DebugMode("--ItemAdded: Handled by Chesko_Frostfall verseion < 3.x")
-		return
-	endif
-
-	;TODO - Everything below this line should be moved to the handlers for external mods
-	If ( (prefix == RN_Prefix || akBaseItem == RN_Items_Cookpot) && Check_RN_Craft(akBaseItem, type, aiItemCount) )
-		;
-	ElseIf ( (prefix == HB_Prefix || HB_Items_Vanilla.Find(akBaseItem) > -1) && Check_HB_Craft(akBaseItem, type, aiItemCount) )
-		;
-	ElseIf ( (prefix == WL_Prefix || akBaseItem == WL_Items_Chassis) && Check_WL_Craft(akBaseItem, aiItemCount) )
-		;
-	ElseIf ( prefix == LC_Prefix && Check_LC_Craft(akBaseItem, aiItemCount) )
-		;
-
-	ElseIf crafting_furniture == "smelt"
+	if crafting_furniture == "smelt"
 		DebugMode("Smelting, using value from Crafting - Misc")
 		TimeCalc( miscCraftTime * ExpertiseMultiplier("Smithing") )
 
@@ -323,12 +198,7 @@ Function ItemAdded (Form akBaseItem, int aiItemCount, ObjectReference akItemRefe
 		elseif a.isShield()
 			TimeCalc(shieldCraftTime*ExpertiseMultiplier("Smithing"))
 		elseif a.isJewelry() || a.isClothingRing()
-			If FF_Split_Amulet || CF_Splitting_Amulet
-				DebugMode("Amulet, but ignored due to splitter.")
-				FF_Split_Amulet = CF_Splitting_Amulet = False
-			Else
-				TimeCalc(jewelryCraftTime*ExpertiseMultiplier("Smithing"))
-			EndIf
+			TimeCalc(jewelryCraftTime*ExpertiseMultiplier("Smithing"))
 		else
 			;whatever is left
 			TimeCalc(armorCraftTime*ExpertiseMultiplier("Smithing"))
@@ -389,15 +259,15 @@ Function ItemAdded (Form akBaseItem, int aiItemCount, ObjectReference akItemRefe
 		endif
 
 	endif
+	
+	return -1.0
+endfunction
 
-EndFunction
-
-Function ItemRemoved (Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akDestContainer)
-
-	If !_isModActive || UI.IsMenuOpen("Console")
-		Return
-	EndIf
-
+;///////////////////////////////////////////////////////////////////////////////
+// called when an item is removed from player's inventory - normally eaten or drunk
+// Returns the same as ItemAdded
+/;
+float function ItemRemoved( form Item, int Prefix, int Type, int Count, form Destination )
 	; Ignore tiny objects. Like Fork of Damnation. *HUGE SIGH*
 	If akBaseItem.GetWeight() < 0.01
 		DebugMode(akBaseItem.GetName()+" weight: "+akBaseItem.GetWeight())
@@ -473,10 +343,14 @@ Function ItemRemoved (Form akBaseItem, int aiItemCount, ObjectReference akItemRe
 	EndIf
 
 	_critSection = False
+	return -1.0
+endfunction
 
-EndFunction
-
-Event OnMenuOpen(String MenuName)
+;///////////////////////////////////////////////////////////////////////////////
+// called when any screen other than the 3D renedered world is displayed
+// Returns the same as ItemAdded
+/;
+float function MenuOpened( int Menu )
 	DebugMode("OnMenuOpen " + MenuName)
 	If MenuName == "Book Menu"
 		if Game.GetPlayer().IsInCombat() && cantRead
@@ -551,9 +425,14 @@ Event OnMenuOpen(String MenuName)
 	ElseIf MenuName == "GiftMenu"
 		StartReading  = Utility.GetCurrentRealTime()
 	EndIf
-EndEvent
+	return -1.0
+endfunction
 
-Event OnMenuClose(String MenuName)
+;///////////////////////////////////////////////////////////////////////////////
+// called when any screen other than the 3D renedered world is closed
+// Returns the same as ItemAdded
+/;
+float function MenuClosed( int Menu )
 	DebugMode("OnMenuClose " + MenuName)
 	If !CloseBook
 		If MenuName == "Book Menu"
@@ -646,122 +525,6 @@ Event OnMenuClose(String MenuName)
 	Else
 		CloseBook = False
 	EndIf
-EndEvent
-
-
-Bool Function Check_LC_Craft(Form akBaseItem, int aiItemCount)
-	DebugMode("Check_LC_Craft...")
-
-	Float t
-	Float totalBaseTime
-
-	If akBaseItem == LC_Items_Candle
-		t = ToMinutes(lcBrewTime)
-		totalBaseTime = t * aiItemCount
-		DebugMode("Candle. Base time = " + t + "; x" + aiItemCount + " = " + totalBaseTime)
-		TimeCalc(totalBaseTime)
-
-	ElseIf LC_Items_Basic.Find(akBaseItem) > -1
-		t = ToMinutes(lcBasicTime)
-		DebugMode("Basic. Base time = " + t)
-		TimeCalc(t)
-
-	ElseIf LC_Items_Arcane.Find(akBaseItem) > -1
-		DebugMode("Arcane. Base time = " + lcArcaneTime + "; Smithing = " + Game.GetPlayer().GetActorValue("Smithing") + "; Mult = " + ExpertiseMultiplier("Smithing"))
-		TimeCalc( lcArcaneTime * ExpertiseMultiplier("Smithing") )
-
-	Else ; Assume a forged good
-		DebugMode("Forged. Base time = " + lcForgeTime + "; Smithing = " + Game.GetPlayer().GetActorValue("Smithing") + "; Mult = " + ExpertiseMultiplier("Smithing"))
-		TimeCalc( lcForgeTime * ExpertiseMultiplier("Smithing") )
-
-	EndIf
-
-	Return True
-
-EndFunction
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; MCM Handlers
-function mcmInit
-	if ( isModActive )
-		DebugMode("Initializing...")
-		ReadingTakesTime.StartReading = Utility.GetCurrentRealTime()
-		ReadingTakesTime.StopReading = Utility.GetCurrentRealTime()
-		if ( isReadingActive )
-			RegisterForMenu("Book Menu")
-		else
-			UnregisterForMenu("Book Menu")
-		endIf
-		if ( isCraftingActive )
-			RegisterForMenu("Crafting Menu")
-		else
-			UnregisterForMenu("Crafting Menu")
-		endIf
-		if ( isContainerActive )
-			RegisterForMenu("ContainerMenu")
-			;RegisterForCrosshairRef()
-		else
-			UnregisterForMenu("ContainerMenu")
-			;UnregisterForCrosshairRef()
-		endIf
-		if ( isLockpickActive )
-			RegisterForMenu("Lockpicking Menu")
-		else
-			UnregisterForMenu("Lockpicking Menu")
-		endIf
-		if ( isTrainingActive )
-			RegisterForMenu("Training Menu")
-		else
-			UnregisterForMenu("Training Menu")
-		endIf
-		if ( isLevelUpActive )
-			RegisterForMenu("StatsMenu")
-		else
-			UnregisterForMenu("StatsMenu")
-		endIf
-		if ( isInventoryActive )
-			RegisterForMenu("InventoryMenu")
-		else
-			UnregisterForMenu("InventoryMenu")
-		endIf
-		if ( isMagicActive )
-			RegisterForMenu("MagicMenu")
-		else
-			UnregisterForMenu("MagicMenu")
-		endIf
-		if ( isJournalActive )
-			RegisterForMenu("Journal Menu")
-			ReadingTakesTime.StartReading = Utility.GetCurrentRealTime()
-			ReadingTakesTime.StopReading = Utility.GetCurrentRealTime()
-		else
-			UnregisterForMenu("Journal Menu")
-		endIf
-		if ( isMapActive )
-			RegisterForMenu("MapMenu")
-		else
-			UnregisterForMenu("MapMenu")
-		endIf
-		if ( isBarterActive )
-			RegisterForMenu("BarterMenu")
-		else
-			UnregisterForMenu("BarterMenu")
-		endIf
-		if ( isGiftActive )
-			RegisterForMenu("GiftMenu")
-		else
-			UnregisterForMenu("GiftMenu")
-		endIf
-		
-		DebugMode("Checking mod dependencies, ignore errors below about missing files...")
-		ReadingTakesTime.Init_HF_Exclusions()
-		ReadingTakesTime.CheckModStatus()
-		
-		DebugMode("Done initializing!")
-	else
-		UnregisterForAllMenus()
-		UnregisterForCrosshairRef()
-	endIf
-	ReadingTakesTime.InitStats(isModActive)
+	return -1.0
 endfunction
 

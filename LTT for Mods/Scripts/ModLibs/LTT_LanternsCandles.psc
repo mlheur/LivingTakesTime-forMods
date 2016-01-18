@@ -43,3 +43,33 @@ Function Init_LC_Items()
 
 EndFunction
 
+Bool Function Check_LC_Craft(Form akBaseItem, int aiItemCount)
+	DebugMode("Check_LC_Craft...")
+
+	Float t
+	Float totalBaseTime
+
+	If akBaseItem == LC_Items_Candle
+		t = ToMinutes(lcBrewTime)
+		totalBaseTime = t * aiItemCount
+		DebugMode("Candle. Base time = " + t + "; x" + aiItemCount + " = " + totalBaseTime)
+		TimeCalc(totalBaseTime)
+
+	ElseIf LC_Items_Basic.Find(akBaseItem) > -1
+		t = ToMinutes(lcBasicTime)
+		DebugMode("Basic. Base time = " + t)
+		TimeCalc(t)
+
+	ElseIf LC_Items_Arcane.Find(akBaseItem) > -1
+		DebugMode("Arcane. Base time = " + lcArcaneTime + "; Smithing = " + Game.GetPlayer().GetActorValue("Smithing") + "; Mult = " + ExpertiseMultiplier("Smithing"))
+		TimeCalc( lcArcaneTime * ExpertiseMultiplier("Smithing") )
+
+	Else ; Assume a forged good
+		DebugMode("Forged. Base time = " + lcForgeTime + "; Smithing = " + Game.GetPlayer().GetActorValue("Smithing") + "; Mult = " + ExpertiseMultiplier("Smithing"))
+		TimeCalc( lcForgeTime * ExpertiseMultiplier("Smithing") )
+
+	EndIf
+
+	Return True
+
+EndFunction

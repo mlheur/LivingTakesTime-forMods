@@ -1,2012 +1,1499 @@
 scriptname LTT_Menu extends SKI_ConfigBase
+;///////////////////////////////////////////////////////////////////////////////
+// Purpose:
+//	LTT For Mods provides a sort of transparent interface to MCM.  With all
+//	the variables a properties stored in LTT_DataHandler tables, it makes
+//	more sense to implement MCM within LTT_Base.  This file provides a
+//	sort of wrapper/interface that calls the LTT_Base version of MCM events.
+///////////////////////////////////////////////////////////////////////////////;
 
-import FISSFactory
-import LTT_Common
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Most of the MCM handlers will be called from LTT.mcm_* functions because it
-; has access to all the mod handlers, properties, etc.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Variable Declarations
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Properties passed from ESP
-Quest Property LTT Auto
-
-Function InitMod()
-	LTT.mcmInit()
-endfunction
-
-Function SaveSettings()
-	FISSInterface fiss = FISSFactory.getFISS()
-	If !fiss
-		debug.MessageBox("$FISS not installed. Saving disabled")
-		return
-	endif
-	fiss.beginSave("LTT\\LTTSettings.xml", "LivingTakesTime")
-	
-	fiss.saveBool("isModActive", isModActive)
-	fiss.saveBool("isReadingActive", isReadingActive)
-	fiss.saveBool("isCraftingActive", isCraftingActive)
-	fiss.saveBool("isContainerActive", isContainerActive)
-	fiss.saveBool("isLockpickActive", isLockpickActive)
-	fiss.saveBool("isTrainingActive", isTrainingActive)
-	fiss.saveBool("isLevelUpActive", isLevelUpActive)
-	fiss.saveBool("isInventoryActive", isInventoryActive)
-	fiss.saveBool("isMagicActive", isMagicActive)
-	fiss.saveBool("isJournalActive", isJournalActive)
-	fiss.saveBool("isMapActive", isMapActive)
-	fiss.saveBool("isBarterActive", isBarterActive)
-	fiss.saveBool("isGiftActive", isGiftActive)
-	fiss.saveBool("cantLoot", ReadingTakesTime.cantLoot)
-	fiss.saveBool("cantPick", ReadingTakesTime.cantPick)
-	fiss.saveBool("showMessage", ReadingTakesTime.showMessage)
-	fiss.saveBool("dontShowMessage", ReadingTakesTime.dontShowMessage)
-	fiss.saveBool("expertiseReducesTime", ReadingTakesTime.expertiseReducesTime)
-	fiss.saveBool("cantRead", ReadingTakesTime.cantRead)
-	fiss.saveBool("readingIncreasesSpeech", ReadingTakesTime.readingIncreasesSpeech)
-	fiss.saveBool("cantLevelUp", ReadingTakesTime.cantLevelUp)
-	fiss.saveBool("cantInventory", ReadingTakesTime.cantInventory)
-	fiss.saveBool("cantMagic", ReadingTakesTime.cantMagic)
-	fiss.saveBool("cantJournal", ReadingTakesTime.cantJournal)
-	fiss.saveBool("cantMap", ReadingTakesTime.cantMap)
-	
-	fiss.saveFloat("readMult", ReadingTakesTime.readMult)
-	fiss.saveFloat("readingIncreaseMult", ReadingTakesTime.readingIncreaseMult)
-	fiss.saveFloat("spellLearnTime", ReadingTakesTime.spellLearnTime)
-	fiss.saveFloat("headCraftTime", ReadingTakesTime.headCraftTime)
-	fiss.saveFloat("armorCraftTime", ReadingTakesTime.armorCraftTime)
-	fiss.saveFloat("handsCraftTime", ReadingTakesTime.handsCraftTime)
-	fiss.saveFloat("feetCraftTime", ReadingTakesTime.feetCraftTime)
-	fiss.saveFloat("shieldCraftTime", ReadingTakesTime.shieldCraftTime)
-	fiss.saveFloat("jewelryCraftTime", ReadingTakesTime.jewelryCraftTime)
-	fiss.saveFloat("battleAxeCraftTime", ReadingTakesTime.battleAxeCraftTime)
-	fiss.saveFloat("bowCraftTime", ReadingTakesTime.bowCraftTime)
-	fiss.saveFloat("daggerCraftTime", ReadingTakesTime.daggerCraftTime)
-	fiss.saveFloat("greatswordCraftTime", ReadingTakesTime.greatswordCraftTime)
-	fiss.saveFloat("maceCraftTime", ReadingTakesTime.maceCraftTime)
-	fiss.saveFloat("staffCraftTime", ReadingTakesTime.staffCraftTime)
-	fiss.saveFloat("swordCraftTime", ReadingTakesTime.swordCraftTime)
-	fiss.saveFloat("warhammerCraftTime", ReadingTakesTime.warhammerCraftTime)
-	fiss.saveFloat("warAxeCraftTime", ReadingTakesTime.warAxeCraftTime)
-	fiss.saveFloat("weaponCraftTime", ReadingTakesTime.weaponCraftTime)
-	fiss.saveFloat("miscCraftTime", ReadingTakesTime.miscCraftTime)
-	fiss.saveFloat("armorImproveTime", ReadingTakesTime.armorImproveTime)
-	fiss.saveFloat("weaponImproveTime", ReadingTakesTime.weaponImproveTime)
-	fiss.saveFloat("enchantingTime", ReadingTakesTime.enchantingTime)
-	fiss.saveFloat("potionCraftTime", ReadingTakesTime.potionCraftTime)
-	fiss.saveFloat("lootMult", ReadingTakesTime.lootMult)
-	fiss.saveFloat("pickMult", ReadingTakesTime.pickMult)
-	fiss.saveFloat("pickpocketMult", ReadingTakesTime.pickpocketMult)
-	fiss.saveFloat("trainingMult", ReadingTakesTime.trainingMult)
-	fiss.saveFloat("trainingTime", ReadingTakesTime.trainingTime)
-	fiss.saveFloat("levelUpMult", ReadingTakesTime.levelUpMult)
-	fiss.saveFloat("levelUpTime", ReadingTakesTime.levelUpTime)
-	fiss.saveFloat("inventoryMult", ReadingTakesTime.inventoryMult)
-	fiss.saveFloat("eatTime", ReadingTakesTime.eatTime)
-	fiss.saveFloat("magicMult", ReadingTakesTime.magicMult)
-	fiss.saveFloat("journalMult", ReadingTakesTime.journalMult)
-	fiss.saveFloat("mapMult", ReadingTakesTime.mapMult)
-	fiss.saveFloat("barterMult", ReadingTakesTime.barterMult)
-	fiss.saveFloat("giftMult", ReadingTakesTime.giftMult)
-
-	string saveResult = fiss.endSave()
-	if saveResult != ""
-		DebugMode(saveResult)
-	endif
-EndFunction
-
-Function LoadSettings()
-	FISSInterface fiss = FISSFactory.getFISS()
-	If !fiss
-		debug.MessageBox("FISS not installed. Loading disabled")
-		return
-	endif
-	fiss.beginLoad("LTT\\LTTSettings.xml")
-	
-	isModActive = fiss.loadBool("isModActive")
-	isReadingActive = fiss.loadBool("isReadingActive")
-	isCraftingActive = fiss.loadBool("isCraftingActive")
-	isContainerActive = fiss.loadBool("isContainerActive")
-	isLockpickActive = fiss.loadBool("isLockpickActive")
-	isTrainingActive = fiss.loadBool("isTrainingActive")
-	isLevelUpActive = fiss.loadBool("isLevelUpActive")
-	isInventoryActive = fiss.loadBool("isInventoryActive")
-	isMagicActive = fiss.loadBool("isMagicActive")
-	isJournalActive = fiss.loadBool("isJournalActive")
-	isMapActive = fiss.loadBool("isMapActive")
-	isBarterActive = fiss.loadBool("isBarterActive")
-	isGiftActive = fiss.loadBool("isGiftActive")
-	ReadingTakesTime.cantLoot = fiss.loadBool("cantLoot")
-	ReadingTakesTime.cantPick = fiss.loadBool("cantPick")
-	ReadingTakesTime.showMessage = fiss.loadBool("showMessage")
-	ReadingTakesTime.dontShowMessage = fiss.loadBool("dontShowMessage")
-	ReadingTakesTime.expertiseReducesTime = fiss.loadBool("expertiseReducesTime")
-	ReadingTakesTime.cantRead = fiss.loadBool("cantRead")
-	ReadingTakesTime.readingIncreasesSpeech = fiss.loadBool("readingIncreasesSpeech")
-	ReadingTakesTime.cantLevelUp = fiss.loadBool("cantLevelUp")
-	ReadingTakesTime.cantInventory = fiss.loadBool("cantInventory")
-	ReadingTakesTime.cantMagic = fiss.loadBool("cantMagic")
-	ReadingTakesTime.cantJournal = fiss.loadBool("cantJournal")
-	ReadingTakesTime.cantMap = fiss.loadBool("cantMap")
-	
-	ReadingTakesTime.readMult = fiss.loadFloat("readMult")
-	ReadingTakesTime.readingIncreaseMult = fiss.loadFloat("readingIncreaseMult")
-	ReadingTakesTime.spellLearnTime = fiss.loadFloat("spellLearnTime")
-	ReadingTakesTime.headCraftTime = fiss.loadFloat("headCraftTime")
-	ReadingTakesTime.armorCraftTime = fiss.loadFloat("armorCraftTime")
-	ReadingTakesTime.handsCraftTime = fiss.loadFloat("handsCraftTime")
-	ReadingTakesTime.feetCraftTime = fiss.loadFloat("feetCraftTime")
-	ReadingTakesTime.shieldCraftTime = fiss.loadFloat("shieldCraftTime")
-	ReadingTakesTime.jewelryCraftTime = fiss.loadFloat("jewelryCraftTime")
-	ReadingTakesTime.battleAxeCraftTime = fiss.loadFloat("battleAxeCraftTime")
-	ReadingTakesTime.bowCraftTime = fiss.loadFloat("bowCraftTime")
-	ReadingTakesTime.daggerCraftTime = fiss.loadFloat("daggerCraftTime")
-	ReadingTakesTime.greatswordCraftTime = fiss.loadFloat("greatswordCraftTime")
-	ReadingTakesTime.maceCraftTime = fiss.loadFloat("maceCraftTime")
-	ReadingTakesTime.staffCraftTime = fiss.loadFloat("staffCraftTime")
-	ReadingTakesTime.swordCraftTime = fiss.loadFloat("swordCraftTime")
-	ReadingTakesTime.warhammerCraftTime = fiss.loadFloat("warhammerCraftTime")
-	ReadingTakesTime.warAxeCraftTime = fiss.loadFloat("warAxeCraftTime")
-	ReadingTakesTime.weaponCraftTime = fiss.loadFloat("weaponCraftTime")
-	ReadingTakesTime.miscCraftTime = fiss.loadFloat("miscCraftTime")
-	ReadingTakesTime.armorImproveTime = fiss.loadFloat("armorImproveTime")
-	ReadingTakesTime.weaponImproveTime = fiss.loadFloat("weaponImproveTime")
-	ReadingTakesTime.enchantingTime = fiss.loadFloat("enchantingTime")
-	ReadingTakesTime.potionCraftTime = fiss.loadFloat("potionCraftTime")
-	ReadingTakesTime.lootMult = fiss.loadFloat("lootMult")
-	ReadingTakesTime.pickMult = fiss.loadFloat("pickMult")
-	ReadingTakesTime.pickpocketMult = fiss.loadFloat("pickpocketMult")
-	ReadingTakesTime.trainingMult = fiss.loadFloat("trainingMult")
-	ReadingTakesTime.trainingTime = fiss.loadFloat("trainingTime")
-	ReadingTakesTime.levelUpMult = fiss.loadFloat("levelUpMult")
-	ReadingTakesTime.levelUpTime = fiss.loadFloat("levelUpTime")
-	ReadingTakesTime.inventoryMult = fiss.loadFloat("inventoryMult")
-	ReadingTakesTime.eatTime = fiss.loadFloat("eatTime")
-	ReadingTakesTime.magicMult = fiss.loadFloat("magicMult")
-	ReadingTakesTime.journalMult = fiss.loadFloat("journalMult")
-	ReadingTakesTime.mapMult = fiss.loadFloat("mapMult")
-	ReadingTakesTime.barterMult = fiss.loadFloat("barterMult")
-	ReadingTakesTime.giftMult = fiss.loadFloat("giftMult")
-	
-	string loadResult = fiss.endLoad()
-	if loadResult != ""
-		DebugMode(loadResult)
-	endif
-	InitMod()
-EndFunction
+import LTT_Factory
+LTT_Base Property LTT Auto
+bool _InitComplete = false
 
 int function GetVersion()
-	return 13
-endFunction
+	LTT.DebugLog( "++Menu::GetVersion()" )
+	return LTT.getVersion()
+	LTT.DebugLog( "--Menu::GetVersion()" )
+endfunction
+
+event OnGameReload() ; this is called before OnConfigInit() - why???
+	LTT.DebugLog( "++Menu::OnGameReload()" )
+	if ! _InitComplete
+		OnConfigInit()
+	endif
+	LTT.mcmOnGameReload()
+	parent.OnGameReload()
+	LTT.DebugLog( "--Menu::OnGameReload()" )
+endEvent
 
 event OnConfigInit()
-
-		Pages = new string[11]
-		Pages[0] = "$General"
-		Pages[1] = "$Reading"
-		Pages[2] = "$Crafting"
-		Pages[3] = "$Looting"
-		Pages[4] = "$Training"
-		Pages[5] = "$Preparing"
-		Pages[6] = "$Trading"
-		Pages[7] = "Campfire" ; Was Frostfall
-		Pages[8] = "RND"
-		Pages[9] = "Hunterborn"
-		Pages[10] = "Lanterns, Candles"
-	
-	ReadingTakesTime.StartReading = Utility.GetCurrentRealTime()
-	ReadingTakesTime.StopReading = Utility.GetCurrentRealTime()
-	
-	UnregisterForAllMenus()
-	;UnregisterForCrosshairRef()
-	RegisterForMenu("Book Menu")
-	RegisterForMenu("Crafting Menu")
-	RegisterForMenu("ContainerMenu")
-	;RegisterForCrosshairRef()
-	RegisterForMenu("Lockpicking Menu")
-	RegisterForMenu("Training Menu")
-	RegisterForMenu("StatsMenu")
-	RegisterForMenu("InventoryMenu")
-	RegisterForMenu("MagicMenu")
-	RegisterForMenu("Journal Menu")
-	RegisterForMenu("MapMenu")
-	RegisterForMenu("BarterMenu")
-	RegisterForMenu("GiftMenu")
-	
-	ReadingTakesTime.showMessage = True
-	ReadingTakesTime.dontShowMessage = True
-	ReadingTakesTime.showMessageThreshold = 10
-	ReadingTakesTime.cantRead = True
-	ReadingTakesTime.readMult = 1
-	ReadingTakesTime.armorCraftTime = 4
-	ReadingTakesTime.weaponCraftTime = 4
-	ReadingTakesTime.armorImproveTime = 1
-	ReadingTakesTime.weaponImproveTime = 1
-	ReadingTakesTime.enchantingTime = 1
-	ReadingTakesTime.potionCraftTime = 0.2
-	ReadingTakesTime.cantLoot = True
-	ReadingTakesTime.lootMult = 1
-	ReadingTakesTime.cantPick = True
-	ReadingTakesTime.pickMult = 1
-	ReadingTakesTime.trainingMult = 1
-	ReadingTakesTime.trainingTime = 2
-	ReadingTakesTime.cantLevelUp = True
-	ReadingTakesTime.levelUpMult = 1
-	ReadingTakesTime.levelUpTime = 1
-	ReadingTakesTime.cantInventory = True
-	ReadingTakesTime.inventoryMult = 1
-	ReadingTakesTime.eatTime = 5
-	ReadingTakesTime.cantMagic = True
-	ReadingTakesTime.magicMult = 1
-	ReadingTakesTime.cantJournal = True
-	ReadingTakesTime.journalMult = 1
-	ReadingTakesTime.cantMap = True
-	ReadingTakesTime.mapMult = 1
-	ReadingTakesTime.barterMult = 1
-	ReadingTakesTime.giftMult = 1
-	
-	isModActive = false
-	isReadingActive = true
-	isCraftingActive = true
-	isContainerActive = true
-	isLockpickActive = true
-	isTrainingActive = true
-	isLevelUpActive = true
-	isInventoryActive = true
-	isMagicActive = true
-	isJournalActive = true
-	isMapActive = true
-	isBarterActive = true
-	isGiftActive = true
-
+	LTT.DebugLog( "++Menu::OnConfigInit()" )
+	if ! _InitComplete
+		LTT = LTT_getBase()
+		Pages = LTT.mcmOnConfigInit()
+		_InitComplete = true
+	endif
+	LTT.DebugLog( "--Menu::OnConfigInit()" )
 endEvent
 
-event OnVersionUpdate(int version)
-    if (version > 2)
-		ReadingTakesTime.isInventoryActive = isInventoryActive 
-		ReadingTakesTime.headCraftTime = 3
-		ReadingTakesTime.armorCraftTime = 6
-		ReadingTakesTime.handsCraftTime = 3
-		ReadingTakesTime.feetCraftTime = 3
-		ReadingTakesTime.shieldCraftTime = 4
-		ReadingTakesTime.jewelryCraftTime = 2
-		ReadingTakesTime.battleAxeCraftTime = 4
-		ReadingTakesTime.bowCraftTime = 4
-		ReadingTakesTime.daggerCraftTime = 3
-		ReadingTakesTime.greatswordCraftTime = 4
-		ReadingTakesTime.maceCraftTime = 4
-		ReadingTakesTime.staffCraftTime = 2
-		ReadingTakesTime.swordCraftTime = 4
-		ReadingTakesTime.warhammerCraftTime = 4
-		ReadingTakesTime.warAxeCraftTime = 4
-		ReadingTakesTime.weaponCraftTime = 2
-		ReadingTakesTime.miscCraftTime = 2
-		ReadingTakesTime.chopTime = 5
-    endIf
-	if (version > 3)
-		ReadingTakesTime.expertiseReducesTime = True
-		ReadingTakesTime.readingIncreasesSpeech = True
-		ReadingTakesTime.readingIncreaseMult = 1
-    endIf
-	if (version > 4)
-		ReadingTakesTime.pickpocketMult = 1
-	endIf
-	if (version > 5)
-		Pages[0] = "$General"
-		Pages[1] = "$Reading"
-		Pages[2] = "$Crafting"
-		Pages[3] = "$Looting"
-		Pages[4] = "$Training"
-		Pages[5] = "$Preparing"
-		Pages[6] = "$Trading"
-		ReadingTakesTime.spellLearnTime = 2
-		;InitMod()
-    endIf
-	If version > 6
-		DebugMode("Version >>" + version + "<< [mlheur's custom brew from dragonsong, with campfire and frostfall3] is starting or updating...")
-		Pages = new string[11]
-		Pages[0] = "$General"
-		Pages[1] = "$Reading"
-		Pages[2] = "$Crafting"
-		Pages[3] = "$Looting"
-		Pages[4] = "$Training"
-		Pages[5] = "$Preparing"
-		Pages[6] = "$Trading"
-		Pages[7] = "Campfire, Frostfall"
-		Pages[8] = "RND"
-		Pages[9] = "Hunterborn"
-		Pages[10] = "Lanterns, Candles"
-		ReadingTakesTime.hotkeySuspend = 0
-		ReadingTakesTime.Suspended = False
-		ReadingTakesTime.lightArmorTime = 15
-		ReadingTakesTime.heavyArmorTime = 45
-		ReadingTakesTime.showMessageThreshold = 10
-		SetModDefaults()
-		InitMod()
-	EndIf
-endEvent
-
-event OnGameReload()
-	parent.OnGameReload() ; Don't forget to call the parent!	
-	ReadingTakesTime.Suspended = False
-	InitMod()
-	ReassignHotKeys()
-endEvent
+event OnVersionUpdate( int Version )
+	LTT.DebugLog( "++Menu::OnVersionUpdate()" )
+	Pages = LTT.mcmOnVersionUpdate( Version )
+	LTT.DebugLog( "--Menu::OnVersionUpdate()" )
+endevent
 
 event OnPageReset(string page)
-	if (page == "")
-		LoadCustomContent("LivingTakesTime/LTThome.dds",26,23)
-		return
-	else
-		UnloadCustomContent()
-	endIf
-	
-	bool isCFActive = Game.GetFormFromFile(0x0468D3, "Campfire.esm") ; _Camp_BlankItem
-	bool isFFActive = Game.GetFormFromFile(0x01D430, "Frostfall.esp") ; _Frost_WaterPotion
-	bool isRNActive = Game.GetFormFromFile(0x005968, "RealisticNeedsandDiseases.esp") ; Water
-	bool isHBActive = Game.GetFormFromFile(0x006953, "Hunterborn.esp") ; Bits of Bone
-	bool isWLActive = Game.GetFormFromFile(0x0012C9, "Chesko_WearableLantern.esp") ; Travel Lantern
-	bool isLCActive = Game.GetFormFromFile(0x0012DC, "lanterns.esp") ; Candle
-	DebugMode ( "Active Mods: CF["+isCFActive+"] FF["+isFFActive+"] RN["+isRNActive+"] HB["+isHBActive+"] WL ["+isWLActive+"] LC["+isLCActive+"]" );
-	
-	if (page == "$General")
-		SetCursorFillMode(TOP_TO_BOTTOM)
-		AddHeaderOption("$Options")
-		isModActiveID = AddToggleOption("$Activate Mod?", isModActive)
-		showMessageID = AddToggleOption("$Show message notifications?", ReadingTakesTime.showMessage)
-		;dontShowMessageID = AddToggleOption("$No notifications if no time has passed?", ReadingTakesTime.dontShowMessage)
-		showMessageThresholdID = AddSliderOption("$Notification threshold", ReadingTakesTime.showMessageThreshold)
-		expertiseReducesTimeID = AddToggleOption("$Expertise reduces time?", ReadingTakesTime.expertiseReducesTime)
-		hotkeySuspendID = AddKeyMapOption("Suspend hotkey", ReadingTakesTime.hotkeySuspend)
-		SetCursorPosition(1)
-		AddHeaderOption("$Save & Load")
-		FISSInterface fiss = FISSFactory.getFISS()
-		int SaveFlag = OPTION_FLAG_NONE
-		int LoadFlag = OPTION_FLAG_NONE
-		if !fiss
-			SaveFlag = OPTION_FLAG_DISABLED
-			LoadFlag = OPTION_FLAG_DISABLED
-		else
-			fiss.beginLoad("LTT\\LTTSettings.xml")
-			if fiss.endLoad() != ""
-				LoadFlag = OPTION_FLAG_DISABLED
-			endIf
-		endif
-		saveID = AddTextOption("$Save settings", "", SaveFlag)
-		loadID = AddTextOption("$Load settings", "", LoadFlag)
-	elseif (page == "$Reading")
-		SetCursorFillMode(TOP_TO_BOTTOM)
-		AddHeaderOption("$Options")
-		isReadingActiveID = AddToggleOption("$Reading Takes Time?", isReadingActive)
-		readMultID = AddSliderOption("$Time Multiplier", ReadingTakesTime.readMult,"$x{2}")
-		cantReadID = AddToggleOption("$Block read while in combat?", ReadingTakesTime.cantRead)
-		readingIncreasesSpeechID = AddToggleOption("$Reading increases speech?", ReadingTakesTime.readingIncreasesSpeech)
-		readingIncreaseMultID = AddSliderOption("$Reading increase Multiplier", ReadingTakesTime.readingIncreaseMult,"$x{2}")
-		spellLearnTimeID = AddSliderOption("$Learning Spell Time", ReadingTakesTime.spellLearnTime,"${1} hour(s)")
-	elseIf (page == "$Crafting")
-		SetCursorFillMode(TOP_TO_BOTTOM)
-		AddHeaderOption("$Options")
-		isCraftingActiveID = AddToggleOption("$Crafting Takes Time?", isCraftingActive)
-		AddHeaderOption("$Armors, Shields and Jewels")
-		armorImproveTimeID = AddSliderOption("$Improving Time", ReadingTakesTime.armorImproveTime,"${1} hour(s)")
-		headCraftTimeID = AddSliderOption("$Helmet & Circlet Crafting Time", ReadingTakesTime.headCraftTime,"${1} hour(s)")
-		armorCraftTimeID = AddSliderOption("$Cuirass & Clothes Crafting Time", ReadingTakesTime.armorCraftTime,"${1} hour(s)")
-		handsCraftTimeID = AddSliderOption("$Bracers & Gloves Crafting Time", ReadingTakesTime.handsCraftTime,"${1} hour(s)")
-		feetCraftTimeID = AddSliderOption("$Boots & Shoes Crafting Time", ReadingTakesTime.feetCraftTime,"${1} hour(s)")
-		shieldCraftTimeID = AddSliderOption("$Shield Crafting Time", ReadingTakesTime.shieldCraftTime,"${1} hour(s)")
-		jewelryCraftTimeID = AddSliderOption("$Jewelry Crafting Time", ReadingTakesTime.jewelryCraftTime,"${1} hour(s)")
-		AddHeaderOption("$Tanning, Smelting and Misc")
-		miscCraftTimeID = AddSliderOption("$Crafting Time", ReadingTakesTime.miscCraftTime,"${1} hour(s)")
-		AddHeaderOption("$Enchanting")
-		enchantingTimeID = AddSliderOption("$Crafting Time", ReadingTakesTime.enchantingTime,"${1} hour(s)")
-		AddHeaderOption("$Potions, Poisons and Food")
-		potionCraftTimeID = AddSliderOption("$Crafting Time", ReadingTakesTime.potionCraftTime,"${1} hour(s)")
-		SetCursorPosition(5)
-		AddHeaderOption("$Weapons")
-		weaponImproveTimeID = AddSliderOption("$Improving Time", ReadingTakesTime.weaponImproveTime,"${1} hour(s)")
-		battleAxeCraftTimeID = AddSliderOption("$Battle Axe Crafting Time", ReadingTakesTime.battleAxeCraftTime,"${1} hour(s)")
-		bowCraftTimeID = AddSliderOption("$Bow Crafting Time", ReadingTakesTime.bowCraftTime,"${1} hour(s)")
-		daggerCraftTimeID = AddSliderOption("$Dagger Crafting Time", ReadingTakesTime.daggerCraftTime,"${1} hour(s)")
-		greatswordCraftTimeID = AddSliderOption("$Greatsword Crafting Time", ReadingTakesTime.greatswordCraftTime,"${1} hour(s)")
-		maceCraftTimeID = AddSliderOption("$Mace Crafting Time", ReadingTakesTime.maceCraftTime,"${1} hour(s)")
-		staffCraftTimeID = AddSliderOption("$Staff Crafting Time", ReadingTakesTime.staffCraftTime,"${1} hour(s)")
-		swordCraftTimeID = AddSliderOption("$Sword Crafting Time", ReadingTakesTime.swordCraftTime,"${1} hour(s)")
-		warhammerCraftTimeID = AddSliderOption("$Warhammer Crafting Time", ReadingTakesTime.warhammerCraftTime,"${1} hour(s)")
-		warAxeCraftTimeID = AddSliderOption("$War Axe Crafting Time", ReadingTakesTime.warAxeCraftTime,"${1} hour(s)")
-		weaponCraftTimeID = AddSliderOption("$Ammo Crafting Time", ReadingTakesTime.weaponCraftTime,"${1} hour(s)")
-	elseIf (page == "$Looting")
-		SetCursorFillMode(TOP_TO_BOTTOM)
-		AddHeaderOption("$Containers, Dead Bodies and Pickpocket")
-		isContainerActiveID = AddToggleOption("$Looting Takes Time?", isContainerActive)
-		lootMultID = AddSliderOption("$Time Multiplier", ReadingTakesTime.lootMult,"$x{2}")
-		cantLootID = AddToggleOption("$Block looting while in combat?", ReadingTakesTime.cantLoot)
-		pickpocketMultID = AddSliderOption("$Pickpocket Time Multiplier", ReadingTakesTime.pickpocketMult,"$x{2}")
-		; New options, by dragonsong
-		LightAmorID = AddSliderOption("Time to loot light armor", ReadingTakesTime.lightArmorTime, "${0} Minute(s)")
-		HeavyArmorID = AddSliderOption("Time to loot heavy armor", ReadingTakesTime.heavyArmorTime, "${0} Minute(s)")
-		SetCursorPosition(1)
-		AddHeaderOption("$Lockpicking")
-		isLockpickActiveID = AddToggleOption("$Lockpicking Takes Time?", isLockpickActive)
-		pickMultID = AddSliderOption("$Time Multiplier", ReadingTakesTime.pickMult,"$x{2}")
-		cantPickID = AddToggleOption("$Block lockpicking while in combat?", ReadingTakesTime.cantPick)		
-	elseIf (page == "$Training")
-		SetCursorFillMode(LEFT_TO_RIGHT)
-		AddHeaderOption("$Training")
-		AddHeaderOption("$Level Up")
-		isTrainingActiveID = AddToggleOption("$Training Takes Time?", isTrainingActive)
-		isLevelUpActiveID = AddToggleOption("$Leveling Up Takes Time?", isLevelUpActive)
-		trainingMultID = AddSliderOption("$Time Multiplier", ReadingTakesTime.trainingMult,"$x{2}")
-		levelUpMultID = AddSliderOption("$Time Multiplier", ReadingTakesTime.levelUpMult,"$x{2}")
-		trainingTimeID = AddSliderOption("$Training Time", ReadingTakesTime.trainingTime,"${1} hour(s)")
-		SetCursorFillMode(TOP_TO_BOTTOM)
-		levelUpTimeID = AddSliderOption("$Level Up Time", ReadingTakesTime.levelUpTime,"${1} hour(s)")
-		cantLevelUpID = AddToggleOption("$Block leveling while in combat?", ReadingTakesTime.cantLevelUp)
-	elseIf (page == "$Preparing")
-		SetCursorFillMode(LEFT_TO_RIGHT)
-		AddHeaderOption("$Inventory")
-		AddHeaderOption("$Magic")
-		isInventoryActiveID = AddToggleOption("$Inventory Takes Time?", isInventoryActive)
-		isMagicActiveID = AddToggleOption("$Magic Menu Takes Time?", isMagicActive)
-		inventoryMultID = AddSliderOption("$Time Multiplier", ReadingTakesTime.inventoryMult,"$x{2}")
-		magicMultID = AddSliderOption("$Time Multiplier", ReadingTakesTime.magicMult,"$x{2}")
-		cantInventoryID = AddToggleOption("$Block inventory while in combat?", ReadingTakesTime.cantInventory)
-		cantMagicID = AddToggleOption("$Block magic menu while in combat?", ReadingTakesTime.cantMagic)
-		SetCursorFillMode(TOP_TO_BOTTOM)
-		eatTimeID = AddSliderOption("$Eating Time", ReadingTakesTime.eatTime,"${0} Minute(s)")
-		SetCursorFillMode(LEFT_TO_RIGHT)
-		AddHeaderOption("$Journal")
-		AddHeaderOption("$Map")
-		isJournalActiveID = AddToggleOption("$Journal Takes Time?", isJournalActive)
-		isMapActiveID = AddToggleOption("$Map Takes Time?", isMapActive)
-		journalMultID = AddSliderOption("$Time Multiplier", ReadingTakesTime.journalMult,"$x{2}")
-		mapMultID = AddSliderOption("$Time Multiplier", ReadingTakesTime.mapMult,"$x{2}")
-		cantJournalID = AddToggleOption("$Block journal while in combat?", ReadingTakesTime.cantJournal)
-		cantMapID = AddToggleOption("$Block map menu while in combat?", ReadingTakesTime.cantMap)
-	elseIf (page == "$Trading")
-		SetCursorFillMode(LEFT_TO_RIGHT)
-		AddHeaderOption("$Barter")
-		AddHeaderOption("$Gift")
-		isBarterActiveID = AddToggleOption("$Barter Takes Time?", isBarterActive)
-		isGiftActiveID = AddToggleOption("$Gifting Takes Time?", isGiftActive)
-		barterMultID = AddSliderOption("$Time Multiplier", ReadingTakesTime.barterMult,"$x{2}")
-		giftMultID = AddSliderOption("$Time Multiplier", ReadingTakesTime.giftMult,"$x{2}")
-		
-	ElseIf page == "Campfire, Frostfall"
-		SetCursorFillMode(TOP_TO_BOTTOM)
-		If !isCFActive
-			AddTextOption("", "Campfire is not active.")
-			Return
-		EndIf
-		AddHeaderOption("Camping Gear")
-		CFCloakID = AddSliderOption("Cloaks", ReadingTakesTime.cfCloakTime, "${1} hour(s)")
-		CFStickID = AddSliderOption("Walking stick", ReadingTakesTime.cfStickTime, "${0} Minute(s)")
-		CFTorchID = AddSliderOption("Torch", ReadingTakesTime.cfTorchTime, "${0} Minute(s)")
-		CFCookpotID = AddSliderOption("Cooking Pot", ReadingTakesTime.cfCookpotTime, "${1} hour(s)")
-		CFBackpackID = AddSliderOption("Backpacks", ReadingTakesTime.cfBackpackTime, "${1} hour(s)")
-		CFBeddingID = AddSliderOption("Bedding", ReadingTakesTime.cfBeddingTime, "${1} hour(s)")
-		CFSmallTentID = AddSliderOption("Small tents", ReadingTakesTime.cfSmallTentTime, "${1} hour(s)")
-		CFLargeTentID = AddSliderOption("Large tents", ReadingTakesTime.cfLargeTentTime, "${1} hour(s)")
-		CFHatchetID = AddSliderOption("Tools", ReadingTakesTime.cfHatchetTime, "${0} Minute(s)")
-		CFArrowsID = AddSliderOption("Arrows", ReadingTakesTime.cfArrowsTime, "${1} hour(s)")
-		; Ends in cell 20
-		
-		SetCursorPosition(19)
-		AddHeaderOption("Materials")
-		CFLinenID = AddSliderOption("Linen wrap", ReadingTakesTime.cfLinenTime, "${0} Minute(s)")
-		CFFurID = AddSliderOption("Fur plate", ReadingTakesTime.cfFurTime, "${1} hour(s)")
-		CFLaceID = AddSliderOption("Hide lace", ReadingTakesTime.cfLaceTime, "${0} Minute(s)")
-		CFTanRackID = AddSliderOption("Tanning rack", ReadingTakesTime.cfTanRackTime, "${0} Minute(s)")
-		CFMortarID = AddSliderOption("Mortar and pestle", ReadingTakesTime.cfMortarTime, "${1} hour(s)")
-		CFEnchID = AddSliderOption("Enchanting supplies", ReadingTakesTime.cfEnchTime, "${1} hour(s)")
-		; Ends in cell 31
-
-		SetCursorPosition(1)
-		AddHeaderOption("Firecraft")
-		CFFirecraftImprovesID = AddToggleOption( "Perk Improves", ReadingTakesTime.cfFirecraftImproves )
-		CFMakeTinderID = AddSliderOption("Make Tinder", ReadingTakesTime.cfMakeTinderTime, "${0} Minute(s)")
-		CFMakeKindlingID = AddSliderOption("Make Kindling", ReadingTakesTime.cfMakeKindlingTime, "${0} Minute(s)")
-		CFAddTinderID = AddSliderOption("Add Tinder", ReadingTakesTime.cfAddTinderTime, "${0} Minute(s)")
-		CFAddKindlingID = AddSliderOption("Add Kindling", ReadingTakesTime.cfAddKindlingTime, "${0} Minute(s)")
-		CFLightFireID = AddSliderOption("Sparking the Fire", ReadingTakesTime.cfLightFireTime, "${0} Minute(s)")
-		CFAddFuelID = AddSliderOption("Stoking the Fire", ReadingTakesTime.cfAddFuelTime, "${0} Minute(s)")
-		; ensd in cell 15
-		
-		SetCursorPosition(24)
-		If isFFActive
-			AddHeaderOption( "Frostfall" )
-			FFSnowberryID = AddSliderOption( "Snowberry Extract", ReadingTakesTime.ffSnowberryTime, "${0} Minute(s)")
-		else
-			AddHeaderOption( "Frostfall not active" )
-		endif
-		; ends on 24 or 26 depending on if FF is active or not.
-		
-	ElseIf page == "RND"
-		SetCursorFillMode(TOP_TO_BOTTOM)
-		If !isRNActive
-			AddTextOption("", "Realistic Needs and Diseases is not active.")
-			Return
-		EndIf
-		AddHeaderOption("Crafted")
-		RNWaterskinID = AddSliderOption("Waterskin", ReadingTakesTime.rnWaterskinTime, "${1} hour(s)")
-		RNCookpotID = AddSliderOption("Cookpot", ReadingTakesTime.rnCookpotTime, "${1} hour(s)")
-		RNTinderboxID = AddSliderOption("Tinderbox", ReadingTakesTime.rnTinderboxTime, "${1} hour(s)")
-		RNBedrollID = AddSliderOption("Bedroll", ReadingTakesTime.rnBedrollTime, "${1} hour(s)")
-		RNTentID = AddSliderOption("Tent", ReadingTakesTime.rnTentTime, "${1} hour(s)")
-		RNMilkBucketID = AddSliderOption("Milk bucket", ReadingTakesTime.rnMilkBucketTime, "${0} Minute(s)")
-		SetCursorPosition(1)
-		AddHeaderOption("Cooked")
-		RNFoodSnackID = AddSliderOption("Eat snack", ReadingTakesTime.rnEatSnackTime, "${0} Minute(s)")
-		RNFoodMediumID = AddSliderOption("Eat medium meal", ReadingTakesTime.rnEatMediumTime, "${0} Minute(s)")
-		RNFoodFillingID = AddSliderOption("Eat filling meal", ReadingTakesTime.rnEatFillingTime, "${0} Minute(s)")
-		RNWaterDrinkID = AddSliderOption("Drink water", ReadingTakesTime.rnDrinkTime, "${0} Minute(s)")
-		RNCookSnackID = AddSliderOption("Cook snack", ReadingTakesTime.rnCookSnackTime, "${0} Minute(s)")
-		RNCookMediumID = AddSliderOption("Cook medium meal", ReadingTakesTime.rnCookMediumTime, "${0} Minute(s)")
-		RNCookFillingID = AddSliderOption("Cook filling meal", ReadingTakesTime.rnCookFillingTime, "${0} Minute(s)")
-		RNBrewDrinkID = AddSliderOption("Brew drink", ReadingTakesTime.rnBrewTime, "${0} Minute(s)")
-		RNWaterPrepID = AddSliderOption("Prep water", ReadingTakesTime.rnWaterPrepTime, "${0} Minute(s)")
-		RNSaltID = AddSliderOption("Create salt", ReadingTakesTime.rnSaltTime, "${1} hour(s)")
-	
-	ElseIf page == "Hunterborn"
-		SetCursorFillMode(TOP_TO_BOTTOM)
-		If !isHBActive
-			AddTextOption("", "Hunterborn is not active.")
-			Return
-		EndIf
-		AddHeaderOption("Scrimshaw")
-		HBScrimBitsID = AddSliderOption("Bone bits", ReadingTakesTime.hbScrimBitsTime, "${0} Minute(s)")
-		HBScrimIdolID = AddSliderOption("Idols", ReadingTakesTime.hbScrimIdolTime, "${1} hour(s)")
-		HBScrimToolID = AddSliderOption("Tools", ReadingTakesTime.hbScrimToolTime, "${1} hour(s)")
-		AddEmptyOption()
-		AddHeaderOption("Leather")
-		HBLeatherID = AddSliderOption("Leather (all sources)", ReadingTakesTime.hbLeatherTime, "${1} hour(s)")
-		HBStripID = AddSliderOption("Leather strips (all sources)", ReadingTakesTime.hbStripTime, "${0} Minute(s)")
-		SetCursorPosition(1)
-		AddHeaderOption("Weapons and Armor")
-		HBWeapArmorTipID = AddTextOption("", "Note on expertise")
-		HBArrowsID = AddSliderOption("Arrows", ReadingTakesTime.hbArrowsTime, "${1} hour(s)")
-		AddEmptyOption()
-		AddHeaderOption("Misc")
-		HBBedrollID = AddSliderOption("Hunter's bedroll", ReadingTakesTime.hbBedrollTime, "${1} hour(s)")
-		HBIngrID = AddSliderOption("Ingredients", ReadingTakesTime.hbIngrTime, "${0} Minute(s)")
-		HBBrewID = AddSliderOption("Brews", ReadingTakesTime.hbBrewTime, "${0} Minute(s)")
-		HBTallowID = AddSliderOption("Tallow", ReadingTakesTime.hbTallowTime, "${0} Minute(s)")
-	
-	ElseIf page == "Lanterns, Candles"
-		SetCursorFillMode(TOP_TO_BOTTOM)
-		If !isWLActive
-			AddTextOption("", "Wearable Lantern is not active.")
-		Else
-			AddHeaderOption("Wearable Lantern")
-			WLLanternID = AddSliderOption("Travel lantern", ReadingTakesTime.wlWearableTime, "${0} Minute(s)")
-			WLChassisID = AddSliderOption("Chassis", ReadingTakesTime.wlChassisTime, "${1} hour(s)")
-			WLOilID = AddSliderOption("Lantern oil", ReadingTakesTime.wlOilTime, "${0} Minute(s)")
-		EndIf
-		SetCursorPosition(1)
-		If !isLCActive
-			AddTextOption("", "Lanterns and Candles is not active.")
-		Else
-			AddHeaderOption("Lanterns and Candles")
-			LCBasicID = AddSliderOption("Basic", ReadingTakesTime.lcBasicTime, "${0} Minute(s)")
-			LCForgeID = AddSliderOption("Forged", ReadingTakesTime.lcForgeTime, "${1} hour(s)")
-			LCArcaneID = AddSliderOption("Arcane", ReadingTakesTime.lcArcaneTime, "${1} hour(s)")
-			LCBrewID = AddSliderOption("Brew candle", ReadingTakesTime.lcBrewTime, "${0} Minute(s)")
-		EndIf
-
-	endIf
+	LTT.DebugLog( "++Menu::OnPageReset()" )
+	LTT.mcmOnPageReset( self, Page )
+	LTT.DebugLog( "--Menu::OnPageReset()" )
 endEvent
 
-event OnOptionSelect(int option)
-	if (option == saveID)
-		Bool Choice = ShowMessage("$Save Settings?", True, "$Save", "$Cancel")
-		if (Choice)
-			SaveSettings()
-			ForcePageReset()
-		endif
-	endif
-	if (option == loadID)
-		Bool Choice = ShowMessage("$Load Settings?", True, "$Load", "$Cancel")
-		if (Choice)
-			LoadSettings()
-			ForcePageReset()
-		endif
-	endif
-	if ( option == isModActiveID )
-		isModActive= !isModActive
-		SetToggleOptionValue(isModActiveID , isModActive)
-		InitMod()
-	elseif ( option == isReadingActiveID )
-		isReadingActive = !isReadingActive
-		SetToggleOptionValue(isReadingActiveID, isReadingActive)
-		if ( isReadingActive )
-			RegisterForMenu("Book Menu")
-		else
-			UnregisterForMenu("Book Menu")
-		endIf
-	elseif ( option == isCraftingActiveID )
-		isCraftingActive = !isCraftingActive 
-		SetToggleOptionValue(isCraftingActiveID, isCraftingActive )
-		if ( isCraftingActive )
-			RegisterForMenu("Crafting Menu")
-		else
-			UnregisterForMenu("Crafting Menu")
-		endIf
-	elseif ( option == isContainerActiveID )
-		isContainerActive = !isContainerActive 
-		SetToggleOptionValue(isContainerActiveID, isContainerActive )
-		if ( isContainerActive )
-			RegisterForMenu("ContainerMenu")
-			;RegisterForCrosshairRef()
-		else
-			UnregisterForMenu("ContainerMenu")
-			;UnregisterForCrosshairRef()
-		endIf
-	elseif ( option == isLockpickActiveID )
-		isLockpickActive = !isLockpickActive 
-		SetToggleOptionValue(isLockpickActiveID, isLockpickActive )
-		if ( isLockpickActive )
-			RegisterForMenu("Lockpicking Menu")
-		else
-			UnregisterForMenu("Lockpicking Menu")
-		endIf
-	elseif ( option == isTrainingActiveID )
-		isTrainingActive = !isTrainingActive
-		SetToggleOptionValue(isTrainingActiveID, isTrainingActive )
-		if ( isTrainingActive)
-			RegisterForMenu("Training Menu")
-		else
-			UnregisterForMenu("Training Menu")
-		endIf
-	elseif ( option == isLevelUpActiveID )
-		isLevelUpActive = !isLevelUpActive
-		SetToggleOptionValue(isLevelUpActiveID, isLevelUpActive )
-		if ( isLevelUpActive )
-			RegisterForMenu("StatsMenu")
-		else
-			UnregisterForMenu("StatsMenu")
-		endIf
-	elseif ( option == isInventoryActiveID)
-		isInventoryActive = !isInventoryActive 
-		ReadingTakesTime.isInventoryActive = isInventoryActive 
-		SetToggleOptionValue(isInventoryActiveID, isInventoryActive )
-		if ( isInventoryActive )
-			RegisterForMenu("InventoryMenu")
-		else
-			UnregisterForMenu("InventoryMenu")
-		endIf
-	elseif ( option == isMagicActiveID)
-		isMagicActive = !isMagicActive 
-		SetToggleOptionValue(isMagicActiveID, isMagicActive )
-		if ( isMagicActive )
-			RegisterForMenu("MagicMenu")
-		else
-			UnregisterForMenu("MagicMenu")
-		endIf
-	elseif ( option == isJournalActiveID)
-		isJournalActive = !isJournalActive
-		SetToggleOptionValue(isJournalActiveID, isJournalActive )
-		if ( isJournalActive )
-			RegisterForMenu("Journal Menu")
-			ReadingTakesTime.StartReading = Utility.GetCurrentRealTime()
-			ReadingTakesTime.StopReading = Utility.GetCurrentRealTime()
-		else
-			UnregisterForMenu("Journal Menu")
-		endIf
-	elseif ( option == isMapActiveID )
-		isMapActive = !isMapActive
-		SetToggleOptionValue(isMapActiveID, isMapActive )
-		if ( isMapActive )
-			RegisterForMenu("MapMenu")
-		else
-			UnregisterForMenu("MapMenu")
-		endIf
-	elseif ( option == isBarterActiveID )
-		isBarterActive = !isBarterActive 
-		SetToggleOptionValue(isBarterActiveID, isBarterActive )
-		if ( isBarterActive )
-			RegisterForMenu("BarterMenu")
-		else
-			UnregisterForMenu("BarterMenu")
-		endIf
-	elseif ( option == isGiftActiveID )
-		isGiftActive = !isGiftActive 
-		SetToggleOptionValue(isGiftActiveID, isGiftActive )
-		if ( isGiftActive )
-			RegisterForMenu("GiftMenu")
-		else
-			UnregisterForMenu("GiftMenu")
-		endIf
-	elseif ( option == cantLootID )
-		ReadingTakesTime.cantLoot = !ReadingTakesTime.cantLoot
-		SetToggleOptionValue(cantLootID, ReadingTakesTime.cantLoot)
-	elseif ( option == cantPickID )
-		ReadingTakesTime.cantPick = !ReadingTakesTime.cantPick
-		SetToggleOptionValue(cantPickID, ReadingTakesTime.cantPick)
-	elseif ( option == showMessageID )
-		ReadingTakesTime.showMessage = !ReadingTakesTime.showMessage
-		SetToggleOptionValue(showMessageID , ReadingTakesTime.showMessage)
-	elseif ( option == dontShowMessageID )
-		ReadingTakesTime.dontShowMessage = !ReadingTakesTime.dontShowMessage 
-		SetToggleOptionValue(dontShowMessageID, ReadingTakesTime.dontShowMessage )
-	elseif ( option == expertiseReducesTimeID )
-		ReadingTakesTime.expertiseReducesTime = !ReadingTakesTime.expertiseReducesTime 
-		SetToggleOptionValue(expertiseReducesTimeID, ReadingTakesTime.expertiseReducesTime )
-	elseif ( option == cantReadID)
-		ReadingTakesTime.cantRead = !ReadingTakesTime.cantRead
-		SetToggleOptionValue(cantReadID, ReadingTakesTime.cantRead)
-	elseif ( option == readingIncreasesSpeechID)
-		ReadingTakesTime.readingIncreasesSpeech = !ReadingTakesTime.readingIncreasesSpeech
-		SetToggleOptionValue(readingIncreasesSpeechID, ReadingTakesTime.readingIncreasesSpeech)
-	elseif ( option == cantLevelUpID)
-		ReadingTakesTime.cantLevelUp = !ReadingTakesTime.cantLevelUp
-		SetToggleOptionValue(cantLevelUpID, ReadingTakesTime.cantLevelUp)
-	elseif ( option == cantInventoryID)
-		ReadingTakesTime.cantInventory = !ReadingTakesTime.cantInventory
-		SetToggleOptionValue(cantInventoryID, ReadingTakesTime.cantInventory)
-	elseif ( option == cantMagicID)
-		ReadingTakesTime.cantMagic = !ReadingTakesTime.cantMagic
-		SetToggleOptionValue(cantMagicID, ReadingTakesTime.cantMagic)
-	elseif ( option == cantJournalID)
-		ReadingTakesTime.cantJournal = !ReadingTakesTime.cantJournal
-		SetToggleOptionValue(cantJournalID, ReadingTakesTime.cantJournal)
-	elseif ( option == cantMapID)
-		ReadingTakesTime.cantMap = !ReadingTakesTime.cantMap
-		SetToggleOptionValue(cantMapID, ReadingTakesTime.cantMap)
-	elseif ( option == CFFirecraftImprovesID )
-		ReadingTakesTime.cfFirecraftImproves = !ReadingTakesTime.cfFirecraftImproves
-		SetToggleOptionValue(CFFirecraftImprovesID, ReadingTakesTime.cfFirecraftImproves)
-	endIf
-endEvent
-
-event OnOptionSliderOpen(int option)
-	if (option == readMultID )
-		SetSliderDialogStartValue(ReadingTakesTime.readMult)
-		SetSliderDialogDefaultValue(1.00)
-		SetSliderDialogRange(0.00, 4.00)
-		SetSliderDialogInterval(0.05)
-	
-	elseif (option == showMessageThresholdID )
-		SetSliderDialogStartValue(ReadingTakesTime.showMessageThreshold)
-		SetSliderDialogDefaultValue(1.0)
-		SetSliderDialogRange(1.0, 59.0)
-		SetSliderDialogInterval(1.0)
-		
-	elseif (option == readingIncreaseMultID )
-		SetSliderDialogStartValue(ReadingTakesTime.readingIncreaseMult)
-		SetSliderDialogDefaultValue(1.0)
-		SetSliderDialogRange(0.0, 10.0)
-		SetSliderDialogInterval(0.1)
-		
-	elseif (option == spellLearnTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.spellLearnTime)
-		SetSliderDialogDefaultValue(2.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseif (option == headCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.headCraftTime)
-		SetSliderDialogDefaultValue(3.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseif (option == armorCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.armorCraftTime)
-		SetSliderDialogDefaultValue(6.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseif (option == handsCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.handsCraftTime)
-		SetSliderDialogDefaultValue(3.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseif (option == feetCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.feetCraftTime)
-		SetSliderDialogDefaultValue(3.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseif (option == shieldCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.shieldCraftTime)
-		SetSliderDialogDefaultValue(4.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseif (option == jewelryCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.jewelryCraftTime)
-		SetSliderDialogDefaultValue(2.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == battleAxeCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.battleAxeCraftTime)
-		SetSliderDialogDefaultValue(4.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == bowCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.bowCraftTime)
-		SetSliderDialogDefaultValue(4.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == daggerCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.daggerCraftTime)
-		SetSliderDialogDefaultValue(3.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == greatswordCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.greatswordCraftTime)
-		SetSliderDialogDefaultValue(4.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == maceCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.maceCraftTime)
-		SetSliderDialogDefaultValue(4.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == staffCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.staffCraftTime)
-		SetSliderDialogDefaultValue(2.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == swordCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.swordCraftTime)
-		SetSliderDialogDefaultValue(4.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == warhammerCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.warhammerCraftTime)
-		SetSliderDialogDefaultValue(4.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == warAxeCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.warAxeCraftTime)
-		SetSliderDialogDefaultValue(4.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == weaponCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.weaponCraftTime)
-		SetSliderDialogDefaultValue(2.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == miscCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.miscCraftTime)
-		SetSliderDialogDefaultValue(1.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == armorImproveTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.armorImproveTime)
-		SetSliderDialogDefaultValue(1.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == weaponImproveTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.weaponImproveTime)
-		SetSliderDialogDefaultValue(1.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == enchantingTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.enchantingTime)
-		SetSliderDialogDefaultValue(1.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == potionCraftTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.potionCraftTime)
-		SetSliderDialogDefaultValue(1.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == lootMultID )
-		SetSliderDialogStartValue(ReadingTakesTime.lootMult)
-		SetSliderDialogDefaultValue(1.00)
-		SetSliderDialogRange(0.00, 4.00)
-		SetSliderDialogInterval(0.05)
-	
-	elseIf (option == pickMultID )
-		SetSliderDialogStartValue(ReadingTakesTime.pickMult)
-		SetSliderDialogDefaultValue(1.00)
-		SetSliderDialogRange(0.00, 4.00)
-		SetSliderDialogInterval(0.05)
-		
-	elseIf (option == pickpocketMultID )
-		SetSliderDialogStartValue(ReadingTakesTime.pickpocketMult)
-		SetSliderDialogDefaultValue(1.00)
-		SetSliderDialogRange(0.00, 4.00)
-		SetSliderDialogInterval(0.05)
-		
-	ElseIf option == LightAmorID
-		SetSliderDialogStartValue(ReadingTakesTime.lightArmorTime)
-		SetSliderDialogDefaultValue(15)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	
-	ElseIf option == HeavyArmorID
-		SetSliderDialogStartValue(ReadingTakesTime.heavyArmorTime)
-		SetSliderDialogDefaultValue(45)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	
-	elseIf (option == trainingMultID )
-		SetSliderDialogStartValue(ReadingTakesTime.trainingMult)
-		SetSliderDialogDefaultValue(1.00)
-		SetSliderDialogRange(0.00, 4.00)
-		SetSliderDialogInterval(0.05)
-	
-	elseIf (option == trainingTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.trainingTime)
-		SetSliderDialogDefaultValue(2.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == levelUpMultID )
-		SetSliderDialogStartValue(ReadingTakesTime.levelUpMult)
-		SetSliderDialogDefaultValue(1.00)
-		SetSliderDialogRange(0.00, 4.00)
-		SetSliderDialogInterval(0.05)
-	
-	elseIf (option == levelUpTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.levelUpTime)
-		SetSliderDialogDefaultValue(1.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	
-	elseIf (option == inventoryMultID )
-		SetSliderDialogStartValue(ReadingTakesTime.inventoryMult)
-		SetSliderDialogDefaultValue(1.00)
-		SetSliderDialogRange(0.00, 4.00)
-		SetSliderDialogInterval(0.05)
-	
-	elseIf (option == eatTimeID )
-		SetSliderDialogStartValue(ReadingTakesTime.eatTime)
-		SetSliderDialogDefaultValue(5)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	
-	elseIf (option == magicMultID )
-		SetSliderDialogStartValue(ReadingTakesTime.magicMult)
-		SetSliderDialogDefaultValue(1.00)
-		SetSliderDialogRange(0.00, 4.00)
-		SetSliderDialogInterval(0.05)
-	
-	elseIf (option == journalMultID )
-		SetSliderDialogStartValue(ReadingTakesTime.journalMult)
-		SetSliderDialogDefaultValue(1.00)
-		SetSliderDialogRange(0.00, 4.00)
-		SetSliderDialogInterval(0.05)
-	
-	elseIf (option == mapMultID )
-		SetSliderDialogStartValue(ReadingTakesTime.mapMult)
-		SetSliderDialogDefaultValue(1.00)
-		SetSliderDialogRange(0.00, 4.00)
-		SetSliderDialogInterval(0.05)
-	
-	elseIf (option == barterMultID )
-		SetSliderDialogStartValue(ReadingTakesTime.barterMult)
-		SetSliderDialogDefaultValue(1.00)
-		SetSliderDialogRange(0.00, 4.00)
-		SetSliderDialogInterval(0.05)
-	
-	elseIf (option == giftMultID )
-		SetSliderDialogStartValue(ReadingTakesTime.giftMult)
-		SetSliderDialogDefaultValue(1.00)
-		SetSliderDialogRange(0.00, 4.00)
-		SetSliderDialogInterval(0.05)
-	
-	; Campfire Camping Items
-	ElseIf option == CFCloakID
-		SetSliderDialogStartValue(ReadingTakesTime.cfCloakTime)
-		SetSliderDialogDefaultValue(DEF_cfCloakTime)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == CFStickID
-		SetSliderDialogStartValue(ReadingTakesTime.cfStickTime)
-		SetSliderDialogDefaultValue(DEF_cfStickTime)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == CFTorchID
-		SetSliderDialogStartValue(ReadingTakesTime.cfTorchTime)
-		SetSliderDialogDefaultValue(DEF_cfTorchTime)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == CFCookpotID
-		SetSliderDialogStartValue(ReadingTakesTime.cfCookpotTime)
-		SetSliderDialogDefaultValue(DEF_cfCookpotTime)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == CFBackpackID
-		SetSliderDialogStartValue(ReadingTakesTime.cfBackpackTime)
-		SetSliderDialogDefaultValue(DEF_cfBackpackTime)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == CFBeddingID
-		SetSliderDialogStartValue(ReadingTakesTime.cfBeddingTime)
-		SetSliderDialogDefaultValue(DEF_cfBeddingTime)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == CFSmallTentID
-		SetSliderDialogStartValue(ReadingTakesTime.cfSmallTentTime)
-		SetSliderDialogDefaultValue(DEF_cfSmallTentTime)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == CFLargeTentID
-		SetSliderDialogStartValue(ReadingTakesTime.cfLargeTentTime)
-		SetSliderDialogDefaultValue(DEF_cfLargeTentTime)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == CFHatchetID
-		SetSliderDialogStartValue(ReadingTakesTime.cfHatchetTime)
-		SetSliderDialogDefaultValue(DEF_cfHatchetTime)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == CFArrowsID
-		SetSliderDialogStartValue(ReadingTakesTime.cfArrowsTime)
-		SetSliderDialogDefaultValue(DEF_cfArrowsTime)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-
-	; Campfire Materials
-	ElseIf option == CFLinenID
-		SetSliderDialogStartValue(ReadingTakesTime.cfLinenTime)
-		SetSliderDialogDefaultValue(DEF_cfLinenTime)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == CFFurID
-		SetSliderDialogStartValue(ReadingTakesTime.cfFurTime)
-		SetSliderDialogDefaultValue(DEF_cfFurTime)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == CFLaceID
-		SetSliderDialogStartValue(ReadingTakesTime.cfLaceTime)
-		SetSliderDialogDefaultValue(DEF_cfLaceTime)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == CFTanRackID
-		SetSliderDialogStartValue(ReadingTakesTime.cfTanRackTime)
-		SetSliderDialogDefaultValue(DEF_cfTanRackTime)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == CFMortarID
-		SetSliderDialogStartValue(ReadingTakesTime.cfMortarTime)
-		SetSliderDialogDefaultValue(DEF_cfMortarTime)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == CFEnchID
-		SetSliderDialogStartValue(ReadingTakesTime.cfEnchTime)
-		SetSliderDialogDefaultValue(DEF_cfEnchTime)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-
-	; Campfire Firecraft
-	ElseIf option == CFMakeTinderID
-		SetSliderDialogStartValue(ReadingTakesTime.cfMakeTinderTime)
-		SetSliderDialogDefaultValue(DEF_cfMakeTinderTime)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == CFMakeKindlingID
-		SetSliderDialogStartValue(ReadingTakesTime.cfMakeKindlingTime)
-		SetSliderDialogDefaultValue(DEF_cfMakeKindlingTime)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == CFAddTinderID
-		SetSliderDialogStartValue(ReadingTakesTime.cfAddTinderTime)
-		SetSliderDialogDefaultValue(DEF_cfAddTinderTime)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == CFAddKindlingID
-		SetSliderDialogStartValue(ReadingTakesTime.cfAddKindlingTime)
-		SetSliderDialogDefaultValue(DEF_cfAddKindlingTime)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == CFLightFireID
-		SetSliderDialogStartValue(ReadingTakesTime.cfLightFireTime)
-		SetSliderDialogDefaultValue(DEF_cfLightFireTime)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == CFAddFuelID
-		SetSliderDialogStartValue(ReadingTakesTime.cfAddFuelTime)
-		SetSliderDialogDefaultValue(DEF_cfAddFuelTime)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	
-	ElseIf option == FFSnowberryID
-		SetSliderDialogStartValue(ReadingTakesTime.ffSnowberryTime)
-		SetSliderDialogDefaultValue(DEF_Extract)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	
-	ElseIf option == RNWaterskinID
-		SetSliderDialogStartValue(ReadingTakesTime.rnWaterskinTime)
-		SetSliderDialogDefaultValue(2.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == RNCookpotID
-		SetSliderDialogStartValue(ReadingTakesTime.rnCookpotTime)
-		SetSliderDialogDefaultValue(1.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == RNTinderboxID
-		SetSliderDialogStartValue(ReadingTakesTime.rnTinderboxTime)
-		SetSliderDialogDefaultValue(2.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == RNBedrollID
-		SetSliderDialogStartValue(ReadingTakesTime.rnBedrollTime)
-		SetSliderDialogDefaultValue(3.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == RNTentID
-		SetSliderDialogStartValue(ReadingTakesTime.rnTentTime)
-		SetSliderDialogDefaultValue(4.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == RNMilkBucketID
-		SetSliderDialogStartValue(ReadingTakesTime.rnMilkBucketTime)
-		SetSliderDialogDefaultValue(5)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == RNFoodSnackID
-		SetSliderDialogStartValue(ReadingTakesTime.rnEatSnackTime)
-		SetSliderDialogDefaultValue(2)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == RNFoodMediumID
-		SetSliderDialogStartValue(ReadingTakesTime.rnEatMediumTime)
-		SetSliderDialogDefaultValue(10)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == RNFoodFillingID
-		SetSliderDialogStartValue(ReadingTakesTime.rnEatFillingTime)
-		SetSliderDialogDefaultValue(30)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == RNWaterDrinkID
-		SetSliderDialogStartValue(ReadingTakesTime.rnDrinkTime)
-		SetSliderDialogDefaultValue(2)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == RNCookSnackID
-		SetSliderDialogStartValue(ReadingTakesTime.rnCookSnackTime)
-		SetSliderDialogDefaultValue(10)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == RNCookMediumID
-		SetSliderDialogStartValue(ReadingTakesTime.rnCookMediumTime)
-		SetSliderDialogDefaultValue(20)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == RNCookFillingID
-		SetSliderDialogStartValue(ReadingTakesTime.rnCookFillingTime)
-		SetSliderDialogDefaultValue(45)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == RNBrewDrinkID
-		SetSliderDialogStartValue(ReadingTakesTime.rnBrewTime)
-		SetSliderDialogDefaultValue(15)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == RNWaterPrepID
-		SetSliderDialogStartValue(ReadingTakesTime.rnWaterPrepTime)
-		SetSliderDialogDefaultValue(5)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == RNSaltID
-		SetSliderDialogStartValue(ReadingTakesTime.rnSaltTime)
-		SetSliderDialogDefaultValue(2.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-
-	ElseIf option == HBScrimBitsID
-		SetSliderDialogStartValue(ReadingTakesTime.hbScrimBitsTime)
-		SetSliderDialogDefaultValue(5)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == HBScrimIdolID
-		SetSliderDialogStartValue(ReadingTakesTime.hbScrimIdolTime)
-		SetSliderDialogDefaultValue(2.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == HBScrimToolID
-		SetSliderDialogStartValue(ReadingTakesTime.hbScrimToolTime)
-		SetSliderDialogDefaultValue(1.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == HBLeatherID
-		SetSliderDialogStartValue(ReadingTakesTime.hbLeatherTime)
-		SetSliderDialogDefaultValue(1.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == HBStripID
-		SetSliderDialogStartValue(ReadingTakesTime.hbStripTime)
-		SetSliderDialogDefaultValue(30)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == HBBedrollID
-		SetSliderDialogStartValue(ReadingTakesTime.hbBedrollTime)
-		SetSliderDialogDefaultValue(3.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == HBIngrID
-		SetSliderDialogStartValue(ReadingTakesTime.hbIngrTime)
-		SetSliderDialogDefaultValue(30)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == HBBrewID
-		SetSliderDialogStartValue(ReadingTakesTime.hbBrewTime)
-		SetSliderDialogDefaultValue(30)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == HBTallowID
-		SetSliderDialogStartValue(ReadingTakesTime.hbTallowTime)
-		SetSliderDialogDefaultValue(10)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == HBArrowsID
-		SetSliderDialogStartValue(ReadingTakesTime.hbArrowsTime)
-		SetSliderDialogDefaultValue(1.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-		
-	ElseIf option == WLLanternID
-		SetSliderDialogStartValue(ReadingTakesTime.wlWearableTime)
-		SetSliderDialogDefaultValue(30)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == WLChassisID
-		SetSliderDialogStartValue(ReadingTakesTime.wlChassisTime)
-		SetSliderDialogDefaultValue(2.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == WLOilID
-		SetSliderDialogStartValue(ReadingTakesTime.wlOilTime)
-		SetSliderDialogDefaultValue(30)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-		
-	ElseIf option == LCBasicID
-		SetSliderDialogStartValue(ReadingTakesTime.lcBasicTime)
-		SetSliderDialogDefaultValue(10)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	ElseIf option == LCForgeID
-		SetSliderDialogStartValue(ReadingTakesTime.lcForgeTime)
-		SetSliderDialogDefaultValue(3.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == LCArcaneID
-		SetSliderDialogStartValue(ReadingTakesTime.lcArcaneTime)
-		SetSliderDialogDefaultValue(6.0)
-		SetSliderDialogRange(0.0, 24.0)
-		SetSliderDialogInterval(0.1)
-	ElseIf option == LCBrewID
-		SetSliderDialogStartValue(ReadingTakesTime.lcBrewTime)
-		SetSliderDialogDefaultValue(15)
-		SetSliderDialogRange(0, 60)
-		SetSliderDialogInterval(1)
-	
-	endIf
-endEvent
-
-
-event OnOptionSliderAccept(int option, float value)
-    if (option == readMultID )
-        ReadingTakesTime.readMult = value
-        SetSliderOptionValue(readMultID, ReadingTakesTime.readMult, "$x{2}")
-
-    elseIf (option == showMessageThresholdID )
-        ReadingTakesTime.showMessageThreshold = value as Int
-        SetSliderOptionValue(showMessageThresholdID , ReadingTakesTime.showMessageThreshold)
-
-    elseIf (option == readingIncreaseMultID )
-        ReadingTakesTime.readingIncreaseMult = value
-        SetSliderOptionValue(readingIncreaseMultID , ReadingTakesTime.readingIncreaseMult, "$x{2}")
-
-    elseIf (option == spellLearnTimeID )
-        ReadingTakesTime.spellLearnTime = value
-        SetSliderOptionValue(spellLearnTimeID , ReadingTakesTime.spellLearnTime, "${1} hour(s)")
-
-    elseIf (option == headCraftTimeID )
-        ReadingTakesTime.headCraftTime = value
-        SetSliderOptionValue(headCraftTimeID , ReadingTakesTime.headCraftTime, "${1} hour(s)")
-
-    elseIf (option == armorCraftTimeID )
-        ReadingTakesTime.armorCraftTime = value
-        SetSliderOptionValue(armorCraftTimeID , ReadingTakesTime.armorCraftTime, "${1} hour(s)")
-
-    elseIf (option == handsCraftTimeID )
-        ReadingTakesTime.handsCraftTime = value
-        SetSliderOptionValue(handsCraftTimeID , ReadingTakesTime.handsCraftTime, "${1} hour(s)")
-
-    elseIf (option == feetCraftTimeID )
-        ReadingTakesTime.feetCraftTime = value
-        SetSliderOptionValue(feetCraftTimeID , ReadingTakesTime.feetCraftTime, "${1} hour(s)")
-
-    elseIf (option == shieldCraftTimeID )
-        ReadingTakesTime.shieldCraftTime = value
-        SetSliderOptionValue(shieldCraftTimeID , ReadingTakesTime.shieldCraftTime, "${1} hour(s)")
-
-    elseIf (option == jewelryCraftTimeID )
-        ReadingTakesTime.jewelryCraftTime = value
-        SetSliderOptionValue(jewelryCraftTimeID , ReadingTakesTime.jewelryCraftTime, "${1} hour(s)")
-
-    elseIf (option == battleAxeCraftTimeID )
-        ReadingTakesTime.battleAxeCraftTime = value
-        SetSliderOptionValue(battleAxeCraftTimeID, ReadingTakesTime.battleAxeCraftTime, "${1} hour(s)")
-
-    elseIf (option == bowCraftTimeID )
-        ReadingTakesTime.bowCraftTime = value
-        SetSliderOptionValue(bowCraftTimeID, ReadingTakesTime.bowCraftTime, "${1} hour(s)")
-
-    elseIf (option == daggerCraftTimeID )
-        ReadingTakesTime.daggerCraftTime = value
-        SetSliderOptionValue(daggerCraftTimeID, ReadingTakesTime.daggerCraftTime, "${1} hour(s)")
-
-    elseIf (option == greatswordCraftTimeID )
-        ReadingTakesTime.greatswordCraftTime = value
-        SetSliderOptionValue(greatswordCraftTimeID, ReadingTakesTime.greatswordCraftTime, "${1} hour(s)")
-
-    elseIf (option == maceCraftTimeID )
-        ReadingTakesTime.maceCraftTime = value
-        SetSliderOptionValue(maceCraftTimeID, ReadingTakesTime.maceCraftTime, "${1} hour(s)")
-
-    elseIf (option == staffCraftTimeID )
-        ReadingTakesTime.staffCraftTime = value
-        SetSliderOptionValue(staffCraftTimeID, ReadingTakesTime.staffCraftTime, "${1} hour(s)")
-
-    elseIf (option == swordCraftTimeID )
-        ReadingTakesTime.swordCraftTime = value
-        SetSliderOptionValue(swordCraftTimeID, ReadingTakesTime.swordCraftTime, "${1} hour(s)")
-
-    elseIf (option == warhammerCraftTimeID )
-        ReadingTakesTime.warhammerCraftTime = value
-        SetSliderOptionValue(warhammerCraftTimeID, ReadingTakesTime.warhammerCraftTime, "${1} hour(s)")
-
-    elseIf (option == warAxeCraftTimeID )
-        ReadingTakesTime.warAxeCraftTime = value
-        SetSliderOptionValue(warAxeCraftTimeID, ReadingTakesTime.warAxeCraftTime, "${1} hour(s)")
-
-    elseIf (option == weaponCraftTimeID )
-        ReadingTakesTime.weaponCraftTime = value
-        SetSliderOptionValue(weaponCraftTimeID, ReadingTakesTime.weaponCraftTime, "${1} hour(s)")
-
-    elseIf (option == miscCraftTimeID )
-        ReadingTakesTime.miscCraftTime = value
-        SetSliderOptionValue(miscCraftTimeID, ReadingTakesTime.miscCraftTime, "${1} hour(s)")
-
-    elseIf (option == armorImproveTimeID )
-        ReadingTakesTime.armorImproveTime = value
-        SetSliderOptionValue(armorImproveTimeID , ReadingTakesTime.armorImproveTime, "${1} hour(s)")
-
-    elseIf (option == weaponImproveTimeID )
-        ReadingTakesTime.weaponImproveTime = value
-        SetSliderOptionValue(weaponImproveTimeID , ReadingTakesTime.weaponImproveTime, "${1} hour(s)")
-
-    elseIf (option == enchantingTimeID )
-        ReadingTakesTime.enchantingTime = value
-        SetSliderOptionValue(enchantingTimeID, ReadingTakesTime.enchantingTime, "${1} hour(s)")
-
-    elseIf (option == potionCraftTimeID )
-        ReadingTakesTime.potionCraftTime = value
-        SetSliderOptionValue(potionCraftTimeID, ReadingTakesTime.potionCraftTime, "${1} hour(s)")
-
-    elseIf (option == lootMultID )
-        ReadingTakesTime.lootMult = value
-        SetSliderOptionValue(lootMultID, ReadingTakesTime.lootMult, "$x{2}")
-
-    elseIf (option == pickMultID )
-        ReadingTakesTime.pickMult = value
-        SetSliderOptionValue(pickMultID, ReadingTakesTime.pickMult, "$x{2}")
-
-    elseIf (option == pickpocketMultID )
-        ReadingTakesTime.pickpocketMult = value
-        SetSliderOptionValue(pickpocketMultID, ReadingTakesTime.pickpocketMult, "$x{2}")
-		
-	ElseIf option == LightAmorID
-        ReadingTakesTime.lightArmorTime = value
-        SetSliderOptionValue(LightAmorID, ReadingTakesTime.lightArmorTime, "${0} Minute(s)")
-
-	ElseIf option == HeavyArmorID
-        ReadingTakesTime.heavyArmorTime = value
-        SetSliderOptionValue(HeavyArmorID, ReadingTakesTime.heavyArmorTime, "${0} Minute(s)")
-
-    elseIf (option == trainingMultID )
-        ReadingTakesTime.trainingMult = value
-        SetSliderOptionValue(trainingMultID, ReadingTakesTime.trainingMult, "$x{2}")
-
-    elseIf (option == trainingTimeID )
-        ReadingTakesTime.trainingTime = value
-        SetSliderOptionValue(trainingTimeID, ReadingTakesTime.trainingTime, "${1} hour(s)")
-
-    elseIf (option == levelUpMultID )
-        ReadingTakesTime.levelUpMult = value
-        SetSliderOptionValue(levelUpMultID, ReadingTakesTime.levelUpMult, "$x{2}")
-
-    elseIf (option == levelUpTimeID )
-        ReadingTakesTime.levelUpTime = value
-        SetSliderOptionValue(levelUpTimeID, ReadingTakesTime.levelUpTime, "${1} hour(s)")
-
-    elseIf (option == inventoryMultID )
-        ReadingTakesTime.inventoryMult = value
-        SetSliderOptionValue(inventoryMultID, ReadingTakesTime.inventoryMult , "$x{2}")
-
-    elseIf (option == eatTimeID )
-        ReadingTakesTime.eatTime = value
-        SetSliderOptionValue(eatTimeID, ReadingTakesTime.eatTime, "${0} Minute(s)")
-
-    elseIf (option == magicMultID )
-        ReadingTakesTime.magicMult = value
-        SetSliderOptionValue(magicMultID, ReadingTakesTime.magicMult, "$x{2}")
-
-    elseIf (option == journalMultID )
-        ReadingTakesTime.journalMult = value
-        SetSliderOptionValue(journalMultID, ReadingTakesTime.journalMult, "$x{2}")
-
-    elseIf (option == mapMultID )
-        ReadingTakesTime.mapMult = value
-        SetSliderOptionValue(mapMultID, ReadingTakesTime.mapMult, "$x{2}")
-
-    elseIf (option == barterMultID )
-        ReadingTakesTime.barterMult = value
-        SetSliderOptionValue(barterMultID, ReadingTakesTime.barterMult, "$x{2}")
-
-    elseIf (option == giftMultID )
-        ReadingTakesTime.giftMult = value
-        SetSliderOptionValue(giftMultID, ReadingTakesTime.giftMult, "$x{2}")
-	
-	; Campfire Camping Items
-	ElseIf option == CFCloakID
-		ReadingTakesTime.cfCloakTime = value
-		SetSliderOptionValue(CFCloakID, ReadingTakesTime.cfCloakTime, "${1} hour(s)")
-	ElseIf option == CFStickID
-		ReadingTakesTime.cfStickTime = value
-		SetSliderOptionValue(CFStickID, ReadingTakesTime.cfStickTime, "${0} Minute(s)")
-	ElseIf option == CFTorchID
-		ReadingTakesTime.cfTorchTime = value
-		SetSliderOptionValue(CFTorchID, ReadingTakesTime.cfTorchTime, "${0} Minute(s)")
-	ElseIf option == CFCookpotID
-		ReadingTakesTime.cfCookpotTime = value
-		SetSliderOptionValue(CFCookpotID, ReadingTakesTime.cfCookpotTime, "${1} hour(s)")
-	ElseIf option == CFBackpackID
-		ReadingTakesTime.cfBackpackTime = value
-		SetSliderOptionValue(CFBackpackID, ReadingTakesTime.cfBackpackTime, "${1} hour(s)")
-	ElseIf option == CFBeddingID
-		ReadingTakesTime.cfBeddingTime = value
-		SetSliderOptionValue(CFBeddingID, ReadingTakesTime.cfBeddingTime, "${1} hour(s)")
-	ElseIf option == CFSmallTentID
-		ReadingTakesTime.cfSmallTentTime = value
-		SetSliderOptionValue(CFSmallTentID, ReadingTakesTime.cfSmallTentTime, "${1} hour(s)")
-	ElseIf option == CFLargeTentID
-		ReadingTakesTime.cfLargeTentTime = value
-		SetSliderOptionValue(CFLargeTentID, ReadingTakesTime.cfLargeTentTime, "${1} hour(s)")
-	ElseIf option == CFHatchetID
-		ReadingTakesTime.cfHatchetTime = value
-		SetSliderOptionValue(CFHatchetID, ReadingTakesTime.cfHatchetTime, "${0} Minute(s)")
-	ElseIf option == CFArrowsID
-		ReadingTakesTime.cfArrowsTime = value
-		SetSliderOptionValue(CFArrowsID, ReadingTakesTime.cfArrowsTime, "${1} hour(s)")
-		
-	; Campfire Materials
-	ElseIf option == CFLinenID
-		ReadingTakesTime.cfLinenTime = value
-		SetSliderOptionValue(CFLinenID, ReadingTakesTime.cfLinenTime, "${0} Minute(s)")
-	ElseIf option == CFFurID
-		ReadingTakesTime.cfFurTime = value
-		SetSliderOptionValue(CFFurID, ReadingTakesTime.cfFurTime, "${1} hour(s)")
-	ElseIf option == CFLaceID
-		ReadingTakesTime.cfLaceTime = value
-		SetSliderOptionValue(CFLaceID, ReadingTakesTime.cfLaceTime, "${0} Minute(s)")
-	ElseIf option == CFTanRackID
-		ReadingTakesTime.cfTanRackTime = value
-		SetSliderOptionValue(CFTanRackID, ReadingTakesTime.cfTanRackTime, "${0} Minute(s)")
-	ElseIf option == CFMortarID
-		ReadingTakesTime.cfMortarTime = value
-		SetSliderOptionValue(CFMortarID, ReadingTakesTime.cfMortarTime, "${1} hour(s)")
-	ElseIf option == CFEnchID
-		ReadingTakesTime.cfEnchTime = value
-		SetSliderOptionValue(CFEnchID, ReadingTakesTime.cfEnchTime, "${1} hour(s)")
-
-	; Campfire Firecraft
-	ElseIf option == CFMakeTinderID
-		ReadingTakesTime.cfMakeTinderTime = value
-		SetSliderOptionValue(CFMakeTinderID, ReadingTakesTime.cfMakeTinderTime, "${0} Minute(s)")
-	ElseIf option == CFMakeKindlingID
-		ReadingTakesTime.cfMakeKindlingTime = value
-		SetSliderOptionValue(CFMakeKindlingID, ReadingTakesTime.cfMakeKindlingTime, "${0} Minute(s)")
-	ElseIf option == CFAddTinderID
-		ReadingTakesTime.cfAddTinderTime = value
-		SetSliderOptionValue(CFAddTinderID, ReadingTakesTime.cfAddTinderTime, "${0} Minute(s)")
-	ElseIf option == CFAddKindlingID
-		ReadingTakesTime.cfAddKindlingTime = value
-		SetSliderOptionValue(CFAddKindlingID, ReadingTakesTime.cfAddKindlingTime, "${0} Minute(s)")
-	ElseIf option == CFLightFireID
-		ReadingTakesTime.cfLightFireTime = value
-		SetSliderOptionValue(CFLightFireID, ReadingTakesTime.cfLightFireTime, "${0} Minute(s)")
-	ElseIf option == CFAddFuelID
-		ReadingTakesTime.cfAddFuelTime = value
-		SetSliderOptionValue(CFAddFuelID, ReadingTakesTime.cfAddFuelTime, "${0} Minute(s)")
-
-	ElseIf option == FFSnowberryID
-		ReadingTakesTime.ffSnowberryTime = value
-		SetSliderOptionValue(FFSnowBerryID, ReadingTakesTime.ffSnowberryTime, "${0} Minute(s)")
-
-	ElseIf option == RNWaterskinID
-		ReadingTakesTime.rnWaterskinTime = value
-        SetSliderOptionValue(RNWaterskinID, ReadingTakesTime.rnWaterskinTime, "${1} hour(s)")
-	ElseIf option == RNCookpotID
-		ReadingTakesTime.rnCookpotTime = value
-        SetSliderOptionValue(RNCookpotID, ReadingTakesTime.rnCookpotTime, "${1} hour(s)")
-	ElseIf option == RNTinderboxID
-		ReadingTakesTime.rnTinderboxTime = value
-        SetSliderOptionValue(RNTinderboxID, ReadingTakesTime.rnTinderboxTime, "${1} hour(s)")
-	ElseIf option == RNBedrollID
-		ReadingTakesTime.rnBedrollTime = value
-        SetSliderOptionValue(RNBedrollID, ReadingTakesTime.rnBedrollTime, "${1} hour(s)")
-	ElseIf option == RNTentID
-		ReadingTakesTime.rnTentTime = value
-        SetSliderOptionValue(RNTentID, ReadingTakesTime.rnTentTime, "${1} hour(s)")
-	ElseIf option == RNMilkBucketID
-		ReadingTakesTime.rnMilkBucketTime = value
-        SetSliderOptionValue(RNMilkBucketID, ReadingTakesTime.rnMilkBucketTime, "${0} Minute(s)")
-	ElseIf option == RNFoodSnackID
-		ReadingTakesTime.rnEatSnackTime = value
-        SetSliderOptionValue(RNFoodSnackID, ReadingTakesTime.rnEatSnackTime, "${0} Minute(s)")
-	ElseIf option == RNFoodMediumID
-		ReadingTakesTime.rnEatMediumTime = value
-        SetSliderOptionValue(RNFoodMediumID, ReadingTakesTime.rnEatMediumTime, "${0} Minute(s)")
-	ElseIf option == RNFoodFillingID
-		ReadingTakesTime.rnEatFillingTime = value
-        SetSliderOptionValue(RNFoodFillingID, ReadingTakesTime.rnEatFillingTime, "${0} Minute(s)")
-	ElseIf option == RNWaterDrinkID
-		ReadingTakesTime.rnDrinkTime = value
-        SetSliderOptionValue(RNWaterDrinkID, ReadingTakesTime.rnDrinkTime, "${0} Minute(s)")
-	ElseIf option == RNCookSnackID
-		ReadingTakesTime.rnCookSnackTime = value
-        SetSliderOptionValue(RNCookSnackID, ReadingTakesTime.rnCookSnackTime, "${0} Minute(s)")
-	ElseIf option == RNCookMediumID
-		ReadingTakesTime.rnCookMediumTime = value
-        SetSliderOptionValue(RNCookMediumID, ReadingTakesTime.rnCookMediumTime, "${0} Minute(s)")
-	ElseIf option == RNCookFillingID
-		ReadingTakesTime.rnCookFillingTime = value
-        SetSliderOptionValue(RNCookFillingID, ReadingTakesTime.rnCookFillingTime, "${0} Minute(s)")
-	ElseIf option == RNBrewDrinkID
-		ReadingTakesTime.rnBrewTime = value
-        SetSliderOptionValue(RNBrewDrinkID, ReadingTakesTime.rnBrewTime, "${0} Minute(s)")
-	ElseIf option == RNWaterPrepID
-		ReadingTakesTime.rnWaterPrepTime = value
-        SetSliderOptionValue(RNWaterPrepID, ReadingTakesTime.rnWaterPrepTime, "${0} Minute(s)")
-	ElseIf option == RNSaltID
-		ReadingTakesTime.rnSaltTime = value
-        SetSliderOptionValue(RNSaltID, ReadingTakesTime.rnSaltTime, "${1} hour(s)")
-	
-	ElseIf option == HBScrimBitsID
-		ReadingTakesTime.hbScrimBitsTime = value
-        SetSliderOptionValue(HBScrimBitsID, ReadingTakesTime.hbScrimBitsTime, "${0} Minute(s)")
-	ElseIf option == HBScrimIdolID
-		ReadingTakesTime.hbScrimIdolTime = value
-        SetSliderOptionValue(HBScrimIdolID, ReadingTakesTime.hbScrimIdolTime, "${1} hour(s)")
-	ElseIf option == HBScrimToolID
-		ReadingTakesTime.hbScrimToolTime = value
-        SetSliderOptionValue(HBScrimToolID, ReadingTakesTime.hbScrimToolTime, "${1} hour(s)")
-	ElseIf option == HBLeatherID
-		ReadingTakesTime.hbLeatherTime = value
-        SetSliderOptionValue(HBLeatherID, ReadingTakesTime.hbLeatherTime, "${1} hour(s)")
-	ElseIf option == HBStripID
-		ReadingTakesTime.hbStripTime = value
-        SetSliderOptionValue(HBStripID, ReadingTakesTime.hbStripTime, "${0} Minute(s)")
-	ElseIf option == HBBedrollID
-		ReadingTakesTime.hbBedrollTime = value
-        SetSliderOptionValue(HBBedrollID, ReadingTakesTime.hbBedrollTime, "${1} hour(s)")
-	ElseIf option == HBIngrID
-		ReadingTakesTime.hbIngrTime = value
-        SetSliderOptionValue(HBIngrID, ReadingTakesTime.hbIngrTime, "${0} Minute(s)")
-	ElseIf option == HBBrewID
-		ReadingTakesTime.hbBrewTime = value
-        SetSliderOptionValue(HBBrewID, ReadingTakesTime.hbBrewTime, "${0} Minute(s)")
-	ElseIf option == HBTallowID
-		ReadingTakesTime.hbTallowTime = value
-        SetSliderOptionValue(HBTallowID, ReadingTakesTime.hbTallowTime, "${0} Minute(s)")
-	ElseIf option == HBArrowsID
-		ReadingTakesTime.hbArrowsTime = value
-        SetSliderOptionValue(HBArrowsID, ReadingTakesTime.hbArrowsTime, "${1} hour(s)")
-		
-	ElseIf option == WLLanternID
-		ReadingTakesTime.wlWearableTime = value
-        SetSliderOptionValue(WLLanternID, ReadingTakesTime.wlWearableTime, "${0} Minute(s)")
-	ElseIf option == WLChassisID
-		ReadingTakesTime.wlChassisTime = value
-        SetSliderOptionValue(WLChassisID, ReadingTakesTime.wlChassisTime, "${1} hour(s)")
-	ElseIf option == WLOilID
-		ReadingTakesTime.wlOilTime = value
-        SetSliderOptionValue(WLOilID, ReadingTakesTime.wlOilTime, "${0} Minute(s)")
-
-	ElseIf option == LCBasicID
-		ReadingTakesTime.lcBasicTime = value
-        SetSliderOptionValue(LCBasicID, ReadingTakesTime.lcBasicTime, "${0} Minute(s)")
-	ElseIf option == LCForgeID
-		ReadingTakesTime.lcForgeTime = value
-        SetSliderOptionValue(LCForgeID, ReadingTakesTime.lcForgeTime, "${1} hour(s)")
-	ElseIf option == LCArcaneID
-		ReadingTakesTime.lcArcaneTime = value
-        SetSliderOptionValue(LCArcaneID, ReadingTakesTime.lcArcaneTime, "${1} hour(s)")
-	ElseIf option == LCBrewID
-		ReadingTakesTime.lcBrewTime = value
-        SetSliderOptionValue(LCBrewID, ReadingTakesTime.lcBrewTime, "${0} Minute(s)")
-
-    endIf
-endEvent
-
-event OnOptionDefault(int option)
-	if (option == isModActiveID )
-		isModActive = true ; default value
-		SetToggleOptionValue(isModActiveID , isModActive)
-	elseif (option == isReadingActiveID )
-		isReadingActive = true ; default value
-		SetToggleOptionValue(isReadingActiveID , isReadingActive)
-	elseif (option == isCraftingActiveID )
-		isCraftingActive = true ; default value
-		SetToggleOptionValue(isCraftingActiveID , isCraftingActive)
-	elseif (option == showMessageID )
-		ReadingTakesTime.showMessage = true ; default value
-		SetToggleOptionValue(showMessageID , ReadingTakesTime.showMessage)
-	elseif (option == dontShowMessageID )
-		ReadingTakesTime.dontShowMessage = true ; default value
-		SetToggleOptionValue(dontShowMessageID, ReadingTakesTime.dontShowMessage )
-	elseif (option == expertiseReducesTimeID )
-		ReadingTakesTime.expertiseReducesTime = true ; default value
-		SetToggleOptionValue(expertiseReducesTimeID, ReadingTakesTime.expertiseReducesTime )
-	elseif (option == cantReadID)
-		ReadingTakesTime.cantRead = true ; default value
-		SetToggleOptionValue(cantReadID, ReadingTakesTime.cantRead)
-	elseif (option == readingIncreasesSpeechID)
-		ReadingTakesTime.readingIncreasesSpeech = true ; default value
-		SetToggleOptionValue(readingIncreasesSpeechID, ReadingTakesTime.readingIncreasesSpeech)
-	elseif (option == cantLootID)
-		ReadingTakesTime.cantLoot= true ; default value
-		SetToggleOptionValue(cantLootID, ReadingTakesTime.cantLoot)
-	elseif (option == cantPickID)
-		ReadingTakesTime.cantPick= true ; default value
-		SetToggleOptionValue(cantPickID, ReadingTakesTime.cantPick)
-	elseif (option == cantLevelUpID)
-		ReadingTakesTime.cantLevelUp= true ; default value
-		SetToggleOptionValue(cantLevelUpID, ReadingTakesTime.cantLevelUp)
-	elseif (option == cantInventoryID)
-		ReadingTakesTime.cantInventory= true ; default value
-		SetToggleOptionValue(cantInventoryID, ReadingTakesTime.cantInventory)
-	elseif (option == cantMagicID)
-		ReadingTakesTime.cantMagic= true ; default value
-		SetToggleOptionValue(cantMagicID, ReadingTakesTime.cantMagic)
-	elseif (option == cantJournalID)
-		ReadingTakesTime.cantJournal= true ; default value
-		SetToggleOptionValue(cantJournalID, ReadingTakesTime.cantJournal)
-	elseif (option == cantMapID)
-		ReadingTakesTime.cantMap= true ; default value
-		SetToggleOptionValue(cantMapID, ReadingTakesTime.cantMap)
-	endIf
-endEvent
-
-event OnOptionKeyMapChange(int a_option, int a_keyCode, string a_conflictControl, string a_conflictName)
-	
-	DebugMode("OnOptionKeyMapChange a_option = " + a_option + " ; a_keyCode = " + a_keyCode + " ; a_conflictControl = " + a_conflictControl + " ; a_conflictName = " + a_conflictName)
-	
-	If (a_conflictControl != "")
-		If (a_conflictName != "")
-			ShowMessage("This key is already mapped to " + a_conflictControl + " in " + a_conflictName + ". Please choose a different key.")
-		Else
-			ShowMessage("This key is already mapped to " + a_conflictControl + " in Skyrim. Please choose a different key.")
-		EndIf
-		Return
-	EndIf
-	
-	If (a_option == hotkeySuspendID)
-		DebugMode("Registered to HotkeySuspend.")
-		ReadingTakesTime.hotkeySuspend = a_keyCode
-	Else
-		DebugMode("No matching registration.")
-		Return
-	EndIf
-
-	RegisterForKey(a_keyCode)
-	ForcePageReset()
-	
-endEvent
-
-event OnOptionHighlight(int option)
-	if (option == isModActiveID )
-		SetInfoText("$Activate or deactivate the mod.")
-	elseif (option == isReadingActiveID || option == isCraftingActiveID || option == isContainerActiveID || option == isLockpickActiveID || option == isTrainingActiveID|| option == isLevelUpActiveID|| option == isInventoryActiveID|| option == isMagicActiveID|| option == isJournalActiveID|| option == isMapActiveID|| option == isBarterActiveID|| option == isGiftActiveID)
-		SetInfoText("$Activate or deactivate this module.")
-	ElseIf option == showMessageThresholdID
-		SetInfoText("Notification of time passed only displayed if at least this many minutes have passed.")
-	elseif (option == readMultID|| option == lootMultID|| option == pickMultID|| option == pickpocketMultID|| option == trainingMultID|| option == levelUpMultID|| option == inventoryMultID|| option == magicMultID|| option == journalMultID|| option == mapMultID|| option == barterMultID|| option == giftMultID)
-		SetInfoText("$Multiplier used to calculate the time spent in this menu.")
-	elseif (option == spellLearnTimeID|| option == headCraftTimeID|| option == armorCraftTimeID|| option == handsCraftTimeID|| option == feetCraftTimeID|| option == shieldCraftTimeID|| option == jewelryCraftTimeID|| option == battleAxeCraftTimeID|| option == bowCraftTimeID|| option == daggerCraftTimeID|| option == greatswordCraftTimeID|| option == maceCraftTimeID|| option == staffCraftTimeID|| option == swordCraftTimeID|| option == warhammerCraftTimeID|| option == warAxeCraftTimeID|| option == weaponCraftTimeID|| option == miscCraftTimeID|| option == armorImproveTimeID|| option == weaponImproveTimeID|| option == potionCraftTimeID|| option == enchantingTimeID|| option == trainingTimeID|| option == levelUpTimeID|| option == eatTimeID)
-		SetInfoText("$Time spent when performing this action.")
-	ElseIf option == hotkeySuspendID
-		SetInfoText("Set a hotkey to suspend / resume the mod.")
-	ElseIf option == LightAmorID
-		SetInfoText("Additional time spent when stripping a corpse of a light armor cuirass.")
-	ElseIf option == HeavyArmorID
-		SetInfoText("Additional time spent when stripping a corpse of a heavy armor cuirass.")
-	elseif (option == cantReadID || option == cantLootID|| option == cantPickID|| option == cantLevelUpID|| option == cantInventoryID|| option == cantMagicID|| option == cantJournalID|| option == cantMapID)
-		SetInfoText("$Block this action while in combat.")
-	elseif (option == readingIncreasesSpeechID )
-		SetInfoText("$Reading increases speech.")
-	elseif (option == readingIncreaseMultID )
-		SetInfoText("$Reading increase multiplier.")
-	elseif (option == showMessageID )
-		SetInfoText("$Show notification messages with the time spent.")
-	elseif (option == dontShowMessageID )
-		SetInfoText("$RTT_DONTSHOWMESSAGE_HIGHLIGHT")
-	elseif (option == expertiseReducesTimeID )
-		SetInfoText("$RTT_EXPERTIESEREDUCESTIME_HIGHLIGHT")
-		
-	; Campfire Camping
-	ElseIf option == CFCloakID
-		SetInfoText("Time spent to craft any of the Frostfall cloaks.")
-	ElseIf option == CFStickID
-		SetInfoText("Time spent to craft a walking stick.")
-	ElseIf option == CFTorchID
-		SetInfoText("Time spent to create one torch.")
-	ElseIf option == CFCookpotID
-		SetInfoText("Time spent at the forge to craft a steel cookpot.")
-	ElseIf option == CFBackpackID
-		SetInfoText("Time spent to craft any of the Frostfall backpacks. Modifying backpacks costs no time.")
-	ElseIf option == CFBeddingID
-		SetInfoText("Time spent on bedrolls for tents, rough bedding takes half this time.")
-	ElseIf option == CFSmallTentID
-		SetInfoText("Time spent to create any small tent.")
-	ElseIf option == CFLargeTentID
-		SetInfoText("Time spent to create any large tent.")
-	ElseIf option == CFHatchetID
-		SetInfoText("Time spent to craft a stone hatchet.")
-	ElseIf option == CFArrowsID
-		SetInfoText("Time spent to craft a batch (24) of stone arrows.")
-	
-	; Campfire Materials
-	ElseIf option == CFLinenID
-		SetInfoText("Time spent to make one linen wrap. Multiplied when crafting several.")
-	ElseIf option == CFFurID
-		SetInfoText("Time spent to create any single fur plate. Multiplied when crafting several.")
-	ElseIf option == CFLaceID
-		SetInfoText("Time spent to produce a string of hide lace. Multiplied when crafting several.")
-	ElseIf option == CFTanRackID
-		SetInfoText("Time spent to assemble a tanning rack.")
-	ElseIf option == CFMortarID
-		SetInfoText("Time spent to craft a mortar and pestle, including Hunterborn's Scrimshaw recipe.")
-	ElseIf option == CFEnchID
-		SetInfoText("Time spent to craft a set of enchanting supplies.")
-	
-	; Campfire Firecraft
-	ElseIf option == CFFirecraftImprovesID
-		SetInfoText("Should the Firecraft perk of Campfire speed up the firecraft times at 20% off for each rank.\nDoes not help lighting with a torch or spell.")
-	ElseIf option == CFMakeTinderID
-		SetInfoText("Time spent making tinder from everyday objects.")
-	ElseIf option == CFMakeKindlingID
-		SetInfoText("Time spent making kindling from everyday objects.")
-	ElseIf option == CFAddTinderID
-		SetInfoText("Time spent prepping tinder on the campfire.")
-	ElseIf option == CFAddKindlingID
-		SetInfoText("Time spent arranging kindling on the campfire.")
-	ElseIf option == CFLightFireID
-		SetInfoText("Time spent trying to spark the fire.\nSpells and torches take one quarter this time.")
-	ElseIf option == CFAddFuelID
-		SetInfoText("Time spent tending to the fire, to replenish fuel or make it bigger.")
-
-	ElseIf option == FFSnowberryID
-		SetInfoText("Time spent making snowberry extract.")
-
-	ElseIf option == RNWaterskinID
-		SetInfoText("Time spent to craft a waterskin, including Hunterborn's recipe.")
-	ElseIf option == RNCookpotID
-		SetInfoText("Time spent to craft a cast iron pot at the forge.")
-	ElseIf option == RNTinderboxID
-		SetInfoText("Time spent to forge and assemble a tinderbox.")
-	ElseIf option == RNBedrollID
-		SetInfoText("Time spent to craft a traveller's bedroll.")
-	ElseIf option == RNTentID
-		SetInfoText("Time spent to craft a traveller's tent.")
-	ElseIf option == RNMilkBucketID
-		SetInfoText("Time spent preparing a common bucket for use as a milk bucket, at the tanning rack.")
-	ElseIf option == RNFoodSnackID
-		SetInfoText("Time spent eating a snack, or candy or fruit. Compatible with any food patched to have RND effects.")
-	ElseIf option == RNFoodMediumID
-		SetInfoText("Time spent eating a medium size meal. Compatible with any food patched to have RND effects.")
-	ElseIf option == RNFoodFillingID
-		SetInfoText("Time spent eating a filling meal. Compatible with any food patched to have RND effects.")
-	ElseIf option == RNWaterDrinkID
-		SetInfoText("Time spent consuming one drink. Compatible with any beverage patched to have RND effects.")
-	ElseIf option == RNCookSnackID
-		SetInfoText("Time spent to cook a snack. Compatible with any food patched to have RND effects. Batches take no extra time.")
-	ElseIf option == RNCookMediumID
-		SetInfoText("Time spent to cook a medium size meal. Compatible with any food patched to have RND effects. Batches take no extra time.")
-	ElseIf option == RNCookFillingID
-		SetInfoText("Time spent to cook a filling meal. Compatible with any food patched to have RND effects. Batches take no extra time.")
-	ElseIf option == RNBrewDrinkID
-		SetInfoText("Time spent to brew any drink, besides plain water. Compatible with any beverage patched to have RND effects. Batches take no extra time.")
-	ElseIf option == RNWaterPrepID
-		SetInfoText("Time spent at the cookpot to prepare water from any source. This includes boiling water, or changing from a waterskin to water for cooking.")
-	ElseIf option == RNSaltID
-		SetInfoText("Time spent boiling down sea water into a salt pile.")
-	
-	ElseIf option == HBScrimBitsID
-		SetInfoText("Time spent to scrimshaw one set of bone bits. Multiplied when crafting several. Harvesting level reduces time taken.")
-	ElseIf option == HBScrimIdolID
-		SetInfoText("Time spent to scrimshaw various idol-like artifacts. Harvesting level reduces time taken.")
-	ElseIf option == HBScrimToolID
-		SetInfoText("Time spent to scrimshaw various tools. Harvesting level reduces time taken.")
-	ElseIf option == HBLeatherID
-		SetInfoText("Time spent to craft 1 piece of leather. Applies to tanning rack AND all other sources, such as armor breakdown. Harvesting level reduces time taken.")
-	ElseIf option == HBStripID
-		SetInfoText("Time spent to craft 3 leather strips. Applies to ANY source of leather strips. Harvesting level reduces time taken.")
-	ElseIf option == HBWeapArmorTipID
-		SetInfoText("Scrimshaw's weapons and armors use the times set in Crafting, but use Harvesting level to reduce time taken, not Smithing.")
-	ElseIf option == HBBedrollID
-		SetInfoText("Time spent to craft a hunter's bedroll, at the tanning rack. Harvesting level reduces time taken.")
-	ElseIf option == HBIngrID
-		SetInfoText("Time spent to rework certain ingredients, such as polished eyes. Harvesting level reduces time taken.")
-	ElseIf option == HBBrewID
-		SetInfoText("Time spent when brewing any of Hunterborn's custom potions at the cookpot.")
-	ElseIf option == HBTallowID
-		SetInfoText("Time spent to craft each piece of tallow. Used only in the Hunterborn + Lanterns and Candles patch.")
-	ElseIf option == HBArrowsID
-		SetInfoText("Time spent to craft a batch of arrows with Scrimshaw. Same time for either 24 with firewood, or 12 with animal bones.")
-		
-	ElseIf option == WLLanternID
-		SetInfoText("Make a lantern wearable by attaching a leather strip. Done at the forge, but not considered smithing.")
-	ElseIf option == WLChassisID
-		SetInfoText("Craft a lantern chassis at a forge. It can then be converted into a wearable lantern.")
-	ElseIf option == WLOilID
-		SetInfoText("Crafting lantern oil is possible with other mods, such as Hunterborn.")
-
-	ElseIf option == LCBasicID
-		SetInfoText("Simple assembly, like a candle in a wine bottle. Done at the forge, but not considered smithing.")
-	ElseIf option == LCForgeID
-		SetInfoText("Wrought iron work done at a forge, such as lanterns and shrines.")
-	ElseIf option == LCArcaneID
-		SetInfoText("Sophisticated works requiring skill as an arcane blacksmith, such as a wizard's lamp.")
-	ElseIf option == LCBrewID
-		SetInfoText("Time spent to sculpt one candle at the cookpot. Multiplied when crafting several.")
-		
-	endIf
-endEvent
-
-
-Event OnKeyUp(int keyCode, float holdTime)
-
-	;DebugMode("OnKeyUp = " + keyCode)
-	
-	If !isModActive
-		UnregisterForAllKeys()
-		Return
-	EndIf
-	
-	If (UI.IsMenuOpen("Console") || Utility.IsInMenuMode() || Game.GetPlayer().GetSitState() != 0)
-		; Ignore keystrokes in the console or at furniture (like naming an enchanted object)
-		
-	ElseIf (keyCode == ReadingTakesTime.hotkeySuspend)
-		ReadingTakesTime.Suspended = !ReadingTakesTime.Suspended
-		If ReadingTakesTime.Suspended
-			Debug.Notification("Living Takes Time suspended.")
-		Else
-			Debug.Notification("Living Takes Time resumed.")
-		EndIf
-		
-	Else
-		UnregisterForKey(keyCode)
-	
-	EndIf
-
-EndEvent
-
-string Function GetCustomControl(int keyCode)
-
-	;DebugMode("GetCustomControl = " + keyCode)
-	
-	If (keyCode == ReadingTakesTime.hotkeySuspend)
-		Return "Suspend/Resume"
-	Else
-		Return ""
-	EndIf
-	
-EndFunction
-
-Function ReassignHotKeys()
-
-	ReassignHotkey(ReadingTakesTime.hotkeySuspend, "HotkeySuspend")
-
-EndFunction
-
-Function ReassignHotkey(int aiKeyCode, string akName)
-	If aiKeyCode
-		RegisterForKey(aiKeyCode)
-		;DebugMode("Hotkey " + aiKeyCode + " registrationg refresh for " + akName + ".")
-	EndIf
-EndFunction
-
-; Default time values for extra mods, FF / HB / WL / LaC
-Function SetModDefaults()
-
-	ReadingTakesTime.cfCloakTime = DEF_cfCloakTime
-	ReadingTakesTime.cfStickTime = DEF_cfStickTime
-	ReadingTakesTime.cfTorchTime = DEF_cfTorchTime
-	ReadingTakesTime.cfCookpotTime = DEF_cfCookpotTime
-	ReadingTakesTime.cfBackpackTime = DEF_cfBackpackTime
-	ReadingTakesTime.cfBeddingTime = DEF_cfBeddingTime
-	ReadingTakesTime.cfSmallTentTime = DEF_cfSmallTentTime
-	ReadingTakesTime.cfLargeTentTime = DEF_cfLargeTentTime
-	ReadingTakesTime.cfHatchetTime = DEF_cfHatchetTime
-	ReadingTakesTime.cfArrowsTime = DEF_cfArrowsTime
-
-	ReadingTakesTime.cfLinenTime = DEF_cfLinenTime
-	ReadingTakesTime.cfFurTime = DEF_cfFurTime
-	ReadingTakesTime.cfLaceTime = DEF_cfLaceTime
-	ReadingTakesTime.cfTanRackTime = DEF_cfTanRackTime
-	ReadingTakesTime.cfMortarTime = DEF_cfMortarTime
-	ReadingTakesTime.cfEnchTime = DEF_cfEnchTime
-
-	ReadingTakesTime.cfFirecraftImproves = DEF_cfFirecraftImproves
-	ReadingTakesTime.cfMakeTinderTime = DEF_cfMakeTinderTime
-	ReadingTakesTime.cfMakeKindlingTime = DEF_cfMakeKindlingTime
-	ReadingTakesTime.cfAddTinderTime = DEF_cfAddTinderTime
-	ReadingTakesTime.cfAddKindlingTime = DEF_cfAddKindlingTime
-	ReadingTakesTime.cfLightFireTime = DEF_cfLightFireTime
-	ReadingTakesTime.cfAddFuelTime = DEF_cfAddFuelTime
-
-	ReadingTakesTime.ffSnowberryTime = DEF_Extract
-
-	ReadingTakesTime.rnWaterskinTime = 2
-	ReadingTakesTime.rnCookpotTime = 1
-	ReadingTakesTime.rnTinderboxTime = 2
-	ReadingTakesTime.rnBedrollTime = 3
-	ReadingTakesTime.rnTentTime = 4
-	ReadingTakesTime.rnMilkBucketTime = 5
-	ReadingTakesTime.rnEatSnackTime = 2
-	ReadingTakesTime.rnEatMediumTime = 10
-	ReadingTakesTime.rnEatFillingTime = 30
-	ReadingTakesTime.rnDrinkTime = 2
-	ReadingTakesTime.rnCookSnackTime = 10
-	ReadingTakesTime.rnCookMediumTime = 20
-	ReadingTakesTime.rnCookFillingTime = 45
-	ReadingTakesTime.rnBrewTime = 15
-	ReadingTakesTime.rnWaterPrepTime = 5
-	ReadingTakesTime.rnSaltTime = 2
-	
-	ReadingTakesTime.hbLeatherTime = 1
-	ReadingTakesTime.hbStripTime = 30
-	ReadingTakesTime.hbScrimBitsTime = 5
-	ReadingTakesTime.hbTallowTime = 10
-	ReadingTakesTime.hbIngrTime = 30
-	ReadingTakesTime.hbBrewTime = 30
-	ReadingTakesTime.hbScrimIdolTime = 2
-	ReadingTakesTime.hbScrimToolTime = 1
-	ReadingTakesTime.hbBedrollTime = 3
-	ReadingTakesTime.hbArrowsTime = 1
-	
-	ReadingTakesTime.wlWearableTime = 30
-	ReadingTakesTime.wlChassisTime = 2
-	ReadingTakesTime.wlOilTime = 30
-	
-	ReadingTakesTime.lcBasicTime = 10
-	ReadingTakesTime.lcForgeTime = 3
-	ReadingTakesTime.lcArcaneTime = 6
-	ReadingTakesTime.lcBrewTime = 15
-
-EndFunction
-
-Function DebugMode(string sMsg)
-	Debug.Trace("[RTT_Menu] " + sMsg)
-EndFunction
+event OnOptionSelect( int option )
+	LTT.DebugLog( "++Menu::OnOptionSelect()" )
+	LTT.DebugLog( "--Menu::OnOptionSelect()" )
+endevent
+
+event OnOptionSliderOpen( int option )
+	LTT.DebugLog( "++Menu::OnOptionSliderOpen()" )
+	LTT.DebugLog( "--Menu::OnOptionSliderOpen()" )
+endevent
+
+event OnOptionSliderAccept( int option, float value)
+	LTT.DebugLog( "++Menu::OnOptionSliderAccept()" )
+	LTT.DebugLog( "--Menu::OnOptionSliderAccept()" )
+endevent
+
+event OnOptionDefault( int option )
+	LTT.DebugLog( "++Menu::OnOptionDefault()" )
+	LTT.DebugLog( "--Menu::OnOptionDefault()" )
+endevent
+
+event OnOptionKeyMapChange( int a_option, int a_keyCode, string a_conflictControl, string a_conflictName )
+	LTT.DebugLog( "++Menu::OnOptionKeyMapChange()" )
+	LTT.DebugLog( "--Menu::OnOptionKeyMapChange()" )
+endevent
+
+event OnOptionHighlight( int option )
+	LTT.DebugLog( "++Menu::OnOptionHighlight()" )
+	LTT.DebugLog( "--Menu::OnOptionHighlight()" )
+endevent
+
+event OnKeyUp( int option, float holdTime )
+	LTT.DebugLog( "++Menu::OnKeyUp()" )
+	LTT.DebugLog( "--Menu::OnKeyUp()" )
+endevent
+
+;;;; DISABLE ;;;;event OnOptionSelect(int option)
+;;;; DISABLE ;;;;	if (option == saveID)
+;;;; DISABLE ;;;;		Bool Choice = ShowMessage("$Save Settings?", True, "$Save", "$Cancel")
+;;;; DISABLE ;;;;		if (Choice)
+;;;; DISABLE ;;;;			SaveSettings()
+;;;; DISABLE ;;;;			ForcePageReset()
+;;;; DISABLE ;;;;		endif
+;;;; DISABLE ;;;;	endif
+;;;; DISABLE ;;;;	if (option == loadID)
+;;;; DISABLE ;;;;		Bool Choice = ShowMessage("$Load Settings?", True, "$Load", "$Cancel")
+;;;; DISABLE ;;;;		if (Choice)
+;;;; DISABLE ;;;;			LoadSettings()
+;;;; DISABLE ;;;;			ForcePageReset()
+;;;; DISABLE ;;;;		endif
+;;;; DISABLE ;;;;	endif
+;;;; DISABLE ;;;;	if ( option == isModActiveID )
+;;;; DISABLE ;;;;		isModActive= !isModActive
+;;;; DISABLE ;;;;		SetToggleOptionValue(isModActiveID , isModActive)
+;;;; DISABLE ;;;;		InitMod()
+;;;; DISABLE ;;;;	elseif ( option == isReadingActiveID )
+;;;; DISABLE ;;;;		isReadingActive = !isReadingActive
+;;;; DISABLE ;;;;		SetToggleOptionValue(isReadingActiveID, isReadingActive)
+;;;; DISABLE ;;;;		if ( isReadingActive )
+;;;; DISABLE ;;;;			RegisterForMenu("Book Menu")
+;;;; DISABLE ;;;;		else
+;;;; DISABLE ;;;;			UnregisterForMenu("Book Menu")
+;;;; DISABLE ;;;;		endIf
+;;;; DISABLE ;;;;	elseif ( option == isCraftingActiveID )
+;;;; DISABLE ;;;;		isCraftingActive = !isCraftingActive 
+;;;; DISABLE ;;;;		SetToggleOptionValue(isCraftingActiveID, isCraftingActive )
+;;;; DISABLE ;;;;		if ( isCraftingActive )
+;;;; DISABLE ;;;;			RegisterForMenu("Crafting Menu")
+;;;; DISABLE ;;;;		else
+;;;; DISABLE ;;;;			UnregisterForMenu("Crafting Menu")
+;;;; DISABLE ;;;;		endIf
+;;;; DISABLE ;;;;	elseif ( option == isContainerActiveID )
+;;;; DISABLE ;;;;		isContainerActive = !isContainerActive 
+;;;; DISABLE ;;;;		SetToggleOptionValue(isContainerActiveID, isContainerActive )
+;;;; DISABLE ;;;;		if ( isContainerActive )
+;;;; DISABLE ;;;;			RegisterForMenu("ContainerMenu")
+;;;; DISABLE ;;;;			;RegisterForCrosshairRef()
+;;;; DISABLE ;;;;		else
+;;;; DISABLE ;;;;			UnregisterForMenu("ContainerMenu")
+;;;; DISABLE ;;;;			;UnregisterForCrosshairRef()
+;;;; DISABLE ;;;;		endIf
+;;;; DISABLE ;;;;	elseif ( option == isLockpickActiveID )
+;;;; DISABLE ;;;;		isLockpickActive = !isLockpickActive 
+;;;; DISABLE ;;;;		SetToggleOptionValue(isLockpickActiveID, isLockpickActive )
+;;;; DISABLE ;;;;		if ( isLockpickActive )
+;;;; DISABLE ;;;;			RegisterForMenu("Lockpicking Menu")
+;;;; DISABLE ;;;;		else
+;;;; DISABLE ;;;;			UnregisterForMenu("Lockpicking Menu")
+;;;; DISABLE ;;;;		endIf
+;;;; DISABLE ;;;;	elseif ( option == isTrainingActiveID )
+;;;; DISABLE ;;;;		isTrainingActive = !isTrainingActive
+;;;; DISABLE ;;;;		SetToggleOptionValue(isTrainingActiveID, isTrainingActive )
+;;;; DISABLE ;;;;		if ( isTrainingActive)
+;;;; DISABLE ;;;;			RegisterForMenu("Training Menu")
+;;;; DISABLE ;;;;		else
+;;;; DISABLE ;;;;			UnregisterForMenu("Training Menu")
+;;;; DISABLE ;;;;		endIf
+;;;; DISABLE ;;;;	elseif ( option == isLevelUpActiveID )
+;;;; DISABLE ;;;;		isLevelUpActive = !isLevelUpActive
+;;;; DISABLE ;;;;		SetToggleOptionValue(isLevelUpActiveID, isLevelUpActive )
+;;;; DISABLE ;;;;		if ( isLevelUpActive )
+;;;; DISABLE ;;;;			RegisterForMenu("StatsMenu")
+;;;; DISABLE ;;;;		else
+;;;; DISABLE ;;;;			UnregisterForMenu("StatsMenu")
+;;;; DISABLE ;;;;		endIf
+;;;; DISABLE ;;;;	elseif ( option == isInventoryActiveID)
+;;;; DISABLE ;;;;		isInventoryActive = !isInventoryActive 
+;;;; DISABLE ;;;;		ReadingTakesTime.isInventoryActive = isInventoryActive 
+;;;; DISABLE ;;;;		SetToggleOptionValue(isInventoryActiveID, isInventoryActive )
+;;;; DISABLE ;;;;		if ( isInventoryActive )
+;;;; DISABLE ;;;;			RegisterForMenu("InventoryMenu")
+;;;; DISABLE ;;;;		else
+;;;; DISABLE ;;;;			UnregisterForMenu("InventoryMenu")
+;;;; DISABLE ;;;;		endIf
+;;;; DISABLE ;;;;	elseif ( option == isMagicActiveID)
+;;;; DISABLE ;;;;		isMagicActive = !isMagicActive 
+;;;; DISABLE ;;;;		SetToggleOptionValue(isMagicActiveID, isMagicActive )
+;;;; DISABLE ;;;;		if ( isMagicActive )
+;;;; DISABLE ;;;;			RegisterForMenu("MagicMenu")
+;;;; DISABLE ;;;;		else
+;;;; DISABLE ;;;;			UnregisterForMenu("MagicMenu")
+;;;; DISABLE ;;;;		endIf
+;;;; DISABLE ;;;;	elseif ( option == isJournalActiveID)
+;;;; DISABLE ;;;;		isJournalActive = !isJournalActive
+;;;; DISABLE ;;;;		SetToggleOptionValue(isJournalActiveID, isJournalActive )
+;;;; DISABLE ;;;;		if ( isJournalActive )
+;;;; DISABLE ;;;;			RegisterForMenu("Journal Menu")
+;;;; DISABLE ;;;;			ReadingTakesTime.StartReading = Utility.GetCurrentRealTime()
+;;;; DISABLE ;;;;			ReadingTakesTime.StopReading = Utility.GetCurrentRealTime()
+;;;; DISABLE ;;;;		else
+;;;; DISABLE ;;;;			UnregisterForMenu("Journal Menu")
+;;;; DISABLE ;;;;		endIf
+;;;; DISABLE ;;;;	elseif ( option == isMapActiveID )
+;;;; DISABLE ;;;;		isMapActive = !isMapActive
+;;;; DISABLE ;;;;		SetToggleOptionValue(isMapActiveID, isMapActive )
+;;;; DISABLE ;;;;		if ( isMapActive )
+;;;; DISABLE ;;;;			RegisterForMenu("MapMenu")
+;;;; DISABLE ;;;;		else
+;;;; DISABLE ;;;;			UnregisterForMenu("MapMenu")
+;;;; DISABLE ;;;;		endIf
+;;;; DISABLE ;;;;	elseif ( option == isBarterActiveID )
+;;;; DISABLE ;;;;		isBarterActive = !isBarterActive 
+;;;; DISABLE ;;;;		SetToggleOptionValue(isBarterActiveID, isBarterActive )
+;;;; DISABLE ;;;;		if ( isBarterActive )
+;;;; DISABLE ;;;;			RegisterForMenu("BarterMenu")
+;;;; DISABLE ;;;;		else
+;;;; DISABLE ;;;;			UnregisterForMenu("BarterMenu")
+;;;; DISABLE ;;;;		endIf
+;;;; DISABLE ;;;;	elseif ( option == isGiftActiveID )
+;;;; DISABLE ;;;;		isGiftActive = !isGiftActive 
+;;;; DISABLE ;;;;		SetToggleOptionValue(isGiftActiveID, isGiftActive )
+;;;; DISABLE ;;;;		if ( isGiftActive )
+;;;; DISABLE ;;;;			RegisterForMenu("GiftMenu")
+;;;; DISABLE ;;;;		else
+;;;; DISABLE ;;;;			UnregisterForMenu("GiftMenu")
+;;;; DISABLE ;;;;		endIf
+;;;; DISABLE ;;;;	elseif ( option == cantLootID )
+;;;; DISABLE ;;;;		ReadingTakesTime.cantLoot = !ReadingTakesTime.cantLoot
+;;;; DISABLE ;;;;		SetToggleOptionValue(cantLootID, ReadingTakesTime.cantLoot)
+;;;; DISABLE ;;;;	elseif ( option == cantPickID )
+;;;; DISABLE ;;;;		ReadingTakesTime.cantPick = !ReadingTakesTime.cantPick
+;;;; DISABLE ;;;;		SetToggleOptionValue(cantPickID, ReadingTakesTime.cantPick)
+;;;; DISABLE ;;;;	elseif ( option == showMessageID )
+;;;; DISABLE ;;;;		ReadingTakesTime.showMessage = !ReadingTakesTime.showMessage
+;;;; DISABLE ;;;;		SetToggleOptionValue(showMessageID , ReadingTakesTime.showMessage)
+;;;; DISABLE ;;;;	elseif ( option == dontShowMessageID )
+;;;; DISABLE ;;;;		ReadingTakesTime.dontShowMessage = !ReadingTakesTime.dontShowMessage 
+;;;; DISABLE ;;;;		SetToggleOptionValue(dontShowMessageID, ReadingTakesTime.dontShowMessage )
+;;;; DISABLE ;;;;	elseif ( option == expertiseReducesTimeID )
+;;;; DISABLE ;;;;		ReadingTakesTime.expertiseReducesTime = !ReadingTakesTime.expertiseReducesTime 
+;;;; DISABLE ;;;;		SetToggleOptionValue(expertiseReducesTimeID, ReadingTakesTime.expertiseReducesTime )
+;;;; DISABLE ;;;;	elseif ( option == cantReadID)
+;;;; DISABLE ;;;;		ReadingTakesTime.cantRead = !ReadingTakesTime.cantRead
+;;;; DISABLE ;;;;		SetToggleOptionValue(cantReadID, ReadingTakesTime.cantRead)
+;;;; DISABLE ;;;;	elseif ( option == readingIncreasesSpeechID)
+;;;; DISABLE ;;;;		ReadingTakesTime.readingIncreasesSpeech = !ReadingTakesTime.readingIncreasesSpeech
+;;;; DISABLE ;;;;		SetToggleOptionValue(readingIncreasesSpeechID, ReadingTakesTime.readingIncreasesSpeech)
+;;;; DISABLE ;;;;	elseif ( option == cantLevelUpID)
+;;;; DISABLE ;;;;		ReadingTakesTime.cantLevelUp = !ReadingTakesTime.cantLevelUp
+;;;; DISABLE ;;;;		SetToggleOptionValue(cantLevelUpID, ReadingTakesTime.cantLevelUp)
+;;;; DISABLE ;;;;	elseif ( option == cantInventoryID)
+;;;; DISABLE ;;;;		ReadingTakesTime.cantInventory = !ReadingTakesTime.cantInventory
+;;;; DISABLE ;;;;		SetToggleOptionValue(cantInventoryID, ReadingTakesTime.cantInventory)
+;;;; DISABLE ;;;;	elseif ( option == cantMagicID)
+;;;; DISABLE ;;;;		ReadingTakesTime.cantMagic = !ReadingTakesTime.cantMagic
+;;;; DISABLE ;;;;		SetToggleOptionValue(cantMagicID, ReadingTakesTime.cantMagic)
+;;;; DISABLE ;;;;	elseif ( option == cantJournalID)
+;;;; DISABLE ;;;;		ReadingTakesTime.cantJournal = !ReadingTakesTime.cantJournal
+;;;; DISABLE ;;;;		SetToggleOptionValue(cantJournalID, ReadingTakesTime.cantJournal)
+;;;; DISABLE ;;;;	elseif ( option == cantMapID)
+;;;; DISABLE ;;;;		ReadingTakesTime.cantMap = !ReadingTakesTime.cantMap
+;;;; DISABLE ;;;;		SetToggleOptionValue(cantMapID, ReadingTakesTime.cantMap)
+;;;; DISABLE ;;;;	elseif ( option == CFFirecraftImprovesID )
+;;;; DISABLE ;;;;		ReadingTakesTime.cfFirecraftImproves = !ReadingTakesTime.cfFirecraftImproves
+;;;; DISABLE ;;;;		SetToggleOptionValue(CFFirecraftImprovesID, ReadingTakesTime.cfFirecraftImproves)
+;;;; DISABLE ;;;;	endIf
+;;;; DISABLE ;;;;endEvent
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;event OnOptionSliderOpen(int option)
+;;;; DISABLE ;;;;	if (option == readMultID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.readMult)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.00)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.00, 4.00)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.05)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseif (option == showMessageThresholdID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.showMessageThreshold)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(1.0, 59.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1.0)
+;;;; DISABLE ;;;;		
+;;;; DISABLE ;;;;	elseif (option == readingIncreaseMultID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.readingIncreaseMult)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 10.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;		
+;;;; DISABLE ;;;;	elseif (option == spellLearnTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.spellLearnTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(2.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseif (option == headCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.headCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(3.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseif (option == armorCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.armorCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(6.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseif (option == handsCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.handsCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(3.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseif (option == feetCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.feetCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(3.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseif (option == shieldCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.shieldCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(4.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseif (option == jewelryCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.jewelryCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(2.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == battleAxeCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.battleAxeCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(4.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == bowCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.bowCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(4.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == daggerCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.daggerCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(3.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == greatswordCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.greatswordCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(4.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == maceCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.maceCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(4.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == staffCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.staffCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(2.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == swordCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.swordCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(4.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == warhammerCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.warhammerCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(4.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == warAxeCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.warAxeCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(4.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == weaponCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.weaponCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(2.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == miscCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.miscCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == armorImproveTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.armorImproveTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == weaponImproveTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.weaponImproveTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == enchantingTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.enchantingTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == potionCraftTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.potionCraftTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == lootMultID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.lootMult)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.00)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.00, 4.00)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.05)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == pickMultID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.pickMult)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.00)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.00, 4.00)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.05)
+;;;; DISABLE ;;;;		
+;;;; DISABLE ;;;;	elseIf (option == pickpocketMultID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.pickpocketMult)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.00)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.00, 4.00)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.05)
+;;;; DISABLE ;;;;		
+;;;; DISABLE ;;;;	ElseIf option == LightAmorID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.lightArmorTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(15)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	ElseIf option == HeavyArmorID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.heavyArmorTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(45)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == trainingMultID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.trainingMult)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.00)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.00, 4.00)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.05)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == trainingTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.trainingTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(2.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == levelUpMultID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.levelUpMult)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.00)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.00, 4.00)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.05)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == levelUpTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.levelUpTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == inventoryMultID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.inventoryMult)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.00)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.00, 4.00)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.05)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == eatTimeID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.eatTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(5)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == magicMultID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.magicMult)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.00)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.00, 4.00)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.05)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == journalMultID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.journalMult)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.00)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.00, 4.00)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.05)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == mapMultID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.mapMult)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.00)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.00, 4.00)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.05)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == barterMultID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.barterMult)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.00)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.00, 4.00)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.05)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	elseIf (option == giftMultID )
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.giftMult)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.00)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.00, 4.00)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.05)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	; Campfire Camping Items
+;;;; DISABLE ;;;;	ElseIf option == CFCloakID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfCloakTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfCloakTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == CFStickID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfStickTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfStickTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == CFTorchID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfTorchTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfTorchTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == CFCookpotID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfCookpotTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfCookpotTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == CFBackpackID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfBackpackTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfBackpackTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == CFBeddingID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfBeddingTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfBeddingTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == CFSmallTentID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfSmallTentTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfSmallTentTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == CFLargeTentID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfLargeTentTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfLargeTentTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == CFHatchetID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfHatchetTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfHatchetTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == CFArrowsID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfArrowsTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfArrowsTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	; Campfire Materials
+;;;; DISABLE ;;;;	ElseIf option == CFLinenID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfLinenTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfLinenTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == CFFurID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfFurTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfFurTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == CFLaceID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfLaceTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfLaceTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == CFTanRackID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfTanRackTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfTanRackTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == CFMortarID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfMortarTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfMortarTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == CFEnchID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfEnchTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfEnchTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	; Campfire Firecraft
+;;;; DISABLE ;;;;	ElseIf option == CFMakeTinderID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfMakeTinderTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfMakeTinderTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == CFMakeKindlingID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfMakeKindlingTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfMakeKindlingTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == CFAddTinderID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfAddTinderTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfAddTinderTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == CFAddKindlingID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfAddKindlingTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfAddKindlingTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == CFLightFireID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfLightFireTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfLightFireTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == CFAddFuelID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.cfAddFuelTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_cfAddFuelTime)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	ElseIf option == FFSnowberryID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.ffSnowberryTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(DEF_Extract)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	ElseIf option == RNWaterskinID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.rnWaterskinTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(2.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == RNCookpotID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.rnCookpotTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == RNTinderboxID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.rnTinderboxTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(2.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == RNBedrollID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.rnBedrollTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(3.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == RNTentID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.rnTentTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(4.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == RNMilkBucketID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.rnMilkBucketTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(5)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == RNFoodSnackID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.rnEatSnackTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(2)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == RNFoodMediumID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.rnEatMediumTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(10)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == RNFoodFillingID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.rnEatFillingTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(30)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == RNWaterDrinkID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.rnDrinkTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(2)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == RNCookSnackID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.rnCookSnackTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(10)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == RNCookMediumID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.rnCookMediumTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(20)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == RNCookFillingID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.rnCookFillingTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(45)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == RNBrewDrinkID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.rnBrewTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(15)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == RNWaterPrepID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.rnWaterPrepTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(5)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == RNSaltID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.rnSaltTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(2.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	ElseIf option == HBScrimBitsID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.hbScrimBitsTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(5)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == HBScrimIdolID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.hbScrimIdolTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(2.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == HBScrimToolID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.hbScrimToolTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == HBLeatherID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.hbLeatherTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == HBStripID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.hbStripTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(30)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == HBBedrollID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.hbBedrollTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(3.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == HBIngrID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.hbIngrTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(30)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == HBBrewID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.hbBrewTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(30)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == HBTallowID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.hbTallowTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(10)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == HBArrowsID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.hbArrowsTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(1.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;		
+;;;; DISABLE ;;;;	ElseIf option == WLLanternID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.wlWearableTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(30)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == WLChassisID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.wlChassisTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(2.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == WLOilID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.wlOilTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(30)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;		
+;;;; DISABLE ;;;;	ElseIf option == LCBasicID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.lcBasicTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(10)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	ElseIf option == LCForgeID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.lcForgeTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(3.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == LCArcaneID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.lcArcaneTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(6.0)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0.0, 24.0)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(0.1)
+;;;; DISABLE ;;;;	ElseIf option == LCBrewID
+;;;; DISABLE ;;;;		SetSliderDialogStartValue(ReadingTakesTime.lcBrewTime)
+;;;; DISABLE ;;;;		SetSliderDialogDefaultValue(15)
+;;;; DISABLE ;;;;		SetSliderDialogRange(0, 60)
+;;;; DISABLE ;;;;		SetSliderDialogInterval(1)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	endIf
+;;;; DISABLE ;;;;endEvent
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;event OnOptionSliderAccept(int option, float value)
+;;;; DISABLE ;;;;    if (option == readMultID )
+;;;; DISABLE ;;;;        ReadingTakesTime.readMult = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(readMultID, ReadingTakesTime.readMult, "$x{2}")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == showMessageThresholdID )
+;;;; DISABLE ;;;;        ReadingTakesTime.showMessageThreshold = value as Int
+;;;; DISABLE ;;;;        SetSliderOptionValue(showMessageThresholdID , ReadingTakesTime.showMessageThreshold)
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == readingIncreaseMultID )
+;;;; DISABLE ;;;;        ReadingTakesTime.readingIncreaseMult = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(readingIncreaseMultID , ReadingTakesTime.readingIncreaseMult, "$x{2}")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == spellLearnTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.spellLearnTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(spellLearnTimeID , ReadingTakesTime.spellLearnTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == headCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.headCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(headCraftTimeID , ReadingTakesTime.headCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == armorCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.armorCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(armorCraftTimeID , ReadingTakesTime.armorCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == handsCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.handsCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(handsCraftTimeID , ReadingTakesTime.handsCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == feetCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.feetCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(feetCraftTimeID , ReadingTakesTime.feetCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == shieldCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.shieldCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(shieldCraftTimeID , ReadingTakesTime.shieldCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == jewelryCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.jewelryCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(jewelryCraftTimeID , ReadingTakesTime.jewelryCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == battleAxeCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.battleAxeCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(battleAxeCraftTimeID, ReadingTakesTime.battleAxeCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == bowCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.bowCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(bowCraftTimeID, ReadingTakesTime.bowCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == daggerCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.daggerCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(daggerCraftTimeID, ReadingTakesTime.daggerCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == greatswordCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.greatswordCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(greatswordCraftTimeID, ReadingTakesTime.greatswordCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == maceCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.maceCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(maceCraftTimeID, ReadingTakesTime.maceCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == staffCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.staffCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(staffCraftTimeID, ReadingTakesTime.staffCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == swordCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.swordCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(swordCraftTimeID, ReadingTakesTime.swordCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == warhammerCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.warhammerCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(warhammerCraftTimeID, ReadingTakesTime.warhammerCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == warAxeCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.warAxeCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(warAxeCraftTimeID, ReadingTakesTime.warAxeCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == weaponCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.weaponCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(weaponCraftTimeID, ReadingTakesTime.weaponCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == miscCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.miscCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(miscCraftTimeID, ReadingTakesTime.miscCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == armorImproveTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.armorImproveTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(armorImproveTimeID , ReadingTakesTime.armorImproveTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == weaponImproveTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.weaponImproveTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(weaponImproveTimeID , ReadingTakesTime.weaponImproveTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == enchantingTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.enchantingTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(enchantingTimeID, ReadingTakesTime.enchantingTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == potionCraftTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.potionCraftTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(potionCraftTimeID, ReadingTakesTime.potionCraftTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == lootMultID )
+;;;; DISABLE ;;;;        ReadingTakesTime.lootMult = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(lootMultID, ReadingTakesTime.lootMult, "$x{2}")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == pickMultID )
+;;;; DISABLE ;;;;        ReadingTakesTime.pickMult = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(pickMultID, ReadingTakesTime.pickMult, "$x{2}")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == pickpocketMultID )
+;;;; DISABLE ;;;;        ReadingTakesTime.pickpocketMult = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(pickpocketMultID, ReadingTakesTime.pickpocketMult, "$x{2}")
+;;;; DISABLE ;;;;		
+;;;; DISABLE ;;;;	ElseIf option == LightAmorID
+;;;; DISABLE ;;;;        ReadingTakesTime.lightArmorTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(LightAmorID, ReadingTakesTime.lightArmorTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	ElseIf option == HeavyArmorID
+;;;; DISABLE ;;;;        ReadingTakesTime.heavyArmorTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(HeavyArmorID, ReadingTakesTime.heavyArmorTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == trainingMultID )
+;;;; DISABLE ;;;;        ReadingTakesTime.trainingMult = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(trainingMultID, ReadingTakesTime.trainingMult, "$x{2}")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == trainingTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.trainingTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(trainingTimeID, ReadingTakesTime.trainingTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == levelUpMultID )
+;;;; DISABLE ;;;;        ReadingTakesTime.levelUpMult = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(levelUpMultID, ReadingTakesTime.levelUpMult, "$x{2}")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == levelUpTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.levelUpTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(levelUpTimeID, ReadingTakesTime.levelUpTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == inventoryMultID )
+;;;; DISABLE ;;;;        ReadingTakesTime.inventoryMult = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(inventoryMultID, ReadingTakesTime.inventoryMult , "$x{2}")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == eatTimeID )
+;;;; DISABLE ;;;;        ReadingTakesTime.eatTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(eatTimeID, ReadingTakesTime.eatTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == magicMultID )
+;;;; DISABLE ;;;;        ReadingTakesTime.magicMult = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(magicMultID, ReadingTakesTime.magicMult, "$x{2}")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == journalMultID )
+;;;; DISABLE ;;;;        ReadingTakesTime.journalMult = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(journalMultID, ReadingTakesTime.journalMult, "$x{2}")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == mapMultID )
+;;;; DISABLE ;;;;        ReadingTakesTime.mapMult = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(mapMultID, ReadingTakesTime.mapMult, "$x{2}")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == barterMultID )
+;;;; DISABLE ;;;;        ReadingTakesTime.barterMult = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(barterMultID, ReadingTakesTime.barterMult, "$x{2}")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    elseIf (option == giftMultID )
+;;;; DISABLE ;;;;        ReadingTakesTime.giftMult = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(giftMultID, ReadingTakesTime.giftMult, "$x{2}")
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	; Campfire Camping Items
+;;;; DISABLE ;;;;	ElseIf option == CFCloakID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfCloakTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFCloakID, ReadingTakesTime.cfCloakTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFStickID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfStickTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFStickID, ReadingTakesTime.cfStickTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFTorchID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfTorchTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFTorchID, ReadingTakesTime.cfTorchTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFCookpotID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfCookpotTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFCookpotID, ReadingTakesTime.cfCookpotTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFBackpackID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfBackpackTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFBackpackID, ReadingTakesTime.cfBackpackTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFBeddingID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfBeddingTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFBeddingID, ReadingTakesTime.cfBeddingTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFSmallTentID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfSmallTentTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFSmallTentID, ReadingTakesTime.cfSmallTentTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFLargeTentID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfLargeTentTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFLargeTentID, ReadingTakesTime.cfLargeTentTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFHatchetID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfHatchetTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFHatchetID, ReadingTakesTime.cfHatchetTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFArrowsID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfArrowsTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFArrowsID, ReadingTakesTime.cfArrowsTime, "${1} hour(s)")
+;;;; DISABLE ;;;;		
+;;;; DISABLE ;;;;	; Campfire Materials
+;;;; DISABLE ;;;;	ElseIf option == CFLinenID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfLinenTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFLinenID, ReadingTakesTime.cfLinenTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFFurID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfFurTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFFurID, ReadingTakesTime.cfFurTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFLaceID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfLaceTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFLaceID, ReadingTakesTime.cfLaceTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFTanRackID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfTanRackTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFTanRackID, ReadingTakesTime.cfTanRackTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFMortarID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfMortarTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFMortarID, ReadingTakesTime.cfMortarTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFEnchID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfEnchTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFEnchID, ReadingTakesTime.cfEnchTime, "${1} hour(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	; Campfire Firecraft
+;;;; DISABLE ;;;;	ElseIf option == CFMakeTinderID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfMakeTinderTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFMakeTinderID, ReadingTakesTime.cfMakeTinderTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFMakeKindlingID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfMakeKindlingTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFMakeKindlingID, ReadingTakesTime.cfMakeKindlingTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFAddTinderID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfAddTinderTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFAddTinderID, ReadingTakesTime.cfAddTinderTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFAddKindlingID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfAddKindlingTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFAddKindlingID, ReadingTakesTime.cfAddKindlingTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFLightFireID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfLightFireTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFLightFireID, ReadingTakesTime.cfLightFireTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == CFAddFuelID
+;;;; DISABLE ;;;;		ReadingTakesTime.cfAddFuelTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(CFAddFuelID, ReadingTakesTime.cfAddFuelTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	ElseIf option == FFSnowberryID
+;;;; DISABLE ;;;;		ReadingTakesTime.ffSnowberryTime = value
+;;;; DISABLE ;;;;		SetSliderOptionValue(FFSnowBerryID, ReadingTakesTime.ffSnowberryTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	ElseIf option == RNWaterskinID
+;;;; DISABLE ;;;;		ReadingTakesTime.rnWaterskinTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(RNWaterskinID, ReadingTakesTime.rnWaterskinTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == RNCookpotID
+;;;; DISABLE ;;;;		ReadingTakesTime.rnCookpotTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(RNCookpotID, ReadingTakesTime.rnCookpotTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == RNTinderboxID
+;;;; DISABLE ;;;;		ReadingTakesTime.rnTinderboxTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(RNTinderboxID, ReadingTakesTime.rnTinderboxTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == RNBedrollID
+;;;; DISABLE ;;;;		ReadingTakesTime.rnBedrollTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(RNBedrollID, ReadingTakesTime.rnBedrollTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == RNTentID
+;;;; DISABLE ;;;;		ReadingTakesTime.rnTentTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(RNTentID, ReadingTakesTime.rnTentTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == RNMilkBucketID
+;;;; DISABLE ;;;;		ReadingTakesTime.rnMilkBucketTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(RNMilkBucketID, ReadingTakesTime.rnMilkBucketTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == RNFoodSnackID
+;;;; DISABLE ;;;;		ReadingTakesTime.rnEatSnackTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(RNFoodSnackID, ReadingTakesTime.rnEatSnackTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == RNFoodMediumID
+;;;; DISABLE ;;;;		ReadingTakesTime.rnEatMediumTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(RNFoodMediumID, ReadingTakesTime.rnEatMediumTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == RNFoodFillingID
+;;;; DISABLE ;;;;		ReadingTakesTime.rnEatFillingTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(RNFoodFillingID, ReadingTakesTime.rnEatFillingTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == RNWaterDrinkID
+;;;; DISABLE ;;;;		ReadingTakesTime.rnDrinkTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(RNWaterDrinkID, ReadingTakesTime.rnDrinkTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == RNCookSnackID
+;;;; DISABLE ;;;;		ReadingTakesTime.rnCookSnackTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(RNCookSnackID, ReadingTakesTime.rnCookSnackTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == RNCookMediumID
+;;;; DISABLE ;;;;		ReadingTakesTime.rnCookMediumTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(RNCookMediumID, ReadingTakesTime.rnCookMediumTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == RNCookFillingID
+;;;; DISABLE ;;;;		ReadingTakesTime.rnCookFillingTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(RNCookFillingID, ReadingTakesTime.rnCookFillingTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == RNBrewDrinkID
+;;;; DISABLE ;;;;		ReadingTakesTime.rnBrewTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(RNBrewDrinkID, ReadingTakesTime.rnBrewTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == RNWaterPrepID
+;;;; DISABLE ;;;;		ReadingTakesTime.rnWaterPrepTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(RNWaterPrepID, ReadingTakesTime.rnWaterPrepTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == RNSaltID
+;;;; DISABLE ;;;;		ReadingTakesTime.rnSaltTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(RNSaltID, ReadingTakesTime.rnSaltTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	ElseIf option == HBScrimBitsID
+;;;; DISABLE ;;;;		ReadingTakesTime.hbScrimBitsTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(HBScrimBitsID, ReadingTakesTime.hbScrimBitsTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == HBScrimIdolID
+;;;; DISABLE ;;;;		ReadingTakesTime.hbScrimIdolTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(HBScrimIdolID, ReadingTakesTime.hbScrimIdolTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == HBScrimToolID
+;;;; DISABLE ;;;;		ReadingTakesTime.hbScrimToolTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(HBScrimToolID, ReadingTakesTime.hbScrimToolTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == HBLeatherID
+;;;; DISABLE ;;;;		ReadingTakesTime.hbLeatherTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(HBLeatherID, ReadingTakesTime.hbLeatherTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == HBStripID
+;;;; DISABLE ;;;;		ReadingTakesTime.hbStripTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(HBStripID, ReadingTakesTime.hbStripTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == HBBedrollID
+;;;; DISABLE ;;;;		ReadingTakesTime.hbBedrollTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(HBBedrollID, ReadingTakesTime.hbBedrollTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == HBIngrID
+;;;; DISABLE ;;;;		ReadingTakesTime.hbIngrTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(HBIngrID, ReadingTakesTime.hbIngrTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == HBBrewID
+;;;; DISABLE ;;;;		ReadingTakesTime.hbBrewTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(HBBrewID, ReadingTakesTime.hbBrewTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == HBTallowID
+;;;; DISABLE ;;;;		ReadingTakesTime.hbTallowTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(HBTallowID, ReadingTakesTime.hbTallowTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == HBArrowsID
+;;;; DISABLE ;;;;		ReadingTakesTime.hbArrowsTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(HBArrowsID, ReadingTakesTime.hbArrowsTime, "${1} hour(s)")
+;;;; DISABLE ;;;;		
+;;;; DISABLE ;;;;	ElseIf option == WLLanternID
+;;;; DISABLE ;;;;		ReadingTakesTime.wlWearableTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(WLLanternID, ReadingTakesTime.wlWearableTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == WLChassisID
+;;;; DISABLE ;;;;		ReadingTakesTime.wlChassisTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(WLChassisID, ReadingTakesTime.wlChassisTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == WLOilID
+;;;; DISABLE ;;;;		ReadingTakesTime.wlOilTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(WLOilID, ReadingTakesTime.wlOilTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	ElseIf option == LCBasicID
+;;;; DISABLE ;;;;		ReadingTakesTime.lcBasicTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(LCBasicID, ReadingTakesTime.lcBasicTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;	ElseIf option == LCForgeID
+;;;; DISABLE ;;;;		ReadingTakesTime.lcForgeTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(LCForgeID, ReadingTakesTime.lcForgeTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == LCArcaneID
+;;;; DISABLE ;;;;		ReadingTakesTime.lcArcaneTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(LCArcaneID, ReadingTakesTime.lcArcaneTime, "${1} hour(s)")
+;;;; DISABLE ;;;;	ElseIf option == LCBrewID
+;;;; DISABLE ;;;;		ReadingTakesTime.lcBrewTime = value
+;;;; DISABLE ;;;;        SetSliderOptionValue(LCBrewID, ReadingTakesTime.lcBrewTime, "${0} Minute(s)")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;    endIf
+;;;; DISABLE ;;;;endEvent
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;event OnOptionDefault(int option)
+;;;; DISABLE ;;;;	if (option == isModActiveID )
+;;;; DISABLE ;;;;		isModActive = true ; default value
+;;;; DISABLE ;;;;		SetToggleOptionValue(isModActiveID , isModActive)
+;;;; DISABLE ;;;;	elseif (option == isReadingActiveID )
+;;;; DISABLE ;;;;		isReadingActive = true ; default value
+;;;; DISABLE ;;;;		SetToggleOptionValue(isReadingActiveID , isReadingActive)
+;;;; DISABLE ;;;;	elseif (option == isCraftingActiveID )
+;;;; DISABLE ;;;;		isCraftingActive = true ; default value
+;;;; DISABLE ;;;;		SetToggleOptionValue(isCraftingActiveID , isCraftingActive)
+;;;; DISABLE ;;;;	elseif (option == showMessageID )
+;;;; DISABLE ;;;;		ReadingTakesTime.showMessage = true ; default value
+;;;; DISABLE ;;;;		SetToggleOptionValue(showMessageID , ReadingTakesTime.showMessage)
+;;;; DISABLE ;;;;	elseif (option == dontShowMessageID )
+;;;; DISABLE ;;;;		ReadingTakesTime.dontShowMessage = true ; default value
+;;;; DISABLE ;;;;		SetToggleOptionValue(dontShowMessageID, ReadingTakesTime.dontShowMessage )
+;;;; DISABLE ;;;;	elseif (option == expertiseReducesTimeID )
+;;;; DISABLE ;;;;		ReadingTakesTime.expertiseReducesTime = true ; default value
+;;;; DISABLE ;;;;		SetToggleOptionValue(expertiseReducesTimeID, ReadingTakesTime.expertiseReducesTime )
+;;;; DISABLE ;;;;	elseif (option == cantReadID)
+;;;; DISABLE ;;;;		ReadingTakesTime.cantRead = true ; default value
+;;;; DISABLE ;;;;		SetToggleOptionValue(cantReadID, ReadingTakesTime.cantRead)
+;;;; DISABLE ;;;;	elseif (option == readingIncreasesSpeechID)
+;;;; DISABLE ;;;;		ReadingTakesTime.readingIncreasesSpeech = true ; default value
+;;;; DISABLE ;;;;		SetToggleOptionValue(readingIncreasesSpeechID, ReadingTakesTime.readingIncreasesSpeech)
+;;;; DISABLE ;;;;	elseif (option == cantLootID)
+;;;; DISABLE ;;;;		ReadingTakesTime.cantLoot= true ; default value
+;;;; DISABLE ;;;;		SetToggleOptionValue(cantLootID, ReadingTakesTime.cantLoot)
+;;;; DISABLE ;;;;	elseif (option == cantPickID)
+;;;; DISABLE ;;;;		ReadingTakesTime.cantPick= true ; default value
+;;;; DISABLE ;;;;		SetToggleOptionValue(cantPickID, ReadingTakesTime.cantPick)
+;;;; DISABLE ;;;;	elseif (option == cantLevelUpID)
+;;;; DISABLE ;;;;		ReadingTakesTime.cantLevelUp= true ; default value
+;;;; DISABLE ;;;;		SetToggleOptionValue(cantLevelUpID, ReadingTakesTime.cantLevelUp)
+;;;; DISABLE ;;;;	elseif (option == cantInventoryID)
+;;;; DISABLE ;;;;		ReadingTakesTime.cantInventory= true ; default value
+;;;; DISABLE ;;;;		SetToggleOptionValue(cantInventoryID, ReadingTakesTime.cantInventory)
+;;;; DISABLE ;;;;	elseif (option == cantMagicID)
+;;;; DISABLE ;;;;		ReadingTakesTime.cantMagic= true ; default value
+;;;; DISABLE ;;;;		SetToggleOptionValue(cantMagicID, ReadingTakesTime.cantMagic)
+;;;; DISABLE ;;;;	elseif (option == cantJournalID)
+;;;; DISABLE ;;;;		ReadingTakesTime.cantJournal= true ; default value
+;;;; DISABLE ;;;;		SetToggleOptionValue(cantJournalID, ReadingTakesTime.cantJournal)
+;;;; DISABLE ;;;;	elseif (option == cantMapID)
+;;;; DISABLE ;;;;		ReadingTakesTime.cantMap= true ; default value
+;;;; DISABLE ;;;;		SetToggleOptionValue(cantMapID, ReadingTakesTime.cantMap)
+;;;; DISABLE ;;;;	endIf
+;;;; DISABLE ;;;;endEvent
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;event OnOptionKeyMapChange(int a_option, int a_keyCode, string a_conflictControl, string a_conflictName)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	DebugMode("OnOptionKeyMapChange a_option = " + a_option + " ; a_keyCode = " + a_keyCode + " ; a_conflictControl = " + a_conflictControl + " ; a_conflictName = " + a_conflictName)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	If (a_conflictControl != "")
+;;;; DISABLE ;;;;		If (a_conflictName != "")
+;;;; DISABLE ;;;;			ShowMessage("This key is already mapped to " + a_conflictControl + " in " + a_conflictName + ". Please choose a different key.")
+;;;; DISABLE ;;;;		Else
+;;;; DISABLE ;;;;			ShowMessage("This key is already mapped to " + a_conflictControl + " in Skyrim. Please choose a different key.")
+;;;; DISABLE ;;;;		EndIf
+;;;; DISABLE ;;;;		Return
+;;;; DISABLE ;;;;	EndIf
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	If (a_option == hotkeySuspendID)
+;;;; DISABLE ;;;;		DebugMode("Registered to HotkeySuspend.")
+;;;; DISABLE ;;;;		ReadingTakesTime.hotkeySuspend = a_keyCode
+;;;; DISABLE ;;;;	Else
+;;;; DISABLE ;;;;		DebugMode("No matching registration.")
+;;;; DISABLE ;;;;		Return
+;;;; DISABLE ;;;;	EndIf
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	RegisterForKey(a_keyCode)
+;;;; DISABLE ;;;;	ForcePageReset()
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;endEvent
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;event OnOptionHighlight(int option)
+;;;; DISABLE ;;;;	if (option == isModActiveID )
+;;;; DISABLE ;;;;		SetInfoText("$Activate or deactivate the mod.")
+;;;; DISABLE ;;;;	elseif (option == isReadingActiveID || option == isCraftingActiveID || option == isContainerActiveID || option == isLockpickActiveID || option == isTrainingActiveID|| option == isLevelUpActiveID|| option == isInventoryActiveID|| option == isMagicActiveID|| option == isJournalActiveID|| option == isMapActiveID|| option == isBarterActiveID|| option == isGiftActiveID)
+;;;; DISABLE ;;;;		SetInfoText("$Activate or deactivate this module.")
+;;;; DISABLE ;;;;	ElseIf option == showMessageThresholdID
+;;;; DISABLE ;;;;		SetInfoText("Notification of time passed only displayed if at least this many minutes have passed.")
+;;;; DISABLE ;;;;	elseif (option == readMultID|| option == lootMultID|| option == pickMultID|| option == pickpocketMultID|| option == trainingMultID|| option == levelUpMultID|| option == inventoryMultID|| option == magicMultID|| option == journalMultID|| option == mapMultID|| option == barterMultID|| option == giftMultID)
+;;;; DISABLE ;;;;		SetInfoText("$Multiplier used to calculate the time spent in this menu.")
+;;;; DISABLE ;;;;	elseif (option == spellLearnTimeID|| option == headCraftTimeID|| option == armorCraftTimeID|| option == handsCraftTimeID|| option == feetCraftTimeID|| option == shieldCraftTimeID|| option == jewelryCraftTimeID|| option == battleAxeCraftTimeID|| option == bowCraftTimeID|| option == daggerCraftTimeID|| option == greatswordCraftTimeID|| option == maceCraftTimeID|| option == staffCraftTimeID|| option == swordCraftTimeID|| option == warhammerCraftTimeID|| option == warAxeCraftTimeID|| option == weaponCraftTimeID|| option == miscCraftTimeID|| option == armorImproveTimeID|| option == weaponImproveTimeID|| option == potionCraftTimeID|| option == enchantingTimeID|| option == trainingTimeID|| option == levelUpTimeID|| option == eatTimeID)
+;;;; DISABLE ;;;;		SetInfoText("$Time spent when performing this action.")
+;;;; DISABLE ;;;;	ElseIf option == hotkeySuspendID
+;;;; DISABLE ;;;;		SetInfoText("Set a hotkey to suspend / resume the mod.")
+;;;; DISABLE ;;;;	ElseIf option == LightAmorID
+;;;; DISABLE ;;;;		SetInfoText("Additional time spent when stripping a corpse of a light armor cuirass.")
+;;;; DISABLE ;;;;	ElseIf option == HeavyArmorID
+;;;; DISABLE ;;;;		SetInfoText("Additional time spent when stripping a corpse of a heavy armor cuirass.")
+;;;; DISABLE ;;;;	elseif (option == cantReadID || option == cantLootID|| option == cantPickID|| option == cantLevelUpID|| option == cantInventoryID|| option == cantMagicID|| option == cantJournalID|| option == cantMapID)
+;;;; DISABLE ;;;;		SetInfoText("$Block this action while in combat.")
+;;;; DISABLE ;;;;	elseif (option == readingIncreasesSpeechID )
+;;;; DISABLE ;;;;		SetInfoText("$Reading increases speech.")
+;;;; DISABLE ;;;;	elseif (option == readingIncreaseMultID )
+;;;; DISABLE ;;;;		SetInfoText("$Reading increase multiplier.")
+;;;; DISABLE ;;;;	elseif (option == showMessageID )
+;;;; DISABLE ;;;;		SetInfoText("$Show notification messages with the time spent.")
+;;;; DISABLE ;;;;	elseif (option == dontShowMessageID )
+;;;; DISABLE ;;;;		SetInfoText("$RTT_DONTSHOWMESSAGE_HIGHLIGHT")
+;;;; DISABLE ;;;;	elseif (option == expertiseReducesTimeID )
+;;;; DISABLE ;;;;		SetInfoText("$RTT_EXPERTIESEREDUCESTIME_HIGHLIGHT")
+;;;; DISABLE ;;;;		
+;;;; DISABLE ;;;;	; Campfire Camping
+;;;; DISABLE ;;;;	ElseIf option == CFCloakID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to craft any of the Frostfall cloaks.")
+;;;; DISABLE ;;;;	ElseIf option == CFStickID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to craft a walking stick.")
+;;;; DISABLE ;;;;	ElseIf option == CFTorchID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to create one torch.")
+;;;; DISABLE ;;;;	ElseIf option == CFCookpotID
+;;;; DISABLE ;;;;		SetInfoText("Time spent at the forge to craft a steel cookpot.")
+;;;; DISABLE ;;;;	ElseIf option == CFBackpackID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to craft any of the Frostfall backpacks. Modifying backpacks costs no time.")
+;;;; DISABLE ;;;;	ElseIf option == CFBeddingID
+;;;; DISABLE ;;;;		SetInfoText("Time spent on bedrolls for tents, rough bedding takes half this time.")
+;;;; DISABLE ;;;;	ElseIf option == CFSmallTentID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to create any small tent.")
+;;;; DISABLE ;;;;	ElseIf option == CFLargeTentID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to create any large tent.")
+;;;; DISABLE ;;;;	ElseIf option == CFHatchetID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to craft a stone hatchet.")
+;;;; DISABLE ;;;;	ElseIf option == CFArrowsID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to craft a batch (24) of stone arrows.")
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	; Campfire Materials
+;;;; DISABLE ;;;;	ElseIf option == CFLinenID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to make one linen wrap. Multiplied when crafting several.")
+;;;; DISABLE ;;;;	ElseIf option == CFFurID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to create any single fur plate. Multiplied when crafting several.")
+;;;; DISABLE ;;;;	ElseIf option == CFLaceID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to produce a string of hide lace. Multiplied when crafting several.")
+;;;; DISABLE ;;;;	ElseIf option == CFTanRackID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to assemble a tanning rack.")
+;;;; DISABLE ;;;;	ElseIf option == CFMortarID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to craft a mortar and pestle, including Hunterborn's Scrimshaw recipe.")
+;;;; DISABLE ;;;;	ElseIf option == CFEnchID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to craft a set of enchanting supplies.")
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	; Campfire Firecraft
+;;;; DISABLE ;;;;	ElseIf option == CFFirecraftImprovesID
+;;;; DISABLE ;;;;		SetInfoText("Should the Firecraft perk of Campfire speed up the firecraft times at 20% off for each rank.\nDoes not help lighting with a torch or spell.")
+;;;; DISABLE ;;;;	ElseIf option == CFMakeTinderID
+;;;; DISABLE ;;;;		SetInfoText("Time spent making tinder from everyday objects.")
+;;;; DISABLE ;;;;	ElseIf option == CFMakeKindlingID
+;;;; DISABLE ;;;;		SetInfoText("Time spent making kindling from everyday objects.")
+;;;; DISABLE ;;;;	ElseIf option == CFAddTinderID
+;;;; DISABLE ;;;;		SetInfoText("Time spent prepping tinder on the campfire.")
+;;;; DISABLE ;;;;	ElseIf option == CFAddKindlingID
+;;;; DISABLE ;;;;		SetInfoText("Time spent arranging kindling on the campfire.")
+;;;; DISABLE ;;;;	ElseIf option == CFLightFireID
+;;;; DISABLE ;;;;		SetInfoText("Time spent trying to spark the fire.\nSpells and torches take one quarter this time.")
+;;;; DISABLE ;;;;	ElseIf option == CFAddFuelID
+;;;; DISABLE ;;;;		SetInfoText("Time spent tending to the fire, to replenish fuel or make it bigger.")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	ElseIf option == FFSnowberryID
+;;;; DISABLE ;;;;		SetInfoText("Time spent making snowberry extract.")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	ElseIf option == RNWaterskinID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to craft a waterskin, including Hunterborn's recipe.")
+;;;; DISABLE ;;;;	ElseIf option == RNCookpotID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to craft a cast iron pot at the forge.")
+;;;; DISABLE ;;;;	ElseIf option == RNTinderboxID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to forge and assemble a tinderbox.")
+;;;; DISABLE ;;;;	ElseIf option == RNBedrollID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to craft a traveller's bedroll.")
+;;;; DISABLE ;;;;	ElseIf option == RNTentID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to craft a traveller's tent.")
+;;;; DISABLE ;;;;	ElseIf option == RNMilkBucketID
+;;;; DISABLE ;;;;		SetInfoText("Time spent preparing a common bucket for use as a milk bucket, at the tanning rack.")
+;;;; DISABLE ;;;;	ElseIf option == RNFoodSnackID
+;;;; DISABLE ;;;;		SetInfoText("Time spent eating a snack, or candy or fruit. Compatible with any food patched to have RND effects.")
+;;;; DISABLE ;;;;	ElseIf option == RNFoodMediumID
+;;;; DISABLE ;;;;		SetInfoText("Time spent eating a medium size meal. Compatible with any food patched to have RND effects.")
+;;;; DISABLE ;;;;	ElseIf option == RNFoodFillingID
+;;;; DISABLE ;;;;		SetInfoText("Time spent eating a filling meal. Compatible with any food patched to have RND effects.")
+;;;; DISABLE ;;;;	ElseIf option == RNWaterDrinkID
+;;;; DISABLE ;;;;		SetInfoText("Time spent consuming one drink. Compatible with any beverage patched to have RND effects.")
+;;;; DISABLE ;;;;	ElseIf option == RNCookSnackID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to cook a snack. Compatible with any food patched to have RND effects. Batches take no extra time.")
+;;;; DISABLE ;;;;	ElseIf option == RNCookMediumID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to cook a medium size meal. Compatible with any food patched to have RND effects. Batches take no extra time.")
+;;;; DISABLE ;;;;	ElseIf option == RNCookFillingID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to cook a filling meal. Compatible with any food patched to have RND effects. Batches take no extra time.")
+;;;; DISABLE ;;;;	ElseIf option == RNBrewDrinkID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to brew any drink, besides plain water. Compatible with any beverage patched to have RND effects. Batches take no extra time.")
+;;;; DISABLE ;;;;	ElseIf option == RNWaterPrepID
+;;;; DISABLE ;;;;		SetInfoText("Time spent at the cookpot to prepare water from any source. This includes boiling water, or changing from a waterskin to water for cooking.")
+;;;; DISABLE ;;;;	ElseIf option == RNSaltID
+;;;; DISABLE ;;;;		SetInfoText("Time spent boiling down sea water into a salt pile.")
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	ElseIf option == HBScrimBitsID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to scrimshaw one set of bone bits. Multiplied when crafting several. Harvesting level reduces time taken.")
+;;;; DISABLE ;;;;	ElseIf option == HBScrimIdolID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to scrimshaw various idol-like artifacts. Harvesting level reduces time taken.")
+;;;; DISABLE ;;;;	ElseIf option == HBScrimToolID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to scrimshaw various tools. Harvesting level reduces time taken.")
+;;;; DISABLE ;;;;	ElseIf option == HBLeatherID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to craft 1 piece of leather. Applies to tanning rack AND all other sources, such as armor breakdown. Harvesting level reduces time taken.")
+;;;; DISABLE ;;;;	ElseIf option == HBStripID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to craft 3 leather strips. Applies to ANY source of leather strips. Harvesting level reduces time taken.")
+;;;; DISABLE ;;;;	ElseIf option == HBWeapArmorTipID
+;;;; DISABLE ;;;;		SetInfoText("Scrimshaw's weapons and armors use the times set in Crafting, but use Harvesting level to reduce time taken, not Smithing.")
+;;;; DISABLE ;;;;	ElseIf option == HBBedrollID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to craft a hunter's bedroll, at the tanning rack. Harvesting level reduces time taken.")
+;;;; DISABLE ;;;;	ElseIf option == HBIngrID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to rework certain ingredients, such as polished eyes. Harvesting level reduces time taken.")
+;;;; DISABLE ;;;;	ElseIf option == HBBrewID
+;;;; DISABLE ;;;;		SetInfoText("Time spent when brewing any of Hunterborn's custom potions at the cookpot.")
+;;;; DISABLE ;;;;	ElseIf option == HBTallowID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to craft each piece of tallow. Used only in the Hunterborn + Lanterns and Candles patch.")
+;;;; DISABLE ;;;;	ElseIf option == HBArrowsID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to craft a batch of arrows with Scrimshaw. Same time for either 24 with firewood, or 12 with animal bones.")
+;;;; DISABLE ;;;;		
+;;;; DISABLE ;;;;	ElseIf option == WLLanternID
+;;;; DISABLE ;;;;		SetInfoText("Make a lantern wearable by attaching a leather strip. Done at the forge, but not considered smithing.")
+;;;; DISABLE ;;;;	ElseIf option == WLChassisID
+;;;; DISABLE ;;;;		SetInfoText("Craft a lantern chassis at a forge. It can then be converted into a wearable lantern.")
+;;;; DISABLE ;;;;	ElseIf option == WLOilID
+;;;; DISABLE ;;;;		SetInfoText("Crafting lantern oil is possible with other mods, such as Hunterborn.")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	ElseIf option == LCBasicID
+;;;; DISABLE ;;;;		SetInfoText("Simple assembly, like a candle in a wine bottle. Done at the forge, but not considered smithing.")
+;;;; DISABLE ;;;;	ElseIf option == LCForgeID
+;;;; DISABLE ;;;;		SetInfoText("Wrought iron work done at a forge, such as lanterns and shrines.")
+;;;; DISABLE ;;;;	ElseIf option == LCArcaneID
+;;;; DISABLE ;;;;		SetInfoText("Sophisticated works requiring skill as an arcane blacksmith, such as a wizard's lamp.")
+;;;; DISABLE ;;;;	ElseIf option == LCBrewID
+;;;; DISABLE ;;;;		SetInfoText("Time spent to sculpt one candle at the cookpot. Multiplied when crafting several.")
+;;;; DISABLE ;;;;		
+;;;; DISABLE ;;;;	endIf
+;;;; DISABLE ;;;;endEvent
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;Event OnKeyUp(int keyCode, float holdTime)
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	;DebugMode("OnKeyUp = " + keyCode)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	If !isModActive
+;;;; DISABLE ;;;;		UnregisterForAllKeys()
+;;;; DISABLE ;;;;		Return
+;;;; DISABLE ;;;;	EndIf
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	If (UI.IsMenuOpen("Console") || Utility.IsInMenuMode() || Game.GetPlayer().GetSitState() != 0)
+;;;; DISABLE ;;;;		; Ignore keystrokes in the console or at furniture (like naming an enchanted object)
+;;;; DISABLE ;;;;		
+;;;; DISABLE ;;;;	ElseIf (keyCode == ReadingTakesTime.hotkeySuspend)
+;;;; DISABLE ;;;;		ReadingTakesTime.Suspended = !ReadingTakesTime.Suspended
+;;;; DISABLE ;;;;		If ReadingTakesTime.Suspended
+;;;; DISABLE ;;;;			Debug.Notification("Living Takes Time suspended.")
+;;;; DISABLE ;;;;		Else
+;;;; DISABLE ;;;;			Debug.Notification("Living Takes Time resumed.")
+;;;; DISABLE ;;;;		EndIf
+;;;; DISABLE ;;;;		
+;;;; DISABLE ;;;;	Else
+;;;; DISABLE ;;;;		UnregisterForKey(keyCode)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	EndIf
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;EndEvent
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;string Function GetCustomControl(int keyCode)
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	;DebugMode("GetCustomControl = " + keyCode)
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	If (keyCode == ReadingTakesTime.hotkeySuspend)
+;;;; DISABLE ;;;;		Return "Suspend/Resume"
+;;;; DISABLE ;;;;	Else
+;;;; DISABLE ;;;;		Return ""
+;;;; DISABLE ;;;;	EndIf
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;EndFunction
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;Function ReassignHotKeys()
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	ReassignHotkey(ReadingTakesTime.hotkeySuspend, "HotkeySuspend")
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;EndFunction
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;Function ReassignHotkey(int aiKeyCode, string akName)
+;;;; DISABLE ;;;;	If aiKeyCode
+;;;; DISABLE ;;;;		RegisterForKey(aiKeyCode)
+;;;; DISABLE ;;;;		;DebugMode("Hotkey " + aiKeyCode + " registrationg refresh for " + akName + ".")
+;;;; DISABLE ;;;;	EndIf
+;;;; DISABLE ;;;;EndFunction
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;; Default time values for extra mods, FF / HB / WL / LaC
+;;;; DISABLE ;;;;Function SetModDefaults()
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	ReadingTakesTime.cfCloakTime = DEF_cfCloakTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfStickTime = DEF_cfStickTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfTorchTime = DEF_cfTorchTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfCookpotTime = DEF_cfCookpotTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfBackpackTime = DEF_cfBackpackTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfBeddingTime = DEF_cfBeddingTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfSmallTentTime = DEF_cfSmallTentTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfLargeTentTime = DEF_cfLargeTentTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfHatchetTime = DEF_cfHatchetTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfArrowsTime = DEF_cfArrowsTime
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	ReadingTakesTime.cfLinenTime = DEF_cfLinenTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfFurTime = DEF_cfFurTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfLaceTime = DEF_cfLaceTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfTanRackTime = DEF_cfTanRackTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfMortarTime = DEF_cfMortarTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfEnchTime = DEF_cfEnchTime
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	ReadingTakesTime.cfFirecraftImproves = DEF_cfFirecraftImproves
+;;;; DISABLE ;;;;	ReadingTakesTime.cfMakeTinderTime = DEF_cfMakeTinderTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfMakeKindlingTime = DEF_cfMakeKindlingTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfAddTinderTime = DEF_cfAddTinderTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfAddKindlingTime = DEF_cfAddKindlingTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfLightFireTime = DEF_cfLightFireTime
+;;;; DISABLE ;;;;	ReadingTakesTime.cfAddFuelTime = DEF_cfAddFuelTime
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	ReadingTakesTime.ffSnowberryTime = DEF_Extract
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;	ReadingTakesTime.rnWaterskinTime = 2
+;;;; DISABLE ;;;;	ReadingTakesTime.rnCookpotTime = 1
+;;;; DISABLE ;;;;	ReadingTakesTime.rnTinderboxTime = 2
+;;;; DISABLE ;;;;	ReadingTakesTime.rnBedrollTime = 3
+;;;; DISABLE ;;;;	ReadingTakesTime.rnTentTime = 4
+;;;; DISABLE ;;;;	ReadingTakesTime.rnMilkBucketTime = 5
+;;;; DISABLE ;;;;	ReadingTakesTime.rnEatSnackTime = 2
+;;;; DISABLE ;;;;	ReadingTakesTime.rnEatMediumTime = 10
+;;;; DISABLE ;;;;	ReadingTakesTime.rnEatFillingTime = 30
+;;;; DISABLE ;;;;	ReadingTakesTime.rnDrinkTime = 2
+;;;; DISABLE ;;;;	ReadingTakesTime.rnCookSnackTime = 10
+;;;; DISABLE ;;;;	ReadingTakesTime.rnCookMediumTime = 20
+;;;; DISABLE ;;;;	ReadingTakesTime.rnCookFillingTime = 45
+;;;; DISABLE ;;;;	ReadingTakesTime.rnBrewTime = 15
+;;;; DISABLE ;;;;	ReadingTakesTime.rnWaterPrepTime = 5
+;;;; DISABLE ;;;;	ReadingTakesTime.rnSaltTime = 2
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	ReadingTakesTime.hbLeatherTime = 1
+;;;; DISABLE ;;;;	ReadingTakesTime.hbStripTime = 30
+;;;; DISABLE ;;;;	ReadingTakesTime.hbScrimBitsTime = 5
+;;;; DISABLE ;;;;	ReadingTakesTime.hbTallowTime = 10
+;;;; DISABLE ;;;;	ReadingTakesTime.hbIngrTime = 30
+;;;; DISABLE ;;;;	ReadingTakesTime.hbBrewTime = 30
+;;;; DISABLE ;;;;	ReadingTakesTime.hbScrimIdolTime = 2
+;;;; DISABLE ;;;;	ReadingTakesTime.hbScrimToolTime = 1
+;;;; DISABLE ;;;;	ReadingTakesTime.hbBedrollTime = 3
+;;;; DISABLE ;;;;	ReadingTakesTime.hbArrowsTime = 1
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	ReadingTakesTime.wlWearableTime = 30
+;;;; DISABLE ;;;;	ReadingTakesTime.wlChassisTime = 2
+;;;; DISABLE ;;;;	ReadingTakesTime.wlOilTime = 30
+;;;; DISABLE ;;;;	
+;;;; DISABLE ;;;;	ReadingTakesTime.lcBasicTime = 10
+;;;; DISABLE ;;;;	ReadingTakesTime.lcForgeTime = 3
+;;;; DISABLE ;;;;	ReadingTakesTime.lcArcaneTime = 6
+;;;; DISABLE ;;;;	ReadingTakesTime.lcBrewTime = 15
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;EndFunction
+;;;; DISABLE ;;;;
+;;;; DISABLE ;;;;Function DebugMode(string sMsg)
+;;;; DISABLE ;;;;	Debug.Trace("[RTT_Menu] " + sMsg)
+;;;; DISABLE ;;;;EndFunction
+;;;; DISABLE ;;;;
