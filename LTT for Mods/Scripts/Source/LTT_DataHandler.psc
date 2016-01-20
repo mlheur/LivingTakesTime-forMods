@@ -1,6 +1,11 @@
 scriptname LTT_DataHandler extends MiscObject
 
 ;///////////////////////////////////////////////////////////////////////////////
+// TODO
+/;
+; Put loop counter limiters on WaitMenuMode() calls.
+
+;///////////////////////////////////////////////////////////////////////////////
 // From ESP
 /;
 LTT_Base Property LTT Auto
@@ -311,10 +316,29 @@ form[]	 _stateForm	; Some states are forms, not native variables and cant be cas
 // is let LTT know to check for it's keyword.
 /;
 int	 _maxStations	 = 32
-int	 _stationCount	 = 0
+int	 _stationCount	 = 2
 string[] _stationKeyword ; The keyword to reference from the ESP, unique name
-string[] _stationName	 ; common name used in scripts (needed?)
-string	 _stationNone	 = "other"
+;;;DISABLE;;;string	 _stationOther	 = "other"
+;;;DISABLE;;;string[] _stationName	 ; common name used in scripts (needed?)
+
+int property station_None	= 0 AutoReadOnly
+int property station_Other	= 1 AutoReadOnly
+
+;;;;;
+;;;
+;;; TODO
+;;; The following should be moved to LTT_Skyrim
+;;;
+int property station_Smelting	= -1 Auto
+int property station_Cooking	= -1 Auto
+int property station_Tanning	= -1 Auto
+int property station_Forging	= -1 Auto
+int property station_Tempering	= -1 Auto
+int property station_Sharpening	= -1 Auto
+int property station_SkyForge	= -1 Auto
+int property station_Mixing	= -1 Auto
+int property station_Enchanting	= -1 Auto
+;;;;;
 
 ;///////////////////////////////////////////////////////////////////////////////
 // Menus are like stations, let mod register a menu to be checked against
@@ -467,7 +491,7 @@ int function addStringProp( int modID, string Name, string Default, string Title
 	_propMaxValue[ID]	= MaxValue
 	_propUnits[ID]		= Units
 	if modID < 0
-		_propPage[ID]		= ""
+		_propPage[ID]		= LTT.mcm.ModName
 	else
 		_propPage[ID]		= _modName[modID]
 	endif
@@ -487,6 +511,13 @@ int function addFloatProp( int modID, string Name, float Default, string Title, 
 endfunction
 int function addBoolProp( int modID, string Name, bool Default, string Title, string Helper, int MCMCell  )
 	return addStringProp( modID, Name, Default as string, Title, Helper, MCMCell, 0.0, 0.0, "", propType_TOGGLE )
+endfunction
+
+function setPropToDefault( int ID )
+	if ID < 0
+		return
+	endif
+	_propValue[ID] = _propDefault[ID]
 endfunction
 
 ; Returns false if the property is not found
@@ -677,12 +708,18 @@ int function addMod( LTT_ModBase Mod, string Name, string ESP, int TestForm, int
 	_modMenus[ID]	= Menus
 	_modObject[ID]	= Mod
 	
+	LTT.reloadMCMPages()
+	
 	return ID
 endfunction
 
 ; returns the ID of the last station in the table, for iterators in LTT_Base
 int function getLastMod()
 	return _modCount - 1
+endfunction
+
+int function getMaxMods()
+	return _maxMods
 endfunction
 
 bool function isModLoaded( int ID )
@@ -795,6 +832,11 @@ endfunction
 
 ; returns the index of the state in the table, -1 on error
 int function addStringState( string Name, string Value = "$E_STATE_NOT_SET", form f = none );
+	LTT.DebugLog( "++addStringState():"\
+	  +" Name="+Name\
+	  +" Value="+Value\
+	  +" Form="+f\
+	)
 	while ! _InitComplete
 		Utility.WaitMenuMode(LoadWaitTime)
 	endwhile
@@ -805,11 +847,13 @@ int function addStringState( string Name, string Value = "$E_STATE_NOT_SET", for
 	endif
 	if ID >= _maxStates
 		LTT.Log( "Development Error: Ran out of State tablespace, update _maxStates in LTT_DataHandler.psc" )
+		LTT.DebugLog( "--addStringState() Failed" )
 		return -1
 	endif
 	_stateName[ID] = Name
 	_stateValue[ID] = Value
 	_stateForm[ID] = f
+	LTT.DebugLog( "--addStringState()" )
 	return ID
 endfunction
 int function addFormState( string Name, form Value = none )
@@ -878,7 +922,7 @@ endfunction
 /;
 
 ; returns the index of the station in the table, -1 on error
-int function addStation( string KW, string Name )
+int function addStation( string KW ) ;, string Name )
 	while ! _InitComplete
 		Utility.WaitMenuMode(LoadWaitTime)
 	endwhile
@@ -892,33 +936,44 @@ int function addStation( string KW, string Name )
 		return -1
 	endif
 	_stationKeyword[ID] = KW
-	_stationName[ID] = Name
+;;;DISABLE;;;	_stationName[ID] = Name
 	return ID
 endfunction
 
 ; allow a mod to remove its station from the table for a period of time (like unregister event)
-function delStation( int ID )
-	if ID < 0
-		return
-	endif
-	_stationName[ID] = _stationNone
-endfunction
+;;;DISABLE;;;function delStation( int ID )
+;;;DISABLE;;;	if ID < 0
+;;;DISABLE;;;		return
+;;;DISABLE;;;	endif
+;;;DISABLE;;;	_stationName[ID] = _stationNone
+;;;DISABLE;;;endfunction
 
 ; returns the ESP keyword of the station in the table, "other" if not found
 string function getStation( int ID )
 	if ID < 0
-		return _stationNone
+		return _stationKeyword[station_Other]
 	endif
 	return _stationKeyword[ID]
 endfunction
 
-; returns the mod's common name of the station in the table, "other" if not found
-string function getStationName( int ID )
-	if ID < 0
-		return _stationNone
-	endif
-	return _stationName[ID]
+int function getStationKeyword( ObjectReference Station )
+	int i = 0
+	while i < _stationCount
+		if Station.HasKeywordString( _stationKeyword[i] )
+			return i
+		endif
+		i+=1
+	endwhile
+	return station_Other
 endfunction
+
+; returns the mod's common name of the station in the table, "other" if not found
+;;;DISABLED;;;string function getStationName( int ID )
+;;;DISABLED;;;	if ID < 0
+;;;DISABLED;;;		return _stationNone
+;;;DISABLED;;;	endif
+;;;DISABLED;;;	return _stationName[ID]
+;;;DISABLED;;;endfunction
 
 ; returns the ID of the last station in the table, for iterators in LTT_Base
 int function getLastStation()
@@ -967,7 +1022,7 @@ endfunction
 // Private Functions
 /;
 
-event _Init()
+function _Init()
 	LTT.DebugLog( "++LDH::_Init()" )
 	; Allocate memory for the lookup tables.
 	_propName	= new string[128]	; _maxProps
@@ -999,7 +1054,10 @@ event _Init()
 	_stateForm	= new form[16]		; _maxStates
 	
 	_stationKeyword = new string[32]	; _maxStations
-	_stationName	= new string[32]	; _maxStations
+;;;DISABLE;;;	_stationName	= new string[32]	; _maxStations
+	_stationKeyword[station_None]	= ""
+	_stationKeyword[station_Other]	= "other"
+	
 	
 	_menuName	= new string[33]	; _maxMenus (always 32+1 because of the bitfields)
 	
@@ -1046,7 +1104,7 @@ event _Init()
 	_InitComplete = true
 
 	LTT.DebugLog( "--LDH::_Init()" )
-endevent
+endfunction
 
 ; Find indexes into tables based on names - these are private because they
 ; are not good performers and their use should be limited.
@@ -1078,11 +1136,11 @@ int function _stateIndex( string Name )
 endfunction
 
 int function _stationIndex( string Name )
-	return _index( Name, _stationName, _stationCount, _maxStations )
+	return _index( Name, _stationKeyword, _stationCount, _maxStations )
 endfunction
 
 function DumpTables()
-	int i = 0
+	int i=0
 	while( i < _propCount )
 		LTT.DebugLog( "Dumping Props i="+i\
 		  +"; _propName=["+_propName[i]+"]"\
@@ -1099,6 +1157,7 @@ function DumpTables()
 		)
 		i+=1
 	endwhile
+	i=0
 	while( i < _modCount )
 		LTT.DebugLog( "Dumping Mods i="+i\
 		  +"; _modName=["+_modName[i]+"]"\
@@ -1111,8 +1170,10 @@ function DumpTables()
 		)
 		i+=1
 	endwhile
+	i=0
 	while( i < _stateCount )
 		LTT.DebugLog( "Dumping States i="+i\
+		  +"; _stateName=["+_stateName[i]+"]"\
 		  +"; _stateValue=["+_stateValue[i]+"]"\
 		  +"; _stateForm=["+_stateForm[i]+"]"\
 		)

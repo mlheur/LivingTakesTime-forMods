@@ -9,7 +9,7 @@ import LTT_Factory
 ;///////////////////////////////////////////////////////////////////////////////
 // Mandatory variables to be set by the mod
 /;
-LTT_Base Property LTT Auto
+LTT_Base property LTT Auto
 int	property modID		= -1 Auto ; self's Mod index in lookup table
 string	property LTT_modName	= "$E_SET_MODNAME" Auto
 string	property ESP		= "$E_SET_ESP_FILE" Auto
@@ -24,11 +24,24 @@ int	property RegisterMenus	= 0 Auto
 //	acts.
 /;
 
-;;;;event OnInit()
-;;;;	OnGameReload()
-;;;;endevent
+event OnInit()
+	LTT = LTT_getBase()
+	LTT.DebugLog( self+"++OnInit()" )
+	int tries=0
+	while !LTT.isReadyForMods()
+		Utility.WaitMenuMode( LTT.LDH.LoadWaitTime )
+		tries += 1
+		if tries > 100
+			LTT.DebugLog( self+"--OnInit() failed too many tries" )
+			return
+		endif
+	endwhile
+	OnGameReload()
+	LTT.DebugLog( self+"--OnInit()" )
+endevent
 
 event OnGameReload()
+	Guard()
 ;	LTT = LTT_getBase() ; from LTT_Factory
 ;	modID = LTT.LDH.addMod( self, LTT_modName, ESP, TestForm, RegisterActs, RegisterMenus )
 ;	if modID < 0 ; We couldn't be added to the Mod table.
@@ -100,5 +113,5 @@ endfunction
 // Internal functions
 /;
 function Guard()
-	Debug.MessageBox("LTT_ModBase: Don't recompile this script")
+	Debug.MessageBox(self+"LTT_ModBase: Don't recompile this script")
 endfunction

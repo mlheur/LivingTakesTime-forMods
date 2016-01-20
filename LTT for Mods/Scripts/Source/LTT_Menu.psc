@@ -22,7 +22,7 @@ event OnGameReload() ; this is called before OnConfigInit() - why???
 	if ! _InitComplete
 		OnConfigInit()
 	endif
-	LTT.mcmOnGameReload()
+	LTT.mcmOnGameReload( self )
 	parent.OnGameReload()
 	LTT.DebugLog( "--Menu::OnGameReload()" )
 endEvent
@@ -31,7 +31,7 @@ event OnConfigInit()
 	LTT.DebugLog( "++Menu::OnConfigInit()" )
 	if ! _InitComplete
 		LTT = LTT_getBase()
-		Pages = LTT.mcmOnConfigInit()
+		LTT.mcmOnConfigInit( self )
 		_InitComplete = true
 	endif
 	LTT.DebugLog( "--Menu::OnConfigInit()" )
@@ -39,48 +39,55 @@ endEvent
 
 event OnVersionUpdate( int Version )
 	LTT.DebugLog( "++Menu::OnVersionUpdate()" )
-	Pages = LTT.mcmOnVersionUpdate( Version )
+	Pages = LTT.mcmOnVersionUpdate( self, Version )
 	LTT.DebugLog( "--Menu::OnVersionUpdate()" )
 endevent
 
 event OnPageReset(string page)
 	LTT.DebugLog( "++Menu::OnPageReset()" )
-	LTT.mcmOnPageReset( self, Page )
+	LTT.mcmOnPageReset( Page )
 	LTT.DebugLog( "--Menu::OnPageReset()" )
 endEvent
 
+event OnOptionDefault( int option )
+	LTT.DebugLog( "++Menu::OnOptionDefault()" )
+	LTT.mcmOnOptionDefault( self, option )
+	LTT.DebugLog( "--Menu::OnOptionDefault()" )
+endevent
+
+event OnOptionHighlight( int option )
+	LTT.DebugLog( "++Menu::OnOptionHighlight()" )
+	LTT.mcmOnOptionHighlight( self, option )
+	LTT.DebugLog( "--Menu::OnOptionHighlight()" )
+endevent
+
 event OnOptionSelect( int option )
 	LTT.DebugLog( "++Menu::OnOptionSelect()" )
+	LTT.mcmOnOptionSelect( self, option )
 	LTT.DebugLog( "--Menu::OnOptionSelect()" )
 endevent
 
 event OnOptionSliderOpen( int option )
 	LTT.DebugLog( "++Menu::OnOptionSliderOpen()" )
+	LTT.mcmOnOptionSliderOpen( self, option )
 	LTT.DebugLog( "--Menu::OnOptionSliderOpen()" )
 endevent
 
-event OnOptionSliderAccept( int option, float value)
+event OnOptionSliderAccept( int option, float Value)
 	LTT.DebugLog( "++Menu::OnOptionSliderAccept()" )
+	LTT.mcmOnOptionSliderAccept( self, option, Value )
 	LTT.DebugLog( "--Menu::OnOptionSliderAccept()" )
-endevent
-
-event OnOptionDefault( int option )
-	LTT.DebugLog( "++Menu::OnOptionDefault()" )
-	LTT.DebugLog( "--Menu::OnOptionDefault()" )
 endevent
 
 event OnOptionKeyMapChange( int a_option, int a_keyCode, string a_conflictControl, string a_conflictName )
 	LTT.DebugLog( "++Menu::OnOptionKeyMapChange()" )
+	LTT.mcmOnOptionKeyMapChange( self, a_option, a_keyCode, a_conflictControl, a_conflictName )
 	LTT.DebugLog( "--Menu::OnOptionKeyMapChange()" )
-endevent
-
-event OnOptionHighlight( int option )
-	LTT.DebugLog( "++Menu::OnOptionHighlight()" )
-	LTT.DebugLog( "--Menu::OnOptionHighlight()" )
 endevent
 
 event OnKeyUp( int option, float holdTime )
 	LTT.DebugLog( "++Menu::OnKeyUp()" )
+	LTT.mcmOnKeyUp( self, option )
 	LTT.DebugLog( "--Menu::OnKeyUp()" )
 endevent
 

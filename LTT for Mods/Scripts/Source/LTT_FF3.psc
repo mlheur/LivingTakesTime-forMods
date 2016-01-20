@@ -8,8 +8,8 @@ int	prop_SnowberryMins	= -1
 form	kSnowberryExtract
 form 	kDummyItem
 
-event OnGameRelaod()
-	LTT = LTT_getBase() ; from LTT_Factory
+event OnGameReload()
+	LTT.DebugLog( "++FF3::OnGameReload()" )
 	LTT_modName = "Frostfall 3+"
 	ESP = "Frostfall.esp"
 	TestForm = fID_DummyItem
@@ -18,12 +18,14 @@ event OnGameRelaod()
 
 	modID = LTT.LDH.addMod( self, LTT_modName, ESP, TestForm, RegisterActs, RegisterMenus )
 	if modID < 0 ; We couldn't be added to the Mod table.
+		LTT.DebugLog( "--FF3::OnGameReload() - unable to successfully addMod()" )
 		return
 	endif
 
 	kSnowberryExtract = Game.GetFormFromFile( fID_Snowberry, ESP )
 	kDummyItem = Game.GetFormFromFile( fID_DummyItem, ESP )
 	prop_SnowberryMins = LTT.LDH.addIntProp( modID, "FF3_SnoberryMins", 15, "$FF3_SnowberryMins", "$HLP_FF3_SnowberryMins", 0, 0, LTT.LDH.maxMins, "minutes" )
+	LTT.DebugLog( "--FF3::OnGameReload() - success" )
 endevent
 
 float function ItemAdded( form Item, int Count, form ItemRef, form Container, int Type, int Prefix )

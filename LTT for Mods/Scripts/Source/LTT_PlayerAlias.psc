@@ -12,9 +12,9 @@ Event OnItemRemoved(Form akBaseItem, int aiItemCount, ObjectReference akItemRefe
 endEvent
 
 Event OnSit(ObjectReference akFurniture)
-	LTT.StartFurniture(akFurniture)
+	LTT.startStation(akFurniture)
 EndEvent
 
 Event OnGetUp(ObjectReference akFurniture)
-	LTT.StopFurniture(akFurniture)
+	LTT.stopStation(akFurniture)
 EndEvent

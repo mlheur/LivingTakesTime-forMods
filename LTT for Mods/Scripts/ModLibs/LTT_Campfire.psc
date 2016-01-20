@@ -4,6 +4,8 @@ string	property LTT_Name	= "Campfire" AutoReadOnly
 string	property LTT_ESP	= "Campfire.esm" AutoReadonly
 int	fID_DummyItem		= 0x0468D3
 
+;;;	ElseIf akFurniture.HasKeywordString("_DE_CraftingSurvival")
+
 ;;;;;;;;;;;;;;;;;;;;
 ; Campfire
 ; Camping
