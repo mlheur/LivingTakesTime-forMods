@@ -18,6 +18,12 @@ scriptname LTT_Base extends Quest
 ///////////////////////////////////////////////////////////////////////////////;
 
 ;///////////////////////////////////////////////////////////////////////////////
+// TODO
+/;
+; Use states to prevent multiple threads from calling init, or figure out
+; why multiple inits are being called.  Here and in LTT_DataHandler...
+
+;///////////////////////////////////////////////////////////////////////////////
 // Variable Declarations
 /;
 
@@ -27,14 +33,13 @@ scriptname LTT_Base extends Quest
 LTT_DataHandler Property LDH Auto
 FISSInterface fiss
 
+bool property isInit	= false Auto
+
 bool LTT_debug		= true ; when set, LTT in beta testing
 bool LTT_verbose	= true ; when set, LTT in alpha testing
 int LTT_verMajor	= 0
 int LTT_verMinor	= 0
-int LTT_version		= -1
 string LTT_SaveFile	= "LTTForMods\\LTTForMods.xml"
-
-bool _readyForMods	= false
 
 int mcmCellBaseActive	= 0
 int mcmCellPersonMsgs	= 2
@@ -42,6 +47,7 @@ int mcmCellMsgThreshold	= 4
 int mcmCellPause	= 1
 int mcmCellPauseKey	= 3
 int mcmCellUserDebug	= 5
+int mcmCellExpertise	= 6
 int mcmCellLoad		= 10
 int mcmCellSave		= 11
 
@@ -61,13 +67,19 @@ GlobalVariable Property GameHour Auto
 // Event Handlers
 /;
 
+event OnUpdate()
+	DebugLog( "++OnUpdate()" )
+	; Mods should call LTT.RegisterForSingleUpdate() so that we can check
+	; them in after we've loaded.
+	LDH.DumpTables( "start of on update" )
+	reloadMods()
+	LDH.DumpTables( "end of on update" )
+	DebugLog( "--OnUpdate(); success" )
+endevent
+
 ;///////////////////////////////////////////////////////////////////////////////
 // External Functions
 /;
-
-bool function isReadyForMods()
-	return _readyForMods
-endfunction
 
 function Log( string sMsg )
 	Debug.Trace( "[LTT] :: "+sMsg )
@@ -75,7 +87,7 @@ endfunction
 
 function DebugLog( string sMsg, bool Verbose = false )
 	bool LoggedToFile = false
-	if LDH && LDH._InitComplete
+	if LDH && LDH.isInit && isInit
 		if LDH.getBoolProp( LDH.prop_UserDebug )
 			LoggedToFile = true
 			Log( sMsg )
@@ -91,7 +103,7 @@ function DebugLog( string sMsg, bool Verbose = false )
 endfunction
 
 int function getVersion()
-	return LTT_version
+	return 0
 endfunction
 
 string function verString()
@@ -107,17 +119,21 @@ endfunction
 
 ; Called from Player.OnSit()
 function startStation(ObjectReference Station)
+	DebugLog( "++startStation()" )
 	int ID = LDH.getStationKeyword( Station )
 	if ID < 0
 		LDH.setStringState( LDH.state_CraftingStation, LDH.getStation(ID) )
 	else
 		LDH.setStringState( LDH.state_CraftingStation, LDH.getStation(LDH.station_Other) )
 	endif
+	DebugLog( "--startStation(); success" )
 endfunction
 
 ; Called from Player.OngGtUp
 function stopStation(ObjectReference akFurniture)
+	DebugLog( "++stopStation()" )
 	LDH.setStringState( LDH.state_CraftingStation, LDH.getStation(LDH.station_None) )
+	DebugLog( "--stopStation(); success" )
 endfunction
 
 ;///////////////////////////////////////////////////////////////////////////////
@@ -126,59 +142,77 @@ endfunction
 
 bool function CheckIncompatibleMods()
 	bool Incompatible = false
-	Log( "Checking MOD Compatibility - ignore errors" )
+	Log( ">>>>>>>>>>>>>>> Checking MOD Compatibility <<<<<<<<<<<<<<<" )
+	Log( ">>>>>>>>>>>>>>> Ignore any errors about files not existing <<<<<<<<<<<<<<<" )
 	if Game.GetFormFromFile( 0xD62, "ReadingTakesTime.esp" )
 		Debug.MessageBox( "$E_RTT_LOADED_INCOMPATIBLE" )
 		Incompatible = true
 	endif
-	Log( "Finished checking MOD compatibility - stop ignoring errors" )
-	
+	Log( ">>>>>>>>>>>>>>> Finished Checking MOD Compatibility <<<<<<<<<<<<<<<" )
 	return Incompatible
 endfunction
 
-int function GetMsgFormat()
+; Message formats are in a form list, return the index into the form list
+; 0 - 1st person messages
+; 1 - 3rd person messages
+int function getMsgFormat()
+	DebugLog( "++getMsgFormat()" )
 	if LDH.getBoolProp( LDH.prop_FirstPersonMsgs )
+		DebugLog( "--getMsgFormat() = 0; 1st person" )
 		return 0
 	endif
+	DebugLog( "--getMsgFormat() = 1; 3rd person" )
 	return 1
 endfunction
 
-bool function AdvanceTime(float duration)
-	if !LDH.getBoolProp( LDH.prop_BaseActive ) || LDH.getBoolProp( LDH.prop_Paused ) || duration < 0.0
-		return true
-	endif
-	
-	if duration <= 0.0
+bool function advanceTime(float hrsPasesd)
+	DebugLog( "++advanceTime()" )
+	if !LDH.getBoolProp( LDH.prop_BaseActive ) || LDH.getBoolProp( LDH.prop_Paused ) || hrsPasesd <= 0.0
+		DebugLog( "--advanceTime(); skipping because we're !active, paused or no time passed" )
 		return true
 	endif
 	
 	bool ShowMsg = true
-	if ( LDH.getIntProp( LDH.prop_ShowMsgThreshold ) < LDH.convertHrsToMins( duration ) )
+	float threshold = LDH.getIntProp( LDH.prop_ShowMsgThreshold ) as float
+	float minsPassed = LDH.convertHrsToMins( hrsPasesd )
+	DebugLog( "Checking message threshold"\
+	  +": threshold="+threshold \
+	  +"; minsPassed="+minsPassed \
+	)
+	if ( minsPassed < threshold )
 		ShowMsg = false
 	endif
 	
-	DebugLog("AdvanceTime: duration="+duration)
 	float CurTime = GameHour.GetValue()
+	
 	; mlheur - not 100% sure why we need to take away the rounded portion
 	; of current time, this was taken from the original RTT code, keeping it
 	int Std = Math.Floor(CurTime)
 	CurTime -= Std 
-	CurTime += (duration)
+	CurTime += (hrsPasesd)
 	CurTime += Std
-	int Hrs = Math.Floor(duration)
-	int Mins =  Math.Floor(LDH.convertHrsToMins(duration - Hrs))
 	
-	DebugLog("Advancing Hours = " + Hrs + "; Minutes = " + Mins )
+	int Hrs = Math.Floor(hrsPasesd)
+	int Mins =  Math.Floor(LDH.convertHrsToMins(hrsPasesd - Hrs))
+	
+	DebugLog("Advancing Time" \
+	  +": Hours="+Hrs \
+	  +"; Minutes="+Mins \
+	  +"; ShowMsg="+ShowMsg \
+	)
 	If ShowMsg
 		(LTT_FL_msgTimePassed.GetAt(GetMsgFormat()) as Message).Show(Hrs,Mins)
 	EndIf
 	
 	GameHour.SetValue(CurTime)
+	DebugLog( "--advanceTime(); success" )
 	return true
 endfunction
 
-function CloseInCombat()
+function closeInCombat()
+	DebugLog( "++closeInCombat()" )
 	if LDH.getBoolProp( LDH.prop_Paused )
+		DebugLog( "--closeInCombat(); skipping because we're paused" )
 		return
 	endif
 	if ( LDH.getIntProp( LDH.prop_ShowMsgThreshold ) > 0 )
@@ -188,23 +222,28 @@ function CloseInCombat()
 		Input.TapKey(15)
 		Utility.WaitMenuMode(0.15)
 	endwhile
+	DebugLog( "--closeInCombat(); success" )
 endfunction
 
-function SkillIncrease(String Skill, Float Increase)
+function increaseSkill(string Skill, float Amt)
+	DebugLog( "++increaseSkill()" )
 	ActorValueInfo aVI = ActorValueInfo.GetActorValueInfobyName(Skill)
-	aVI.AddSkillExperience(Increase)
+	aVI.AddSkillExperience(Amt)
+	DebugLog( "--increaseSkill(); success" )
 endfunction
 
 float function ExpertiseMultiplier(String Skill)
+	DebugLog( "++ExpertiseMultiplier()" )
 	if !LDH.getBoolProp( LDH.prop_ExpertiseReducesTime )
 		return 1
 	endif
-	Float SkillPoints = Game.GetPlayer().GetActorValue(Skill)
+	float SkillPoints = Game.GetPlayer().GetActorValue(Skill)
 	if (SkillPoints<0)
 		SkillPoints = 0
 	elseif (SkillPoints>150)
 		SkillPoints = 150
 	endif
+	DebugLog( "--ExpertiseMultiplier(); success" )
 	return (100-(SkillPoints/2))/100
 endfunction
 
@@ -212,177 +251,200 @@ endfunction
 // For performance reasons, use any excuse to exit this large function early as
 // early as possible.
 /;
-function ItemAdded (Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akContainer)
+function ItemAdded (form BaseItem, int Qty, ObjectReference ItemRef, ObjectReference Source)
+	DebugLog( "++ItemAdded()" \
+	  +": BaseItem="+BaseItem \
+	  +"; Qty="+Qty \
+	  +"; ItemRef="+ItemRef \
+	  +"; Source="+Source \
+	)
 	float TimePassed = 0.0
-	int Type = akBaseItem.GetType()
-	int Prefix = LDH.getFormPrefix(akBaseItem)
-	int modID = LDH.getLastMod()
+	int Type = BaseItem.GetType()
+	int Prefix = LDH.getFormPrefix(BaseItem)
+	int modID = -1
 
-	if ( !LDH.getBoolProp( LDH.prop_BaseActive ) || UI.IsMenuOpen("Console") || akBaseItem == none )
+	DebugLog( "Item"\
+	  +": Type="+Type\
+	  +"; Prefix="+Prefix\
+	)
+
+	if ( !LDH.getBoolProp( LDH.prop_BaseActive ) || UI.IsMenuOpen("Console") || BaseItem == none )
+		DebugLog( "--ItemAdded(); !BaseActive, console is open, or not an item", true )
 		return
 	endif
-	if (!LDH.getBoolProp(LDH.state_IsLooting) && !LDH.getBoolProp(LDH.state_IsCrafting)) || akContainer 
+	if (!LDH.getBoolProp(LDH.state_IsLooting) && !LDH.getBoolProp(LDH.state_IsCrafting)) || Source 
+		DebugLog( "--ItemAdded(); not looting or crafting and came from a container, must be taking from a chest/box", true )
 		return
 	endif
 
-	if LDH.removeFreeItem( akBaseItem )
+	if LDH.removeFreeItem( BaseItem )
+		DebugLog( "--ItemAdded(); Had a free instance of this item in the queue", true )
 		return
 	endif
 	
+	DebugLog( "adding item..." )
+	
 	; iterate through mods and call their instance
-	while modID
+	modID = LDH.getLastMod()
+	DebugLog( "starting modID="+modID )
+	while modID >= 0
+		DebugLog( "checking modID="+modID )
 		LTT_ModBase mod = LDH.getMod(modID)
 		if mod
-			if LDH.getModPrefix(modID) >= 0 && LDH.getModEnabled(modID)
-				TimePassed = mod.ItemAdded( akBaseItem, aiItemCount, akItemReference, akContainer, Type, Prefix )
+			DebugLog( "mod="+mod \
+			  +"; prefix="+LDH.getModPrefix(modID) \
+			)
+			if mod.isRunnable()
+				TimePassed = mod.ItemAdded( BaseItem, Qty, ItemRef, Source, Type, Prefix )
 				if TimePassed >= 0.0
-					AdvanceTime( TimePassed )
+					advanceTime( TimePassed )
+					DebugLog( "--ItemAdded(); Handled by a mod: modID="+modID )
 					return
 				endif
 			endif
 		endif
-		modID-=1
+		modID -= 1
 	endwhile
-EndFunction
-
-function ItemRemoved (Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akContainer )
-	float TimePassed = 0.0
-	int Type = akBaseItem.GetType()
-	int Prefix = LDH.getFormPrefix(akBaseItem)
-	string ItemName = akBaseItem.GetName()
-	int modID = LDH.getLastMod()
-
-	if ( !LDH.getBoolProp( LDH.prop_BaseActive ) || UI.IsMenuOpen("Console") || akBaseItem == none )
-		return
-	endif
-
-; Probably not appropriate, but also maybe not harmful
-;	if LDH.removeFreeItem( akBaseItem )
-;		return
-;	endif
-	
-	; iterate through mods and call their instance
-	while modID
-		LTT_ModBase mod = LDH.getMod(modID)
-		if mod
-			if LDH.getModPrefix(modID) >= 0 && LDH.getModEnabled(modID)
-				TimePassed = mod.ItemRemoved( akBaseItem, aiItemCount, akItemReference, akContainer, Type, Prefix )
-				if TimePassed >= 0.0
-					AdvanceTime( TimePassed )
-					return
-				endif
-			endif
-		endif
-		modID-=1
-	endwhile
+	DebugLog( "--ItemAdded(); not handled by anything, what to do?", true )
 endfunction
 
-event OnMenuOpen(String MenuName)
+function ItemRemoved (Form BaseItem, int Qty, ObjectReference ItemRef, ObjectReference Destination )
+	DebugLog( "++ItemRemoved()" \
+	  +": BaseItem="+BaseItem \
+	  +"; Qty="+Qty \
+	  +"; ItemRef="+ItemRef \
+	  +"; Destination="+Destination \
+	)
 	float TimePassed = 0.0
-	int modID = LDH.getLastMod()
+	int Type = BaseItem.GetType()
+	int Prefix = LDH.getFormPrefix(BaseItem)
+	string ItemName = BaseItem.GetName()
+	int modID = -1
+
+	if ( !LDH.getBoolProp( LDH.prop_BaseActive ) || UI.IsMenuOpen("Console") || BaseItem == none )
+		DebugLog( "--ItemRemoved(); !BaseActive, console is open, or not an item" )
+		return
+	endif
+
+	; iterate through mods and call their instance
+	modID = LDH.getLastMod()
+	while modID >= 0
+		LTT_ModBase mod = LDH.getMod(modID)
+		if mod
+			if mod.isRunnable()
+				TimePassed = mod.ItemRemoved( BaseItem, Qty, ItemRef, Destination, Type, Prefix )
+				if TimePassed >= 0.0
+					advanceTime( TimePassed )
+					DebugLog( "--ItemRemoved(); Handled by a mod: modID="+modID )
+					return
+				endif
+			endif
+		endif
+		modID-=1
+	endwhile
+	DebugLog( "--ItemRemoved(); not handled by anything, what to do?" )
+endfunction
+
+event OnMenuOpen(string MenuName)
+	DebugLog( "++OnMenuOpen()" \
+	  +": MenuName="+MenuName \
+	)
+	float TimePassed = 0.0
+	int modID = -1
 	int menuID = LDH.getMenuID( MenuName )
 
 	if ( !LDH.getBoolProp( LDH.prop_BaseActive ) || LDH.getBoolProp( LDH.prop_Paused ) || UI.IsMenuOpen("Console") )
+		DebugLog( "--OnMenuOpen(); !BaseActive, BasePaused, or console is open" )
 		return
 	endif
 	
 	; iterate through mods and call their instance
-	while modID
+	modID = LDH.getLastMod()
+	while modID >= 0
 		LTT_ModBase mod = LDH.getMod(modID)
 		if mod
-			if LDH.getModPrefix(modID) >= 0 && LDH.getModEnabled(modID)
+			if mod.isRunnable()
 				TimePassed = mod.MenuOpened( menuID )
 				if TimePassed >= 0.0
-					AdvanceTime( TimePassed )
+					advanceTime( TimePassed )
+					DebugLog( "--OnMenuOpen(); Handled by a mod: modID="+modID )
 					return
 				endif
 			endif
 		endif
-		modID-=1
+		modID -= 1
 	endwhile
+	DebugLog( "--OnMenuOpen(); Not handled by any mod, what to do?" )
 endevent
 
 event OnMenuClose(String MenuName)
+	DebugLog( "++OnMenuClose()" \
+	  +": MenuName="+MenuName \
+	)
 	float TimePassed = 0.0
-	int modID = LDH.getLastMod()
+	int modID = -1
 	int menuID = LDH.getMenuID( MenuName )
 
 	if ( !LDH.getBoolProp( LDH.prop_BaseActive ) || LDH.getBoolProp( LDH.prop_Paused ) || UI.IsMenuOpen("Console") )
+		DebugLog( "--OnMenuClose(); !BaseActive, BasePaused, or console is open" )
 		return
 	endif
 	
 	; iterate through mods and call their instance
-	while modID
+	modID = LDH.getLastMod()
+	while modID >= 0
 		LTT_ModBase mod = LDH.getMod(modID)
 		if mod
-			if LDH.getModPrefix(modID) >= 0 && LDH.getModEnabled(modID)
+			if mod.isRunnable()
 				TimePassed = mod.MenuOpened( menuID )
 				if TimePassed >= 0.0
-					AdvanceTime( TimePassed )
+					advanceTime( TimePassed )
+					DebugLog( "--OnMenuClose(); Handled by a mod: modID="+modID )
 					return
 				endif
 			endif
 		endif
-		modID-=1
+		modID -= 1
 	endwhile
+	DebugLog( "--OnMenuClose(); Not handled by any mod, what to do?" )
 endevent
 
 ;///////////////////////////////////////////////////////////////////////////////
 // MCM Functions
+//	These are all called from LTT_Menu.  They were put in here for easy
+//	access to LDH and all the internal variables used in LTT_Base.
 /;
 LTT_Menu property mcm Auto
-bool _inMutex = false
+int[]	mcmOID_Index
+int[]	mcmOID_Prop
+int	mcmOID_Count	= -1
+int	mcmOID_Save	= -1
+int	mcmOID_Load	= -1
 
 function mcmOnConfigInit( LTT_Menu menu )
-
-	if ! _inMutex
-		_inMutex = true
-	else
-		return
-	endif
-
-	DebugLog( "++mcmOnConfigInit" )
-	mcm = menu
-	if ! LDH._InitComplete
-		LDH._Init()
-	endif
-	_readyForMods = true
-	mcmOnVersionUpdate( mcm, -1 )
-	DebugLog( "--mcmOnConfigInit" )
-	
-	_inMutex = false
-	
+	DebugLog( "++mcmOnConfigInit()" )
+	mcmOnVersionUpdate( mcm, getVersion() )
+	DebugLog( "--mcmOnConfigInit(); success" )
 	return
 endfunction
 
 function mcmOnVersionUpdate( LTT_Menu menu, int Version )
-	DebugLog( "++mcmOnVersionUpdate" )
+	DebugLog( "++mcmOnVersionUpdate()" )
 	mcm = menu
-	
-	if ! LDH._InitComplete
-		LDH._Init()
+	if ! LDH.isInit
+		LDH._Init( Version )
 	endif
-	
-	UnregisterForAllMenus()
-	;;;;;;;;;;;;;
-	;;;;;;;;;;;;;
-	;;;;;;;;;;;;;
-	; TODO Iterate through all menus, and register for those requested by any mod
-	;;;;;;;;;;;;;
-	;;;;;;;;;;;;;
-	;;;;;;;;;;;;;
-	
-	mcmOnGameReload( menu )
-	DebugLog( "--mcmOnVersionUpdate" )
+	reRegisterMenus()	
+	DebugLog( "--mcmOnVersionUpdate(); success" )
 	return
 endfunction
 
 function mcmOnGameReload( LTT_Menu menu )
-	DebugLog( "++mcmOnGameReload" )
-	int i
+	DebugLog( "++mcmOnGameReload()" )
+	LDH.DumpTables( "start of on game reload" )
+	LDH._Init( getVersion() )
 	mcm = menu
-	LTT_version = ((LTT_verMajor*100)+LTT_verMinor)
-	; Ensure previous RTT mod is not loaded.
+	
 	if CheckIncompatibleMods()
 		return
 	endif
@@ -404,32 +466,45 @@ function mcmOnGameReload( LTT_Menu menu )
 	LDH.prop_Paused = LDH.addBoolProp( -1, "LTT_Paused", false, "$LTT_Paused", "$HLP_Paused", mcmCellPause )
 	LDH.prop_PauseKey = LDH.addKeyProp( -1, "LTT_PauseKey", -1, "$LTT_PauseKey", "$HLP_PauseKey", mcmCellPauseKey )
 	LDH.prop_UserDebug = LDH.addBoolProp( -1, "LTT_UserDebug", false, "$LTT_UserDebug", "$HLP_UserDebug", mcmCellUserDebug )
+	LDH.prop_ExpertiseReducesTime = LDH.addBoolProp( -1, "LTT_ExpertiseReducesTime", false, "$LTT_ExpertiseReducesTime", "$HLP_ExpertiseReducesTime", mcmCellExpertise )
 	
+	reloadMods( true )
+	
+	LDH.DumpTables( "after on game reload" )
+	
+	isInit = true
+	DebugLog( "--mcmOnGameReload(); success" )
+endfunction
+
+function reloadMods( bool forceReload = false )
+	DebugLog( "++reloadMods()" )
 	; iterate through mods and call their instance
-	i = LDH.getLastMod()
-	while i
+	int i = LDH.getLastMod()
+	while i >= 0
+		DebugLog( "checking mod i="+i )
 		LTT_ModBase mod = LDH.getMod(i)
 		if mod
-			if LDH.getModPrefix(i) > 0
+			DebugLog( "mod="+mod \
+			  +"; mod.isInit="+mod.isInit \
+			  +"; mod.isLoaded="+mod.isLoaded \
+			  +"; forceReload="+forceReload \
+			)
+			if mod.isInit && ( !mod.isLoaded || forceReload )
+				DebugLog( "calling mod.OnGameReload()" )
 				mod.OnGameReload()
 			endif
 		endif
-		i-=i
+		i -= 1
 	endwhile
 	
 	reloadMCMPages()
 		
 	; Reassign Hot Keys
-	DebugLog( "--mcmOnGameReload" )
+	DebugLog( "--reloadMods(); success" )
 endfunction
 
-int[]	mcmOID_Index
-int[]	mcmOID_Prop
-int	mcmOID_Count
-int	mcmOID_Save	= -1
-int	mcmOID_Load	= -1
 function mcmOnPageReset( string Page )
-	DebugLog( "++mcmOnPageReset() Page=["+Page+"]" )
+	DebugLog( "++mcmOnPageReset() Page=\""+Page+"\"" )
 	
 	if Page == " "
 		; This isn't really a page that's being used, so don't redraw anything.
@@ -439,23 +514,22 @@ function mcmOnPageReset( string Page )
 
 	if (page == "")
 		mcm.LoadCustomContent("LivingTakesTime/LTThome.dds",26,23)
+		DebugLog( "--mcmOnPageReset(); success" )
 		return
 	else
 		mcm.UnloadCustomContent()
 	endIf
 	
 	mcmOID_Index = new int[128] ; max MCM cell ID's
-	mcmOID_Index = new int[128]
-	mcmOID_Count = 0
-	int i
-	
-	i = LDH.getLastProp()
-	while i >= 0
-		if Page == LDH.getPropPage(i)
-			int mcmCell = LDH.getPropMCMCell(i)
-			string Label = LDH.getPropTitle(i)
-			int Type = LDH.getPropType(i)
-			DebugLog( "mcmOnPageReset Adding Option: Label="+Label+"; Type="+Type+"; mcmCell="+mcmCell, true )
+	mcmOID_Prop = new int[128]
+	mcmOID_Count = 0	
+	int ID = LDH.getLastProp()
+	while ID >= 0
+		if Page == LDH.getPropPage(ID)
+			int mcmCell = LDH.getPropMCMCell(ID)
+			string Label = LDH.getPropTitle(ID)
+			int Type = LDH.getPropType(ID)
+			DebugLog( "mcmOnPageReset Adding Option: Label="+Label+"; Type="+Type+"; mcmCell="+mcmCell, false )
 			mcm.SetCursorPosition( mcmCell )
 			int OID = -1
 			if Type < 0
@@ -463,27 +537,26 @@ function mcmOnPageReset( string Page )
 			elseif Type == LDH.propType_NONE
 				; also error?
 			elseif Type == LDH.propType_TOGGLE
-				OID = mcm.AddToggleOption( Label, LDH.getBoolProp(i) )
+				OID = mcm.AddToggleOption( Label, LDH.getBoolProp(ID) )
 			elseif Type == LDH.propType_INT
-				OID = mcm.AddSliderOption( Label, LDH.getIntProp(i), "{0} "+LDH.getPropUnits(i) )
+				OID = mcm.AddSliderOption( Label, LDH.getIntProp(ID), "{0} "+LDH.getPropUnits(ID) )
 			elseif Type == LDH.propType_FLOAT
-				OID = mcm.AddSliderOption( Label, LDH.getFloatProp(i), "{1} "+LDH.getPropUnits(i) )
+				OID = mcm.AddSliderOption( Label, LDH.getFloatProp(ID), "{1} "+LDH.getPropUnits(ID) )
 			elseif Type == LDH.propType_TEXT
-				OID = mcm.AddTextOption( Label, LDH.getStringProp(i) )
+				OID = mcm.AddTextOption( Label, LDH.getStringProp(ID) )
 			elseif Type == LDH.propType_KEY
-				OID = mcm.AddKeyMapOption( Label, LDH.getIntProp(i) )
+				OID = mcm.AddKeyMapOption( Label, LDH.getIntProp(ID) )
 			elseif Type == LDH.propType_LABEL
 				OID = mcm.AddHeaderOption( Label )
 			else
-				DebugLog( "Adding a property of unknown type" )
-				OID = 127
+				Log( "Adding a property of unknown type, should never get here" )
 			endif
-			DebugLog( "Setting mcmOID_Index["+OID+"] to "+i )
+			DebugLog( "Setting mcmOID sub["+mcmOID_Count+"] : Index to "+OID+"; Prop to "+ID )
 			mcmOID_Index[mcmOID_Count] = OID
-			mcmOID_Prop[mcmOID_Count] = i
+			mcmOID_Prop[mcmOID_Count] = ID
 			mcmOID_Count += 1
 		endif
-		i-=1
+		ID-=1
 	endwhile
 	
 	;; I might have to hard-code the save & load buttons, and
@@ -498,16 +571,16 @@ function mcmOnPageReset( string Page )
 		mcmOID_Load = -1
 	endif
 	
-	if LTT_verbose
-		i = 0
-		while i < 128
-			DebugLog( "mcmOID_Index["+i+"]="+mcmOID_Index[i] )
-			i+=1
-		endwhile
-		LDH.DumpTables()
-	endif
+;;	if LTT_verbose
+;;		int i = 0
+;;		while i < 128
+;;			DebugLog( "mcmOID_Index["+i+"]="+mcmOID_Index[i] )
+;;			i+=1
+;;		endwhile
+;;	endif
+	LDH.DumpTables( "after on page reset" )
 	
-	DebugLog( "--mcmOnPageReset() Page="+Page )
+	DebugLog( "--mcmOnPageReset(); success" )
 endfunction
 
 int function getOID_Prop( int OID )
@@ -516,6 +589,7 @@ int function getOID_Prop( int OID )
 		if mcmOID_Index[i] == OID
 			return mcmOID_Prop[i]
 		endif
+		i+=1
 	endwhile
 	Log( self+" MCM Handler: Unable to find Property for OID "+OID )
 	return -1
@@ -524,73 +598,192 @@ endfunction
 ; prop type doesn't matter, just treat all as strings.
 function mcmOnOptionDefault( SKI_ConfigBase mcm, int OID )
 	DebugLog( "++mcmOnOptionDefault() OID="+OID )
-	int ID = mcmOID_Index[OID]
+	int ID = getOID_Prop( OID )
 	LDH.setPropToDefault( ID )
-	mcm.ForcePageReset()
-	DebugLog( "--mcmOnOptionDefault() OID="+OID )
+	mcm.ForcePageReset() ; this might be a little heavy-handed, is lazy.
+	DebugLog( "--mcmOnOptionDefault(); success" )
 endfunction
 
 ; prop type doesn't matter, just show its help text.
 function mcmOnOptionHighlight( SKI_ConfigBase mcm, int OID )
 	DebugLog( "++mcmOnOptionHighlight() OID="+OID )
 	
-	if OID == mcmOID_Save || OID == mcmOID_Load
+	; Sepcial case for save/load "buttons"
+	if mcm.CurrentPage == mcm.ModName && ( OID == mcmOID_Save || OID == mcmOID_Load )
 		mcm.SetInfoText( "$HLP_SaveLoad" )
-		DebugLog( "--mcmOnOptionSelect() OID="+OID )
+		DebugLog( "--mcmOnOptionSelect(); success Save/Load" )
 		return
 	endif
 	
-	int ID = mcmOID_Index[OID]
+	; Generic handler for all other props.
+	int ID = getOID_Prop( OID )
 	mcm.SetInfoText( LDH.getPropHelper( ID ) )
-	DebugLog( "--mcmOnOptionHighlight() OID="+OID )
+	DebugLog( "--mcmOnOptionHighlight(); success" )
 endfunction
 
 ; Toggles and Text
 function mcmOnOptionSelect( SKI_ConfigBase mcm, int OID )
 	DebugLog( "++mcmOnOptionSelect() OID="+OID )
 	
-	if OID == mcmOID_Save
-		; Do Save
-		DebugLog( "--mcmOnOptionSelect() OID="+OID )
-		return
-	elseif OID == mcmOID_Load
-		; Do Load
-		DebugLog( "--mcmOnOptionSelect() OID="+OID )
-		return
+	; Sepcial cases for save/load "buttons"
+	if mcm.CurrentPage == mcm.ModName
+		if OID == mcmOID_Save
+			; Do Save
+			Debug.MessageBox( "TOOD: Implement Save" )
+			mcm.ForcePageReset()
+			DebugLog( "--mcmOnOptionSelect(); success Save" )
+			return
+		elseif OID == mcmOID_Load
+			; Do Load
+			Debug.MessageBox( "TOOD: Implement Load" )
+			mcm.ForcePageReset()
+			DebugLog( "--mcmOnOptionSelect(); success Load" )
+			return
+		endif
 	endif
 	
-	int ID = mcmOID_Index[OID]
+	; Generic handler for all other props
+	int ID = getOID_Prop( OID )
+	int Type = LDH.getPropType( ID )
+	if Type == LDH.propType_TOGGLE
+		bool V = LDH.getBoolProp( ID )
+		V = !V
+		LDH.setBoolProp( ID, V )
+		mcm.SetToggleOptionValue( OID, V )		
+		; Let the owning mod do any work associated with changing
+		; this flag, like no longer wanting a menu.
+		LTT_ModBase mod = LDH.getMod( LDH.getPropModID( ID ) )
+		if mod
+			mod.handlePropToggle( ID, V )		
+		endif
+		reRegisterMenus()
+	else ; propType_TEXT doesn't need any handlers, I don't think.
+		Log( "mcm Option selected of unknown type, should never get here" )
+	endif
 	
-	DebugLog( "--mcmOnOptionSelect() OID="+OID )
+	DebugLog( "--mcmOnOptionSelect(); success" )
 endfunction
 
 ; Int's and Floats
 function mcmOnOptionSliderOpen( SKI_ConfigBase mcm, int OID )
 	DebugLog( "++mcmOnOptionSliderOpen() OID="+OID )
-	int ID = mcmOID_Index[OID]
-	DebugLog( "--mcmOnOptionSliderOpen() OID="+OID )
+	int ID = getOID_Prop( OID )
+	int Type = LDH.getPropType( ID )
+	float min = -1.0
+	float max = -1.0
+	float def = -1.0
+	float step = -1.0
+	float val = -1.0
+	if Type == LDH.propType_INT
+		val = LDH.getIntProp(ID) as float
+		min = LDH.getIntPropMin(ID) as float
+		max = LDH.getIntPropMax(ID) as float
+		def = LDH.getIntPropDefault(ID) as float
+		step = 1.0
+	elseif Type == LDH.propType_FLOAT
+		val = LDH.getFloatProp(ID)
+		min = LDH.getFloatPropMin(ID)
+		max = LDH.getFloatPropMax(ID)
+		def = LDH.getFloatPropDefault(ID)
+		step = 0.05
+	else
+		Log( "mcm Option slider of unknown type, should never get here" )
+	endif
+	
+	mcm.SetSliderDialogStartValue( val )
+	mcm.SetSliderDialogDefaultValue( def )
+	mcm.SetSliderDialogRange( min, max )
+	mcm.SetSliderDialogInterval( step )
+	
+	DebugLog( "--mcmOnOptionSliderOpen(); success" )
 endfunction
 
 ; Int's and Floats
-function mcmOnOptionSliderAccept( SKI_ConfigBase mcm, int OID, float Value )
+function mcmOnOptionSliderAccept( SKI_ConfigBase mcm, int OID, float val )
 	DebugLog( "++mcmOnOptionSliderAccept() OID="+OID )
-	int ID = mcmOID_Index[OID]
-	DebugLog( "--mcmOnOptionSliderAccept() OID="+OID )
+	int ID = getOID_Prop( OID )
+	int Type = LDH.getPropType( ID )
+	if Type == LDH.propType_INT
+		LDH.setIntProp( ID, val as int )
+	elseif Type == LDH.propType_FLOAT
+		LDH.setFloatProp( ID, val )
+	else
+		Log( "mcm Option slider of unknown type, should never get here" )
+	endif
+	mcm.SetSliderOptionValue( OID, val )
+	DebugLog( "--mcmOnOptionSliderAccept(); success" )
 endfunction
 
-function mcmOnOptionKeyMapChange( SKI_ConfigBase mcm, int OID, int Key, string ConflictOwner, string ConflictName )
-	DebugLog( "++mcmOnOptionKeyMapChange() OID="+OID )
-	int ID = mcmOID_Index[OID]
-	DebugLog( "--mcmOnOptionKeyMapChange() OID="+OID )
+function mcmOnOptionKeyMapChange( SKI_ConfigBase mcm, int OID, int KeyID, string Conflict, string ConflictOwner )
+	DebugLog( "++mcmOnOptionKeyMapChange()"\
+	  +": OID="+OID\
+	  +": KeyID="+KeyID\
+	  +": Conflict="+Conflict\
+	  +": ConflictOwner="+ConflictOwner\
+	)
+	bool ReuseKey = true
+	int ID = getOID_Prop( OID )
+	
+	if Conflict
+		if ! ConflictOwner
+			ConflictOwner = "Skyrim"
+		endif
+		ReuseKey = mcm.ShowMessage( "$E_REUSE_KEY "+ConflictOwner+"::"+Conflict, true )
+	endif
+	
+	if !ReuseKey
+		DebugLog( "--mcmOnOptionKeyMapChange(); not reusing key" )
+		return
+	endif
+	
+	LDH.setIntProp( ID, KeyID )
+	
+	mcm.RegisterForKey( KeyID ) ; I could feed all key events through mcm, or register the mod for its own key events...
+	mcm.ForcePageReset()
+	DebugLog( "--mcmOnOptionKeyMapChange(); success" )
 endfunction
 
-function mcmOnKeyUp( SKI_ConfigBase mcm, int OID )
-	DebugLog( "++mcmOnKeyUp() OID="+OID )
-	int ID = mcmOID_Index[OID]
-	DebugLog( "--mcmOnKeyUp() OID="+OID )
+function mcmOnKeyUp( int KeyID, float Duration ) ; might not belong to base, check it out...
+	DebugLog( "++mcmOnKeyUp() KeyID="+KeyID )
+	if ( UI.IsMenuOpen( "Console" ) || Utility.IsInMenuMode() || Game.GetPlayer().GetSitState() != 0 )
+		DebugLog( "--mcmOnKeyUp(); Ignoring key during menu and crafting" )
+		return
+	endif
+	
+	; All I know is the key pressed, I need to look up
+	; which mod wants to know when that key was pressed and pass
+	; them the event.
+	; Do I run through all props looking those that have the key where propType == KEY
+	int modID = -1
+	int _ID = LDH.getLastProp()
+	int ID = -1
+	while _ID >= 0
+		if LDH.getPropType(_ID) == LDH.propType_KEY
+			if LDH.getIntProp(_ID) == KeyID
+				modID = LDH.getPropModID(_ID)
+				ID = _ID
+			endif
+		endif
+		_ID+=1
+	endwhile
+	
+	if modID >= 0
+		; Pass the event on to the mod.
+		LTT_ModBase mod = LDH.getMod( modID )
+		mod.OnKeyUp( KeyID, Duration )
+	else
+		; LTT_Base is the mod, probably the pause key was pressed.
+		if ID == LDH.prop_PauseKey
+			; toggle pause state.
+			Debug.MessageBox( "TODO: Toggle base pause state" )
+		endif
+	endif
+	
+	DebugLog( "--mcmOnKeyUp(); success" )
 endfunction
 
 function reloadMCMPages()
+	DebugLog( "++reloadMCMPages()" )
 	int i
 	int p
 	
@@ -620,4 +813,28 @@ function reloadMCMPages()
 		endif
 		i-=1
 	endwhile
+	DebugLog( "--reloadMCMPages(); success" )
+endfunction
+
+function reRegisterMenus()
+	DebugLog( "++reRegisterMenus()" )
+	UnregisterForAllMenus()
+	int MenusWanted = 0
+	; Iterate through all mods collecting which ones want menus
+	int ID = LDH.getLastMod()
+	while ID >= 0
+		MenusWanted = Math.LogicalOr( MenusWanted, LDH.getModMenus( ID ) )
+		ID-=1
+	endwhile
+	
+	; Register whichever menus were called for
+	ID = LDH.getLastMenu()
+	while ID >= 1
+		if Math.LogicalAnd( MenusWanted, Math.LeftShift( 1, (ID - 1) ) )
+			DebugLog( "Want menu ID="+ID )
+			RegisterForMenu( LDH.getMenu( ID ) )
+		endif
+		ID -= 1
+	endwhile
+	DebugLog( "--reRegisterMenus(); success" )
 endfunction

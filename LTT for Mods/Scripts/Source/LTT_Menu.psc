@@ -7,88 +7,84 @@ scriptname LTT_Menu extends SKI_ConfigBase
 //	sort of wrapper/interface that calls the LTT_Base version of MCM events.
 ///////////////////////////////////////////////////////////////////////////////;
 
-import LTT_Factory
 LTT_Base Property LTT Auto
-bool _InitComplete = false
+bool property isInit = false Auto
 
 int function GetVersion()
 	LTT.DebugLog( "++Menu::GetVersion()" )
 	return LTT.getVersion()
-	LTT.DebugLog( "--Menu::GetVersion()" )
+	LTT.DebugLog( "--Menu::GetVersion(); success" )
 endfunction
 
 event OnGameReload() ; this is called before OnConfigInit() - why???
 	LTT.DebugLog( "++Menu::OnGameReload()" )
-	if ! _InitComplete
-		OnConfigInit()
-	endif
-	LTT.mcmOnGameReload( self )
 	parent.OnGameReload()
-	LTT.DebugLog( "--Menu::OnGameReload()" )
+	LTT.mcmOnGameReload( self )
+	LTT.DebugLog( "--Menu::OnGameReload(); success" )
 endEvent
 
 event OnConfigInit()
 	LTT.DebugLog( "++Menu::OnConfigInit()" )
-	if ! _InitComplete
-		LTT = LTT_getBase()
+	parent.OnConfigInit()
+	if ! isInit
 		LTT.mcmOnConfigInit( self )
-		_InitComplete = true
+		isInit = true
 	endif
-	LTT.DebugLog( "--Menu::OnConfigInit()" )
+	LTT.DebugLog( "--Menu::OnConfigInit(); success" )
 endEvent
 
 event OnVersionUpdate( int Version )
 	LTT.DebugLog( "++Menu::OnVersionUpdate()" )
 	Pages = LTT.mcmOnVersionUpdate( self, Version )
-	LTT.DebugLog( "--Menu::OnVersionUpdate()" )
+	LTT.DebugLog( "--Menu::OnVersionUpdate(); success" )
 endevent
 
 event OnPageReset(string page)
 	LTT.DebugLog( "++Menu::OnPageReset()" )
 	LTT.mcmOnPageReset( Page )
-	LTT.DebugLog( "--Menu::OnPageReset()" )
+	LTT.DebugLog( "--Menu::OnPageReset(); success" )
 endEvent
 
 event OnOptionDefault( int option )
 	LTT.DebugLog( "++Menu::OnOptionDefault()" )
 	LTT.mcmOnOptionDefault( self, option )
-	LTT.DebugLog( "--Menu::OnOptionDefault()" )
+	LTT.DebugLog( "--Menu::OnOptionDefault(); success" )
 endevent
 
 event OnOptionHighlight( int option )
 	LTT.DebugLog( "++Menu::OnOptionHighlight()" )
 	LTT.mcmOnOptionHighlight( self, option )
-	LTT.DebugLog( "--Menu::OnOptionHighlight()" )
+	LTT.DebugLog( "--Menu::OnOptionHighlight(); success" )
 endevent
 
 event OnOptionSelect( int option )
 	LTT.DebugLog( "++Menu::OnOptionSelect()" )
 	LTT.mcmOnOptionSelect( self, option )
-	LTT.DebugLog( "--Menu::OnOptionSelect()" )
+	LTT.DebugLog( "--Menu::OnOptionSelect(); success" )
 endevent
 
 event OnOptionSliderOpen( int option )
 	LTT.DebugLog( "++Menu::OnOptionSliderOpen()" )
 	LTT.mcmOnOptionSliderOpen( self, option )
-	LTT.DebugLog( "--Menu::OnOptionSliderOpen()" )
+	LTT.DebugLog( "--Menu::OnOptionSliderOpen(); success" )
 endevent
 
 event OnOptionSliderAccept( int option, float Value)
 	LTT.DebugLog( "++Menu::OnOptionSliderAccept()" )
 	LTT.mcmOnOptionSliderAccept( self, option, Value )
-	LTT.DebugLog( "--Menu::OnOptionSliderAccept()" )
+	LTT.DebugLog( "--Menu::OnOptionSliderAccept(); success" )
 endevent
 
 event OnOptionKeyMapChange( int a_option, int a_keyCode, string a_conflictControl, string a_conflictName )
 	LTT.DebugLog( "++Menu::OnOptionKeyMapChange()" )
 	LTT.mcmOnOptionKeyMapChange( self, a_option, a_keyCode, a_conflictControl, a_conflictName )
-	LTT.DebugLog( "--Menu::OnOptionKeyMapChange()" )
+	LTT.DebugLog( "--Menu::OnOptionKeyMapChange(); success" )
 endevent
 
-event OnKeyUp( int option, float holdTime )
+event OnKeyUp( int KeyID, float Duration )
 	LTT.DebugLog( "++Menu::OnKeyUp()" )
-	LTT.mcmOnKeyUp( self, option )
-	LTT.DebugLog( "--Menu::OnKeyUp()" )
+	LTT.mcmOnKeyUp( KeyID, Duration )
+	LTT.DebugLog( "--Menu::OnKeyUp(); success" )
 endevent
 
 ;;;; DISABLE ;;;;event OnOptionSelect(int option)

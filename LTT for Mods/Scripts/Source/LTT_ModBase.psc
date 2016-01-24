@@ -5,17 +5,21 @@ scriptname LTT_ModBase extends Quest
 ///////////////////////////////////////////////////////////////////////////////;
 
 import LTT_Factory
+LTT_Base property LTT Auto
+string property ModName Auto
 
 ;///////////////////////////////////////////////////////////////////////////////
 // Mandatory variables to be set by the mod
 /;
-LTT_Base property LTT Auto
 int	property modID		= -1 Auto ; self's Mod index in lookup table
-string	property LTT_modName	= "$E_SET_MODNAME" Auto
 string	property ESP		= "$E_SET_ESP_FILE" Auto
 int	property TestForm	= 0xf Auto
 int	property RegisterActs	= 0 Auto
 int	property RegisterMenus	= 0 Auto
+
+bool	property isLoaded	= false Auto
+bool	property isInit		= false Auto
+int		 prop_Enabled	= -1
 
 ;///////////////////////////////////////////////////////////////////////////////
 // Event Handlers
@@ -26,28 +30,58 @@ int	property RegisterMenus	= 0 Auto
 
 event OnInit()
 	LTT = LTT_getBase()
-	LTT.DebugLog( self+"++OnInit()" )
+	DebugLog( "++OnInit()" )
+	; Wait until LTT has finished its Init
 	int tries=0
-	while !LTT.isReadyForMods()
+	while !LTT.isInit
 		Utility.WaitMenuMode( LTT.LDH.LoadWaitTime )
 		tries += 1
 		if tries > 100
-			LTT.DebugLog( self+"--OnInit() failed too many tries" )
+			LTT = none
+			DebugLog( self+"--OnInit(); failed too many tries" )
 			return
 		endif
 	endwhile
-	OnGameReload()
-	LTT.DebugLog( self+"--OnInit()" )
+	modID = LTT.LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
+	if modID < 0 ; We couldn't be added to the Mod table.
+		DebugLog( "--OnInit(); unable to successfully addMod()" )
+		return
+	endif
+	prop_Enabled = LTT.LDH.addBoolProp( modID, ModName+"_Enabled", false, "$LTT_ModEnabled", "$HLP_ModEnabled", 0 )
+	isInit = true
+	isLoaded = false
+	LTT.RegisterForSingleUpdate( 0.0 )
+	DebugLog( "--OnInit(); success" )
 endevent
 
+bool function isRunnable()
+	LTT.DebugLog( self+"isRunnable()" \
+	  +": isInit="+isInit \
+	  +"; isLoaded="+isLoaded \
+	  +"; enabled="+LTT.LDH.getBoolProp( prop_Enabled ) \
+	  +"; prefix="+LTT.LDH.getModPrefix( modID ) \
+	)
+	return( isInit && isLoaded && LTT.LDH.getBoolProp( prop_Enabled ) && LTT.LDH.getModPrefix( modID ) >= 0 )
+endfunction
+
 event OnGameReload()
-	Guard()
-;	LTT = LTT_getBase() ; from LTT_Factory
-;	modID = LTT.LDH.addMod( self, LTT_modName, ESP, TestForm, RegisterActs, RegisterMenus )
-;	if modID < 0 ; We couldn't be added to the Mod table.
-;		return
-;	endif
+	Guard() ; must be overridden by child.
 endevent
+
+event OnKeyUp( int KeyID, float Duration )
+endevent
+
+function handlePropToggle( int PropID, bool NewValue )
+	; The prop table has already been updated, but if the prop belongs
+	; to something that enables/disables menu events, then register/unregister
+	; on the menu table.  This is needed because addBoolProp doesn't know
+	; if the prop relates to a menu or something else.
+	
+;;;	; If overridden, call parent.handlePropToggle() or reimplement this functionality
+;;;	if PropID == prop_Enabled
+;;;		LTT.LDH.setBoolProp( prop_Enabled, NewValue )
+;;;	endif
+endfunction
 
 ;///////////////////////////////////////////////////////////////////////////////
 // Methods that must be overridden for any functionality to be provided
@@ -66,7 +100,7 @@ endfunction
 // Called when stopping LTT to make a clean save.
 /;
 function Unload()
-	;
+	isLoaded = false
 endfunction
 
 ;///////////////////////////////////////////////////////////////////////////////
@@ -113,5 +147,9 @@ endfunction
 // Internal functions
 /;
 function Guard()
-	Debug.MessageBox(self+"LTT_ModBase: Don't recompile this script")
+	Debug.MessageBox(self+" this function must be overridden by Mod's LTT handlers")
+endfunction
+
+function DebugLog( string Msg, bool verbose = false )
+	LTT.DebugLog( self+" :: "+Msg, verbose )
 endfunction

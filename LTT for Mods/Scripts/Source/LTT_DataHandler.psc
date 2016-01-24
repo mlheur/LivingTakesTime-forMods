@@ -156,7 +156,7 @@ int property kWorldSpace			= 71 AutoReadOnly
 ;///////////////////////////////////////////////////////////////////////////////
 // Variable Declarations
 /;
-bool property _InitComplete = false Auto
+bool property isInit = false Auto
 
 ;///////////////////////////////////////////////////////////////////////////////
 // LTT Base Related Properties
@@ -212,6 +212,7 @@ int[]	 _propType	; What type of property to use in MCM, see list below.
 float[]	 _propMinValue	; min & max settings for MCM
 float[]	 _propMaxValue	; min & max settings for MCM
 string[] _propUnits	; for MCM sliders
+int[]	 _propModID	; for knowing which mod uses this prop.
 
 int property propType_NONE	= 0x00 AutoReadonly
 int property propType_TOGGLE	= 0x01 AutoReadonly
@@ -229,8 +230,6 @@ int	 _modCount	= 0
 string[] _modName	; Common name, printed in MCM
 string[] _modESP	; filename of ESP to use on GetFormFromFile()
 int[]	 _modPrefix	; 0xFF prefix for this mod, -1 if the we can't find the mod
-bool[]	 _modLoaded	; Whether LTT has loaded all the items
-bool[]	 _modEnabled	; Whether the mod's activities take time
 int[]	 _modActions	; Which action handlers the mod registers
 int[]	 _modMenus	; Which game menus does the mod want to track
 LTT_ModBase[]	 _modObject	; Will be casted back to LTT_Base to call _modObect[ID]._function_()
@@ -354,7 +353,7 @@ string[] _menuName	; Official name within the game.
 /;
 int	 _maxFreeItems	= 4 ; 
 int	 _freeItemCount	= 0 ;
-Form[]	 _freeItemList	; akBaseItem that is free
+Form[]	 _freeItems	; akBaseItem that is free
 
 ;///////////////////////////////////////////////////////////////////////////////
 // Time-passed markers
@@ -379,9 +378,14 @@ float function convertHrsToMins( float Hrs )
 EndFunction
 
 int function getFormPrefix( form f )
+	LTT.DebugLog( "++getFormPrefix()"\
+	  +": form="+f\
+	)
 	if f == none
+		LTT.DebugLog( "--getFormPrefix(); failed" )
 		return -1
 	endif
+	LTT.DebugLog( "--getFormPrefix(); success" )
 	return Math.RightShift(f.GetFormID(), 24)
 endfunction
 
@@ -405,7 +409,10 @@ endfunction
 /;
 
 int function addStat( string Name ) ; called only by LTT_Base
-	while ! _InitComplete
+	LTT.DebugLog( "++addStat()" \
+	  +": Name="+Name \
+	)
+	while ! isInit
 		Utility.WaitMenuMode(LoadWaitTime)
 	endwhile
 	int ID = _statIndex( Name )
@@ -415,9 +422,11 @@ int function addStat( string Name ) ; called only by LTT_Base
 	endif
 	if ID >= _maxStats
 		LTT.Log( "Development Error: Ran out of Time Passer tablespace, update _maxStats in LTT_DataHandler.psc" )
+		LTT.DebugLog( "--addStat(); failed" )
 		return -1
 	endif
 	_statName[ID] = Name
+	LTT.DebugLog( "--addStat(); success ID="+ID )
 	return ID
 endfunction
 
@@ -462,9 +471,19 @@ endfunction
 
 ; returns the index of the property in the table, -1 on error
 int function addStringProp( int modID, string Name, string Default, string Title, string Helper, int MCMCell, float MinValue = 0.0, float MaxValue = 0.0, string Units = "", int PropType = -1 )
-	while ! _InitComplete
-		Utility.WaitMenuMode(LoadWaitTime)
-	endwhile
+	LTT.DebugLog( "++addStringProp()" \
+	  +": modID="+modID \
+	  +": Name="+Name \
+	  +": Default="+Default \
+	  +": Title="+Title \
+	  +": Helper="+Helper \
+	  +": MCMCell="+MCMCell \
+	  +": MinValue="+MinValue \
+	  +": MaxValue="+MaxValue \
+	  +": Units="+Units \
+	  +": PropType="+PropType \
+	)
+	bool isNew = false
 	if PropType < 0
 		PropType = propType_NONE
 	endif
@@ -474,14 +493,18 @@ int function addStringProp( int modID, string Name, string Default, string Title
 	if ID < 0
 		ID = _propCount
 		_propCount += 1
+		isNew = true
 	endif
 	if ID >= _maxProps
 		LTT.Log( "Development Error: Ran out of Prop tablespace, update _maxProps in LTT_DataHandler.psc" )
+		LTT.DebugLog( "--addStringProp(); failed" )
 		return -1
 	endif
 	; Set mod details
 	_propName[ID]		= Name
-	_propValue[ID]		= Default ; this is not a typo, the initial value is the default value
+	if isNew
+		_propValue[ID]		= Default
+	endif
 	_propTitle[ID]		= Title
 	_propDefault[ID]	= Default
 	_propHelper[ID]		= Helper
@@ -490,11 +513,13 @@ int function addStringProp( int modID, string Name, string Default, string Title
 	_propMinValue[ID]	= MinValue
 	_propMaxValue[ID]	= MaxValue
 	_propUnits[ID]		= Units
+	_propModID[ID]		= modID
 	if modID < 0
 		_propPage[ID]		= LTT.mcm.ModName
 	else
 		_propPage[ID]		= _modName[modID]
 	endif
+	LTT.DebugLog( "--addStringProp(); success ID="+ID )
 	return ID
 endfunction
 int function addIntProp( int modID, string Name, int Default, string Title, string Helper, int MCMCell, int MinValue, int MaxValue, string Units, int PropType = -1 )
@@ -527,6 +552,7 @@ bool function setStringProp( int ID, string Value )
 		return false
 	endif
 	_propValue[ID] = Value
+	return true
 endfunction
 bool function setIntProp( int ID, int Value )
 	return setStringProp( ID, Value as string )
@@ -547,13 +573,13 @@ string function getPropName( int ID )
 endfunction
 
 string function getStringProp( int ID )
-	;Debug.Trace( "[LTT] ++getStringProp() ID="+ID ) ; can't use regular debug logging because it call getProp
+	;Debug.Trace( "[LTT] :: --getStringProp() ID="+ID ) ; can't use regular debug logging because it call getProp
 	if ID < 0
-		LTT.Log( "$E_NO_PROP_VALUE" )
-		Debug.Trace( "[LTT] ++getStringProp() V="+"$E_NO_PROP_VALUE" ) ; can't use regular debug logging because it call getProp
+		LTT.Log( "$E_NO_PROP_VALUE ID="+ID )
+		;Debug.Trace( "[LTT] :: --getStringProp() V="+"$E_NO_PROP_VALUE" ) ; can't use regular debug logging because it call getProp
 		return "$E_NO_PROP_VALUE"
 	endif
-	;Debug.Trace( "[LTT] ++getStringProp() V="+_propValue[ID] ) ; can't use regular debug logging because it call getProp
+	;Debug.Trace( "[LTT] :: --getStringProp() V="+_propValue[ID] ) ; can't use regular debug logging because it call getProp
 	return _propValue[ID]
 endfunction
 int function getIntProp( int ID )
@@ -676,14 +702,26 @@ string function getPropUnits( int ID )
 	return _propUnits[ID]
 endfunction
 
+int function getPropModID( int ID )
+	if ID < 0
+		return -1
+	endif
+	return _propModID[ID]
+endfunction
+
 ;///////////////////////////////////////////////////////////////////////////////
 // Mod adders, getters & setters
 /;
 
 int function addMod( LTT_ModBase Mod, string Name, string ESP, int TestForm, int ACT = -1, int Menus = 0 )
-	while ! _InitComplete
-		Utility.WaitMenuMode(LoadWaitTime)
-	endwhile
+	LTT.DebugLog( "++addMod()" \
+	  +": Mod="+Mod \
+	  +": Name="+Name \
+	  +": ESP="+ESP \
+	  +": TestForm="+TestForm \
+	  +": ACT="+ACT \
+	  +": Menus="+Menus \
+	)
 	if ACT < 0
 		ACT = act_NONE
 	endif
@@ -696,20 +734,20 @@ int function addMod( LTT_ModBase Mod, string Name, string ESP, int TestForm, int
 	endif
 	if ID >= _maxMods
 		LTT.Log( "Development Error: Ran out of mod tablespace, update _maxMods in LTT_DataHandler.psc" )
+		LTT.DebugLog( "--addMod(); failed" )
 		return -1
 	endif
 	; Set mod details
-	_modName[ID]	= Name
-	_modESP[ID]	= ESP
-	_modPrefix[ID]	= getFormPrefix( Game.GetFormFromFile( TestForm, ESP ) )
-	_modLoaded[ID]	= false
-	_modEnabled[ID]	= false
-	_modActions[ID] = ACT
-	_modMenus[ID]	= Menus
 	_modObject[ID]	= Mod
-	
+	_modName[ID]	= Name
+	if ESP != "$E_SET_ESP_FILE"
+		_modESP[ID]	= ESP
+		_modPrefix[ID]	= getFormPrefix( Game.GetFormFromFile( TestForm, ESP ) )
+		_modActions[ID] = ACT
+		_modMenus[ID]	= Menus
+	endif
 	LTT.reloadMCMPages()
-	
+	LTT.DebugLog( "--addMod(); success ID="+ID )
 	return ID
 endfunction
 
@@ -720,13 +758,6 @@ endfunction
 
 int function getMaxMods()
 	return _maxMods
-endfunction
-
-bool function isModLoaded( int ID )
-	if ID < 0
-		return false
-	endif
-	return _modLoaded[ID]
 endfunction
 
 LTT_ModBase function getMod( int ID )
@@ -743,14 +774,6 @@ string function getModName( int ID )
 	return _modName[ID]
 endfunction
 
-bool function setModEnabled( int ID, bool Value = true )
-	if ID < 0
-		return false
-	endif
-	_modEnabled[ID] = Value
-	return true
-endfunction
-
 bool function registerModActions( int ID, int ACT = -1 )
 	if ACT < 0
 		ACT = act_NONE
@@ -760,13 +783,6 @@ bool function registerModActions( int ID, int ACT = -1 )
 	endif
 	_modActions[ID] = ACT
 	return true
-endfunction
-
-bool function getModEnabled( int ID )
-	if ID < 0
-		return false
-	endif
-	return _modEnabled[ID]
 endfunction
 
 int function getModPrefix( int ID )
@@ -784,6 +800,13 @@ bool function isModRegisterdForMenu( int ID, int Menu )
 		return true
 	endif
 	return false
+endfunction
+
+int function getModMenus( int ID )
+	if ID < 0
+		return 0
+	endif
+	return _modMenus[ID]
 endfunction
 
 function removeModMenuRegistration( int ID, int Menu )
@@ -807,22 +830,43 @@ endfunction
 // stations and scripts where this is used, it should be OK.
 /;
 function addFreeItem( form BaseItem )
-	while ! _InitComplete
+	while ! isInit
 		Utility.WaitMenuMode(LoadWaitTime)
 	endwhile
-	_freeItemList[_freeItemCount] = BaseItem
+	_freeItems[_freeItemCount] = BaseItem
 	_freeItemCount += 1
 endfunction
 bool function removeFreeItem( form BaseItem )
+	LTT.DebugLog( "++removeFreeItem()" \
+	  +": BaseItem="+BaseItem\
+	)
+	bool removed = false
 	int i = 0
 	while ( i <= _freeItemCount && i < _maxFreeItems )
-		if _freeItemList[i] == BaseItem
-			_freeItemList[i] = none
+		if _freeItems[i] == BaseItem
+			_freeItems[i] = none
 			_freeItemCount -= 1
-			return true
+			removed = true
+		endif
+		i+=1
+	endwhile
+	; TODO: our freeItemList can become fragmented.  I'd like to defragment
+	; but don't want to take the performance hit...  make multi-threaded
+	i = _maxFreeItems - 1
+	int LastFreeI = 0
+	while i >= LastFreeI && removed
+		while _freeItems[i] == none && i >= 0
+			i -= 1
+		endwhile
+		while _freeItems[LastFreeI] != none && LastFreeI < _maxFreeItems
+			LastFreeI += 1
+		endwhile
+		if i > LastFreeI
+			_freeItems[LastFreeI] = _freeItems[i]
 		endif
 	endwhile
-	return false
+	LTT.DebugLog( "--removeFreeItem() removed="+removed )
+	return removed
 endfunction
 
 
@@ -837,7 +881,7 @@ int function addStringState( string Name, string Value = "$E_STATE_NOT_SET", for
 	  +" Value="+Value\
 	  +" Form="+f\
 	)
-	while ! _InitComplete
+	while ! isInit
 		Utility.WaitMenuMode(LoadWaitTime)
 	endwhile
 	int ID = _stateIndex( Name )
@@ -847,13 +891,13 @@ int function addStringState( string Name, string Value = "$E_STATE_NOT_SET", for
 	endif
 	if ID >= _maxStates
 		LTT.Log( "Development Error: Ran out of State tablespace, update _maxStates in LTT_DataHandler.psc" )
-		LTT.DebugLog( "--addStringState() Failed" )
+		LTT.DebugLog( "--addStringState(); failed" )
 		return -1
 	endif
 	_stateName[ID] = Name
 	_stateValue[ID] = Value
 	_stateForm[ID] = f
-	LTT.DebugLog( "--addStringState()" )
+	LTT.DebugLog( "--addStringState(); success" )
 	return ID
 endfunction
 int function addFormState( string Name, form Value = none )
@@ -923,9 +967,9 @@ endfunction
 
 ; returns the index of the station in the table, -1 on error
 int function addStation( string KW ) ;, string Name )
-	while ! _InitComplete
-		Utility.WaitMenuMode(LoadWaitTime)
-	endwhile
+	LTT.DebugLog( "++addStation()" \
+	  +": KW="+KW \
+	)
 	int ID = _stationIndex( KW )
 	if ID < 0
 		ID = _stationCount
@@ -933,10 +977,12 @@ int function addStation( string KW ) ;, string Name )
 	endif
 	if ID >= _maxStations
 		LTT.Log( "Development Error: Ran out of Crafting Station tablespace, update _maxStationss in LTT_DataHandler.psc" )
+		LTT.DebugLog( "--addStation(); failed" )
 		return -1
 	endif
 	_stationKeyword[ID] = KW
 ;;;DISABLE;;;	_stationName[ID] = Name
+	LTT.DebugLog( "--addStation(); success ID="+ID )
 	return ID
 endfunction
 
@@ -1000,17 +1046,17 @@ endfunction
 int function getMenuIndex( int Menu )
 	int Divisor = Menu
 	int i = 0
-	LTT.DebugLog( "++getMenuIndex() Menu="+Menu, false )
+;;	LTT.DebugLog( "++getMenuIndex() Menu="+Menu, false )
 	while ( i < 32 )
-		LTT.Log( "  getMenuIndex: i="+i+"; Divisor="+Divisor )
+;;		LTT.DebugLog( "  getMenuIndex: i="+i+"; Divisor="+Divisor )
 		if Divisor == 1 || Divisor == -1
-			LTT.DebugLog( "--getMenuIndex()=="+(i+1), false )
+;;			LTT.DebugLog( "--getMenuIndex(); "+(i+1), false )
 			return i+1
 		endif
 		i+=1
 		Divisor/=2
 	endwhile
-	LTT.DebugLog( "--getMenuIndex()=="+-1, false )
+;;	LTT.DebugLog( "--getMenuIndex(); "+-1, false )
 	return -1
 endfunction
 
@@ -1022,8 +1068,14 @@ endfunction
 // Private Functions
 /;
 
-function _Init()
+function _Init( int Version )
 	LTT.DebugLog( "++LDH::_Init()" )
+	
+	if isInit ; should also check for version changes
+		LTT.DebugLog( "--LDH::_Init(); already configured" )
+		return
+	endif
+	
 	; Allocate memory for the lookup tables.
 	_propName	= new string[128]	; _maxProps
 	_propValue	= new string[128]	; _maxProps
@@ -1036,12 +1088,11 @@ function _Init()
 	_propMaxValue	= new float[128]	; _maxProps
 	_propPage	= new string[128]	; _maxProps
 	_propUnits	= new string[128]	; _maxProps
+	_propModID	= new int[128]		; _maxProps
 
 	_modName	= new string[32]	; _maxMods
 	_modESP		= new string[32]	; _maxMods
 	_modPrefix	= new int[32]		; _maxMods
-	_modLoaded	= new bool[32]		; _maxMods
-	_modEnabled	= new bool[32]		; _maxMods
 	_modActions	= new int[32]		; _maxMods
 	_modMenus	= new int[32]		; _maxMods
 	_modObject	= new LTT_ModBase[32]	; _maxMods
@@ -1061,7 +1112,7 @@ function _Init()
 	
 	_menuName	= new string[33]	; _maxMenus (always 32+1 because of the bitfields)
 	
-	_freeItemList	= new form[4]		; _maxFreeItems
+	_freeItems	= new form[4]		; _maxFreeItems
 	
 	_menuName[0]						= ""
 	_menuName[getMenuIndex(menu_Barter)]			= "BarterMenu"
@@ -1101,9 +1152,9 @@ function _Init()
 	;_menuName[getMenuIndex(menu_Tutorial)]			= "Tutorial Menu"
 	_menuName[getMenuIndex(menu_Tween)]			= "TweenMenu"
 	
-	_InitComplete = true
+	isInit = true
 
-	LTT.DebugLog( "--LDH::_Init()" )
+	LTT.DebugLog( "--LDH::_Init(); success" )
 endfunction
 
 ; Find indexes into tables based on names - these are private because they
@@ -1139,8 +1190,11 @@ int function _stationIndex( string Name )
 	return _index( Name, _stationKeyword, _stationCount, _maxStations )
 endfunction
 
-function DumpTables()
+function DumpTables( string Msg = "" )
 	int i=0
+	if Msg
+		LTT.DebugLog( "DumpTables: "+Msg )
+	endif
 	while( i < _propCount )
 		LTT.DebugLog( "Dumping Props i="+i\
 		  +"; _propName=["+_propName[i]+"]"\
@@ -1163,8 +1217,6 @@ function DumpTables()
 		  +"; _modName=["+_modName[i]+"]"\
 		  +"; _modESP=["+_modESP[i]+"]"\
 		  +"; _modPrefix=["+_modPrefix[i]+"]"\
-		  +"; _modLoaded=["+_modLoaded[i]+"]"\
-		  +"; _modEnabled=["+_modEnabled[i]+"]"\
 		  +"; _modActions=["+_modActions[i]+"]"\
 		  +"; _modMenus=["+_modMenus[i]+"]"\
 		)
