@@ -20,8 +20,6 @@ scriptname LTT_Base extends Quest
 ;///////////////////////////////////////////////////////////////////////////////
 // TODO
 /;
-; Use states to prevent multiple threads from calling init, or figure out
-; why multiple inits are being called.  Here and in LTT_DataHandler...
 
 ;///////////////////////////////////////////////////////////////////////////////
 // Variable Declarations
@@ -39,7 +37,7 @@ bool LTT_debug		= true ; when set, LTT in beta testing
 bool LTT_verbose	= true ; when set, LTT in alpha testing
 int LTT_verMajor	= 0
 int LTT_verMinor	= 0
-string LTT_SaveFile	= "LTTForMods\\LTTForMods.xml"
+string LTT_SaveFile	= "LTTForMods.xml"
 
 int mcmCellBaseActive	= 0
 int mcmCellPersonMsgs	= 2
@@ -50,6 +48,7 @@ int mcmCellUserDebug	= 5
 int mcmCellExpertise	= 6
 int mcmCellLoad		= 10
 int mcmCellSave		= 11
+int mcmCellVersion	= 22
 
 ;///////////////////////////////////////////////////////////////////////////////
 // Properties passed from ESP
@@ -566,6 +565,8 @@ function mcmOnPageReset( string Page )
 		mcmOID_Save = mcm.AddToggleOption( "$LTT_Save", false )
 		mcm.SetCursorPosition( mcmCellLoad )
 		mcmOID_Load = mcm.AddToggleOption( "$LTT_Load", false )
+		mcm.SetCursorPosition( mcmCellVersion )
+		mcm.AddHeaderOption(  mcm.ModName+": Version "+verString() )
 	else
 		mcmOID_Save = -1
 		mcmOID_Load = -1
@@ -600,6 +601,16 @@ function mcmOnOptionDefault( SKI_ConfigBase mcm, int OID )
 	DebugLog( "++mcmOnOptionDefault() OID="+OID )
 	int ID = getOID_Prop( OID )
 	LDH.setPropToDefault( ID )
+	int Type = LDH.getPropType( ID )
+	if Type == LDH.propType_TOGGLE
+		; Let the owning mod do any work associated with changing
+		; this flag, like no longer wanting a menu.
+		LTT_ModBase mod = LDH.getMod( LDH.getPropModID( ID ) )
+		if mod
+			mod.handlePropToggle( ID, LDH.getBoolProp( ID ) )		
+		endif
+		reRegisterMenus()
+	endif
 	mcm.ForcePageReset() ; this might be a little heavy-handed, is lazy.
 	DebugLog( "--mcmOnOptionDefault(); success" )
 endfunction
@@ -629,13 +640,14 @@ function mcmOnOptionSelect( SKI_ConfigBase mcm, int OID )
 	if mcm.CurrentPage == mcm.ModName
 		if OID == mcmOID_Save
 			; Do Save
-			Debug.MessageBox( "TOOD: Implement Save" )
+			LDH.savePropTable( fiss, LTT_saveFile )
 			mcm.ForcePageReset()
 			DebugLog( "--mcmOnOptionSelect(); success Save" )
 			return
 		elseif OID == mcmOID_Load
 			; Do Load
-			Debug.MessageBox( "TOOD: Implement Load" )
+			LDH.loadPropTable( fiss, LTT_saveFile )
+			reRegisterMenus()
 			mcm.ForcePageReset()
 			DebugLog( "--mcmOnOptionSelect(); success Load" )
 			return
@@ -728,7 +740,7 @@ function mcmOnOptionKeyMapChange( SKI_ConfigBase mcm, int OID, int KeyID, string
 		if ! ConflictOwner
 			ConflictOwner = "Skyrim"
 		endif
-		ReuseKey = mcm.ShowMessage( "$E_REUSE_KEY "+ConflictOwner+"::"+Conflict, true )
+		ReuseKey = mcm.ShowMessage( "$E_REUSE_KEY"+" "+ConflictOwner+"::"+Conflict, true )
 	endif
 	
 	if !ReuseKey
@@ -764,8 +776,9 @@ function mcmOnKeyUp( int KeyID, float Duration ) ; might not belong to base, che
 				ID = _ID
 			endif
 		endif
-		_ID+=1
+		_ID-=1
 	endwhile
+	; ID is set to the mod's prop ID for the thing watching the key.
 	
 	if modID >= 0
 		; Pass the event on to the mod.
@@ -775,7 +788,8 @@ function mcmOnKeyUp( int KeyID, float Duration ) ; might not belong to base, che
 		; LTT_Base is the mod, probably the pause key was pressed.
 		if ID == LDH.prop_PauseKey
 			; toggle pause state.
-			Debug.MessageBox( "TODO: Toggle base pause state" )
+			DebugLog( "Changing pause status" )
+			LDH.setBoolProp( LDH.prop_Paused, !LDH.getBoolProp( LDH.prop_Paused ) )
 		endif
 	endif
 	

@@ -6,5 +6,5 @@ scriptname LTT_Factory
 ///////////////////////////////////////////////////////////////////////////////;
 
 LTT_Base function LTT_getBase() global
-	return Game.GetFormFromFile( 0x0800, "LivingTakesTime for Mods.esp" ) as LTT_Base
+	return Game.GetFormFromFile( 0x0800, "LTTForMods.esp" ) as LTT_Base
 endfunction

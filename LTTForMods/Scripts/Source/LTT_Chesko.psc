@@ -1,4 +1,4 @@
-scriptname LTT_FF3 extends LTT_ModBase 
+scriptname LTT_Chesko extends LTT_ModBase 
 
 int	ID_Snowberry		= 0x01D430 ; _Frost_WaterPotion "Snowberry Extract" [ALCH:0301D430]
 int	ID_DummyItem		= 0x06B1D8 ; _Frost_DummyItem [MISC:0306B1D8]
@@ -7,6 +7,7 @@ form	SnowberryExtract
 form 	DummyItem
 
 event OnGameReload()
+	LTT = LTT_Factory.LTT_getBase() ; not normally required, but handy if LTT changes between saves
 	DebugLog( "++OnGameReload()" )
 	isLoaded = false
 	ESP = "Frostfall.esp"

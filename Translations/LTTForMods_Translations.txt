@@ -1,0 +1,41 @@
+Language	English	French	German	Italian	Spanish	Czech	Polish	Russian	Japanese
+$ERROR	Error
+$E_NO_FLOAT_PROP_MAXVALUE	E_NoFloatPropertyMaxValue
+$E_NO_FLOAT_PROP_MINVALUE	E_NoFloatPropertyMinValue
+$E_NO_INT_PROP_MAXVALUE	E_NoIntPropertyMaxValue
+$E_NO_INT_PROP_MINVALUE	E_NoIntPropertyMinValue
+$E_NO_MOD	E_CouldNotFindMod
+$E_SET_ESP_FILE	E_ModESPFileNotSet
+$E_STATE_NOT_SET	E_StateNotSet
+$E_NO_PROP_DEFAULT	E_PropertyDefaultNotSet
+$E_NO_PROP_HELPER	E_PropertyHelpTextNotSet
+$E_NO_PROP_MCMCELL	E_PropertyMCMLocationNotSet
+$E_NO_PROP_NAME	E_PropertyNameNotSet
+$E_NO_PROP_TITLE	E_PropertyTitleNotSet
+$E_NO_PROP_VALUE	E_PropertyValueMissing
+$E_PROPVALUE_NOT_SET	E_PropertyValueNotSet
+$E_REUSE_KEY	This key is already set which may cause conflicts, should it be reused?
+$E_RTT_LOADED_INCOMPATIBLE	There are incompatible mods loaded, do not save, quit, remove them and try again.
+$HLP_BaseActive	This enables or disables all event processing for all mods
+$HLP_ExpertiseReducesTime	As skills increase, crafting items under that skill will take less time
+$HLP_FirstPersonMsgs	For more immersion, use first person messages\nFor a vanilla experience, use third person messages.
+$HLP_ModEnabled	Allows or prevents this mod from receiving notification that events have happened which might pass time.\nThis could cause other mods to apply their default event handle instead.
+$HLP_PauseKey	If no key is set, pausing can still be applied through MCM.
+$HLP_Paused	Pausing Living Takes Time means events will still be processed but no time will pass.
+$HLP_SaveLoad	Save or load all settings for all mods known to Living Takes Time For Mods.
+$HLP_ShowMsgThreshold	Only show messages if at least this much time has passed.\nSet to 0 to disable all messages.
+$HLP_UserDebug	Enable this and re-create any problems before submitting bug reports.  Papyrus logs will need to be collected.
+$LTT_BaseActive	Activate
+$LTT_ExpertiseReducesTime	Skill Increases Reduce Time
+$LTT_FirstPersonMsgs	Immersive Messages
+$LTT_Load	Load All Settings
+$LTT_ModEnabled	Enabled
+$LTT_PauseKey	Pause Key
+$LTT_Paused	Pause Time Passing
+$LTT_Save	Save All Settings
+$LTT_ShowMsgTheshold	Time Threshold
+$LTT_UserDebug	Write Debug Info to Papyrus Logs
+$LTT_msgTimePassed_1st	%.0f hour(s) and %.0f minute(s) passed.
+$LTT_msgTimePassed_3rd	%.0f hour(s) and %.0f minute(s) passed.
+$LTT_msgInCombat_1st	I cannot do this in combat.
+$LTT_msgInCombat_3rd	You cannot do this in combat.

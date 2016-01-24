@@ -575,7 +575,7 @@ endfunction
 string function getStringProp( int ID )
 	;Debug.Trace( "[LTT] :: --getStringProp() ID="+ID ) ; can't use regular debug logging because it call getProp
 	if ID < 0
-		LTT.Log( "$E_NO_PROP_VALUE ID="+ID )
+		LTT.Log( "$E_NO_PROP_VALUE"+" ID="+ID )
 		;Debug.Trace( "[LTT] :: --getStringProp() V="+"$E_NO_PROP_VALUE" ) ; can't use regular debug logging because it call getProp
 		return "$E_NO_PROP_VALUE"
 	endif
@@ -769,7 +769,7 @@ endfunction
 
 string function getModName( int ID )
 	if ID < 0
-		return "$E_NO_MOD ID="+ID
+		return "$E_NO_MOD"+" ID="+ID
 	endif
 	return _modName[ID]
 endfunction
@@ -1188,6 +1188,66 @@ endfunction
 
 int function _stationIndex( string Name )
 	return _index( Name, _stationKeyword, _stationCount, _maxStations )
+endfunction
+
+function savePropTable( FISSInterface fiss, string filename )
+	LTT.DebugLog( "++savePropTable() filename="+filename )
+	fiss.beginSave( filename, LTT.mcm.ModName )
+	
+	int ID = getLastProp()
+	while ID >= 0
+		LTT.DebugLog( "Saving" \
+		  +"ID="+ID \
+		  +"Name="+_propName[ID] \
+		  +"Value="+_propValue[ID] \
+		)
+		fiss.saveString( _propName[ID], _propValue[ID] )
+		id -= 1
+	endwhile
+	
+	string result = fiss.endSave()
+	if result
+		LTT.Log( "Save results: "+result )
+		Debug.MessageBox( "Save failed\n"+result )
+	else
+		LTT.DebugLog( "Save results: "+result )
+		Debug.MessageBox( "Saved successfully" )
+	endif
+	LTT.DebugLog( "--savePropTable(); success" )
+endfunction
+
+function loadPropTable( FISSInterface fiss, string filename )
+	LTT.DebugLog( "++savePropTable() filename="+filename )
+	fiss.beginLoad( filename )
+	
+	int ID = getLastProp()
+	while ID >= 0
+		_propValue[ID] = fiss.loadString( _propName[ID] )
+		LTT.DebugLog( "Loaded" \
+		  +"ID="+ID \
+		  +"Name="+_propName[ID] \
+		  +"Value="+_propValue[ID] \
+		)
+		if _propType[ID] == propType_TOGGLE
+			; Let the owning mod do any work associated with changing
+			; this flag, like no longer wanting a menu.
+			LTT_ModBase mod = getMod( getPropModID( ID ) )
+			if mod
+				mod.handlePropToggle( ID, getBoolProp(ID) )		
+			endif
+		endif
+		id -= 1
+	endwhile
+	
+	string result = fiss.endLoad()
+	if result
+		LTT.Log( "Load results: "+result )
+		Debug.MessageBox( "Load failed\n"+result )
+	else
+		LTT.DebugLog( "Load results: "+result )
+		Debug.MessageBox( "Loaded successfully" )
+	endif
+	LTT.DebugLog( "--loadPropTable(); success" )
 endfunction
 
 function DumpTables( string Msg = "" )
