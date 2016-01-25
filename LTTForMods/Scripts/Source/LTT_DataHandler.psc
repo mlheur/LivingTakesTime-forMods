@@ -13,9 +13,12 @@ LTT_Base Property LTT Auto
 ;///////////////////////////////////////////////////////////////////////////////
 // Constants
 /;
-int	Property maxMins			= 1440 AutoReadOnly
-float	Property maxHours			= 24.0 AutoReadOnly
-float	Property LoadWaitTime			= 0.25 AutoReadOnly
+int	property maxMins			= 1440 AutoReadOnly ; 24 hours
+float	property maxHrs				= 24.0 AutoReadOnly
+float	property LoadWaitTime			= 0.25 AutoReadOnly
+int	property LoadTries			= 100 AutoReadonly
+float	property LockWaitTime			= 0.01 AutoReadOnly
+int	property LockTries			= 1000 AutoReadOnly
 
 int property kANIO				= 83 AutoReadOnly
 int property kARMA				= 102 AutoReadOnly
@@ -712,8 +715,12 @@ endfunction
 ;///////////////////////////////////////////////////////////////////////////////
 // Mod adders, getters & setters
 /;
-
+bool _lockAddMod = false
 int function addMod( LTT_ModBase Mod, string Name, string ESP, int TestForm, int ACT = -1, int Menus = 0 )
+	if _lockAddMod
+		return -2
+	endif
+	_lockAddMod = true
 	LTT.DebugLog( "++addMod()" \
 	  +": Mod="+Mod \
 	  +": Name="+Name \
@@ -748,6 +755,7 @@ int function addMod( LTT_ModBase Mod, string Name, string ESP, int TestForm, int
 	endif
 	LTT.reloadMCMPages()
 	LTT.DebugLog( "--addMod(); success ID="+ID )
+	_lockAddMod = false
 	return ID
 endfunction
 
@@ -843,7 +851,7 @@ bool function removeFreeItem( form BaseItem )
 	bool removed = false
 	int i = 0
 	while ( i <= _freeItemCount && i < _maxFreeItems )
-		if _freeItems[i] == BaseItem
+		if BaseItem == _freeItems[i] || BaseItem.HasKeyword( _freeItems[i] as Keyword )
 			_freeItems[i] = none
 			_freeItemCount -= 1
 			removed = true
@@ -1224,9 +1232,9 @@ function loadPropTable( FISSInterface fiss, string filename )
 	while ID >= 0
 		_propValue[ID] = fiss.loadString( _propName[ID] )
 		LTT.DebugLog( "Loaded" \
-		  +"ID="+ID \
-		  +"Name="+_propName[ID] \
-		  +"Value="+_propValue[ID] \
+		  +": ID="+ID \
+		  +"; Name="+_propName[ID] \
+		  +"; Value="+_propValue[ID] \
 		)
 		if _propType[ID] == propType_TOGGLE
 			; Let the owning mod do any work associated with changing

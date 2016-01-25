@@ -1,0 +1,49 @@
+Language	English	French	German	Italian	Spanish	Czech	Polish	Russian	Japanese
+$FF3_SnowberryMins	Snowberry Extract
+$HLP_FF3_SnowberryMins	Time taken to extract juice from snowberries
+$CF_AddFuelMins	Add Fuel
+$CF_AddKindlingMins	Place Kindling
+$CF_AddTinderMins	Place Tinder
+$CF_ArrowsHrs	Craft Arrows
+$CF_BackpackHrs	Craft Backpack
+$CF_BeddingHrs	Craft Bedding
+$CF_CloakHrs	Craft Cloaks
+$CF_CookpotHrs	Craft Cookpots
+$CF_EnchanterHrs	Craft Enchanter
+$CF_FirecraftImproves	Firecraft Perk Decreases Time
+$CF_FurHrs	Craft Fur Plate
+$CF_HatchetHrs	Craft Stone Hatchet
+$CF_LaceMins	Craft Hide Lace
+$CF_LargeTentHrs	Craft Large Tents
+$CF_LightFireMins	Light Campfire
+$CF_LinenMins	Craft Linen
+$CF_MakeKindlingMins	Craft Kindling
+$CF_MakeTinderMins	Craft Tinder
+$CF_MortarHrs	Craft Mortar & Pestle
+$CF_SmallTentHrs	Craft Small Tents
+$CF_StickMins	Craft Walking Stick
+$CF_TanRackMins	Craft Tanning Rack
+$CF_TorchMins	Craft Torch	
+$HLP_CF_AddFuelMins	Time taken to refuel or add more fuel to a campfire
+$HLP_CF_AddKindlingMins	Time taken to place kindling in an empty campfire
+$HLP_CF_AddTinderMins	Time taken to arrange tinder in a campfire
+$HLP_CF_ArrowsHrs	Time taken to craft 24 arrows
+$HLP_CF_BackpackHrs	Time taken to craft a backpack
+$HLP_CF_BeddingHrs	Time taken to craft bedding or add bedding to a tent
+$HLP_CF_CloakHrs	Time taken to craft a cloak
+$HLP_CF_CookpotHrs	Time taken to craft a cookpot
+$HLP_CF_EnchanterHrs	Time taken to craft a portable enchanting station
+$HLP_CF_FirecraftImproves	If enabled, as the firecraft perk increases, time taken while using a campfire decreases
+$HLP_CF_FurHrs	Time taken to craft a fur plate
+$HLP_CF_HatchetHrs	Time taken to craft a stone hatchet
+$HLP_CF_LaceMins	Time taken to craft hide lace
+$HLP_CF_LargeTentHrs	Time taken to craft any large tent
+$HLP_CF_LightFireMins	Time taken to light a fire the old fasioned way\nIf using a torch or spell the amount of time is reduced
+$HLP_CF_LinenMins	Time taken to turn clothing into raw linen
+$HLP_CF_MakeKindlingMins	Time taken to turn materials into a piece of kindling
+$HLP_CF_MakeTinderMins	Time taken to turn materials into tinder
+$HLP_CF_MortarHrs	Time taken to craft a portable mortar and pestle
+$HLP_CF_SmallTentHrs	Time taken to craft any small tent
+$HLP_CF_StickMins	Time taken to craft a walking stick
+$HLP_CF_TanRackMins	Time taken to craft a tanning rack
+$HLP_CF_TorchMins	Time taken to craft a torch

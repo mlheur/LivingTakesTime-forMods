@@ -22,6 +22,25 @@ scriptname LTT_Base extends Quest
 /;
 
 ;///////////////////////////////////////////////////////////////////////////////
+// Constants used by any mod
+/;
+float property craftHeadHrs		= 2.0 AutoReadOnly
+float property craftBodyHrs		= 6.0 AutoReadOnly
+float property craftLimbHrs		= 3.0 AutoReadOnly
+float property craftShieldHrs		= 4.0 AutoReadOnly
+float property craftJewelryHrs		= 1.0 AutoReadOnly
+float property craftOneHandedHrs	= 3.0 AutoReadOnly
+float property craftDaggerHrs		= 1.5 AutoReadOnly
+float property craftTwoHandedHrs	= 5.0 AutoReadOnly
+float property craftStaffHrs		= 2.0 AutoReadOnly
+float property craftBowHrs		= 3.0 AutoReadOnly
+float property craftAmmoHrs		= 1.0 AutoReadOnly
+float property craftMiscHrs		= 1.0 AutoReadOnly
+float property craftImproveHrs		= 1.0 AutoReadOnly
+float property craftBeddingHrs		= 3.0 AutoReadOnly
+int   property craftTorchMins		= 15  AutoReadOnly
+
+;///////////////////////////////////////////////////////////////////////////////
 // Variable Declarations
 /;
 
@@ -178,7 +197,7 @@ bool function advanceTime(float hrsPasesd)
 	  +": threshold="+threshold \
 	  +"; minsPassed="+minsPassed \
 	)
-	if ( minsPassed < threshold )
+	if ( minsPassed < threshold ) || threshold == 0
 		ShowMsg = false
 	endif
 	
@@ -250,9 +269,23 @@ endfunction
 // For performance reasons, use any excuse to exit this large function early as
 // early as possible.
 /;
+bool _spinlockItems = false
 function ItemAdded (form BaseItem, int Qty, ObjectReference ItemRef, ObjectReference Source)
+	int lockTries = 0
+	while _spinlockItems
+		DebugLog( "ItemAdded() locked; tries="+lockTries )
+		Utility.WaitMenuMode( LDH.LockWaitTime )
+		lockTries += 1
+		if lockTries >= LDH.LockTries
+			DebugLog( "ItemAdded() skipped because it could not be handled after "+lockTries+" tries" )
+			return
+		endif
+	endwhile
+	DebugLog( "ItemAdded() got lock" )
+	_spinlockItems = true
 	DebugLog( "++ItemAdded()" \
 	  +": BaseItem="+BaseItem \
+	  +": Name="+BaseItem.GetName() \
 	  +"; Qty="+Qty \
 	  +"; ItemRef="+ItemRef \
 	  +"; Source="+Source \
@@ -269,15 +302,21 @@ function ItemAdded (form BaseItem, int Qty, ObjectReference ItemRef, ObjectRefer
 
 	if ( !LDH.getBoolProp( LDH.prop_BaseActive ) || UI.IsMenuOpen("Console") || BaseItem == none )
 		DebugLog( "--ItemAdded(); !BaseActive, console is open, or not an item", true )
+		DebugLog( "ItemAdded() releasing lock" )
+		_spinlockItems = false
 		return
 	endif
 	if (!LDH.getBoolProp(LDH.state_IsLooting) && !LDH.getBoolProp(LDH.state_IsCrafting)) || Source 
 		DebugLog( "--ItemAdded(); not looting or crafting and came from a container, must be taking from a chest/box", true )
+		DebugLog( "ItemAdded() releasing lock" )
+		_spinlockItems = false
 		return
 	endif
 
 	if LDH.removeFreeItem( BaseItem )
 		DebugLog( "--ItemAdded(); Had a free instance of this item in the queue", true )
+		DebugLog( "ItemAdded() releasing lock" )
+		_spinlockItems = false
 		return
 	endif
 	
@@ -295,9 +334,11 @@ function ItemAdded (form BaseItem, int Qty, ObjectReference ItemRef, ObjectRefer
 			)
 			if mod.isRunnable()
 				TimePassed = mod.ItemAdded( BaseItem, Qty, ItemRef, Source, Type, Prefix )
-				if TimePassed >= 0.0
+				if TimePassed >= 0
 					advanceTime( TimePassed )
 					DebugLog( "--ItemAdded(); Handled by a mod: modID="+modID )
+					DebugLog( "ItemAdded() releasing lock" )
+					_spinlockItems = false
 					return
 				endif
 			endif
@@ -305,11 +346,26 @@ function ItemAdded (form BaseItem, int Qty, ObjectReference ItemRef, ObjectRefer
 		modID -= 1
 	endwhile
 	DebugLog( "--ItemAdded(); not handled by anything, what to do?", true )
+	DebugLog( "ItemAdded() releasing lock" )
+	_spinlockItems = false
 endfunction
 
-function ItemRemoved (Form BaseItem, int Qty, ObjectReference ItemRef, ObjectReference Destination )
+function ItemRemoved(form BaseItem, int Qty, ObjectReference ItemRef, ObjectReference Destination )
+	int lockTries = 0
+	while _spinlockItems
+		DebugLog( "ItemRemoved() locked; tries="+lockTries )
+		Utility.WaitMenuMode( LDH.LockWaitTime )
+		lockTries += 1
+		if lockTries >= LDH.LockTries
+			DebugLog( "ItemAdded() skipped because it could not be handled after "+lockTries+" tries" )
+			return
+		endif
+	endwhile
+	DebugLog( "ItemRemoved() got lock" )
+	_spinlockItems = true
 	DebugLog( "++ItemRemoved()" \
 	  +": BaseItem="+BaseItem \
+	  +": Name="+BaseItem.GetName() \
 	  +"; Qty="+Qty \
 	  +"; ItemRef="+ItemRef \
 	  +"; Destination="+Destination \
@@ -322,6 +378,8 @@ function ItemRemoved (Form BaseItem, int Qty, ObjectReference ItemRef, ObjectRef
 
 	if ( !LDH.getBoolProp( LDH.prop_BaseActive ) || UI.IsMenuOpen("Console") || BaseItem == none )
 		DebugLog( "--ItemRemoved(); !BaseActive, console is open, or not an item" )
+		DebugLog( "ItemRemoved() releasing lock" )
+		_spinlockItems = false
 		return
 	endif
 
@@ -332,9 +390,11 @@ function ItemRemoved (Form BaseItem, int Qty, ObjectReference ItemRef, ObjectRef
 		if mod
 			if mod.isRunnable()
 				TimePassed = mod.ItemRemoved( BaseItem, Qty, ItemRef, Destination, Type, Prefix )
-				if TimePassed >= 0.0
+				if TimePassed >= 0
 					advanceTime( TimePassed )
 					DebugLog( "--ItemRemoved(); Handled by a mod: modID="+modID )
+					DebugLog( "ItemRemoved() releasing lock" )
+					_spinlockItems = false
 					return
 				endif
 			endif
@@ -342,6 +402,8 @@ function ItemRemoved (Form BaseItem, int Qty, ObjectReference ItemRef, ObjectRef
 		modID-=1
 	endwhile
 	DebugLog( "--ItemRemoved(); not handled by anything, what to do?" )
+	DebugLog( "ItemRemoved() releasing lock" )
+	_spinlockItems = false
 endfunction
 
 event OnMenuOpen(string MenuName)
@@ -489,6 +551,7 @@ function reloadMods( bool forceReload = false )
 			  +"; forceReload="+forceReload \
 			)
 			if mod.isInit && ( !mod.isLoaded || forceReload )
+				mod.isLoaded = false
 				DebugLog( "calling mod.OnGameReload()" )
 				mod.OnGameReload()
 			endif
@@ -819,7 +882,7 @@ function reloadMCMPages()
 	while i >= 0
 		LTT_ModBase mod = LDH.getMod(i)
 		if mod
-			if LDH.getModPrefix(i) > 0
+			if mod.isLoaded
 				mcm.Pages[p] = LDH.getModName(i)
 				DebugLog( "Adding mod page: p="+p+"; i="+i+"; mod="+mcm.Pages[p] )
 				p+=1

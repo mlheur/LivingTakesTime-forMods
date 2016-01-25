@@ -1,4 +1,4 @@
-scriptname LTT_Chesko extends LTT_ModBase 
+scriptname LTT_FF3 extends LTT_ModBase
 
 int	ID_Snowberry		= 0x01D430 ; _Frost_WaterPotion "Snowberry Extract" [ALCH:0301D430]
 int	ID_DummyItem		= 0x06B1D8 ; _Frost_DummyItem [MISC:0306B1D8]
@@ -36,13 +36,13 @@ bool function Load()
 	return true
 endfunction
 
-float function ItemAdded( form Item, int Count, form ItemRef, form Container, int Type, int Prefix )
+float function ItemAdded( form Item, int Qty, form ItemRef, form Container, int Type, int Prefix )
 	DebugLog( "++ItemAdded()" )
+	float t = -1.0
 	if Prefix != LTT.LDH.getModPrefix( modID )
-		DebugLog( "--ItemAdded() = -1.0; mod not usable, probably no ESP, shouldn't get here" )
-		return -1.0
+		DebugLog( "--ItemAdded() t="+t+"; not our item" )
+		return t
 	endif
-	Float t = 0.0
 	If Item == SnowberryExtract
 		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_SnowberryMins ) )
 		DebugLog( "--ItemAdded() = "+t+"; Made snowberry extract" )
@@ -54,6 +54,6 @@ float function ItemAdded( form Item, int Count, form ItemRef, form Container, in
 		DebugLog( "--ItemAdded() = 0.0; Received MISC Dummy item on exposure change" )
 		return 0.0
 	endif
-	DebugLog( "--ItemAdded() = -1.0; not our item" )
-	return -1.0
+	DebugLog( "--ItemAdded() t="+t+"; not our item" )
+	return t
 EndFunction

@@ -36,17 +36,29 @@ event OnInit()
 	while !LTT.isInit
 		Utility.WaitMenuMode( LTT.LDH.LoadWaitTime )
 		tries += 1
-		if tries > 100
-			LTT = none
+		if tries > LTT.LDH.LoadTries
 			DebugLog( self+"--OnInit(); failed too many tries" )
+			LTT = none
 			return
 		endif
 	endwhile
-	modID = LTT.LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
-	if modID < 0 ; We couldn't be added to the Mod table.
-		DebugLog( "--OnInit(); unable to successfully addMod()" )
-		return
-	endif
+	tries = 0
+	modID = -1
+	while modID < 0
+		modID = LTT.LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
+		if modID == -1 ; We couldn't be added to the Mod table.
+			DebugLog( "--OnInit(); unable to successfully addMod()" )
+			return
+		else ; if modID == -2
+			Utility.WaitMenuMode( LTT.LDH.LoadWaitTime )
+			tries += 1
+			if tries > LTT.LDH.LoadTries
+				DebugLog( self+"--OnInit(); failed too many tries to addMod" )
+				LTT = none
+				return
+			endif
+		endif
+	endwhile
 	prop_Enabled = LTT.LDH.addBoolProp( modID, ModName+"_Enabled", false, "$LTT_ModEnabled", "$HLP_ModEnabled", 0 )
 	isInit = true
 	isLoaded = false
