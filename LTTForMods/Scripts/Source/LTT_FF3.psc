@@ -36,24 +36,24 @@ bool function Load()
 	return true
 endfunction
 
-float function ItemAdded( form Item, int Qty, form ItemRef, form Container, int Type, int Prefix )
+float function ItemAdded( form BaseItem, int Qty, form ItemRef, form Container, int Type, int Prefix )
 	DebugLog( "++ItemAdded()" )
 	float t = -1.0
 	if Prefix != LTT.LDH.getModPrefix( modID )
 		DebugLog( "--ItemAdded() t="+t+"; not our item" )
 		return t
 	endif
-	If Item == SnowberryExtract
+	If BaseItem == SnowberryExtract
 		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_SnowberryMins ) )
 		DebugLog( "--ItemAdded() = "+t+"; Made snowberry extract" )
+		LTT.SkillUsed = LTT.LDH.skill_Alchemy
 		return t
-
 	EndIf
 	; Frostfall "gives" objects when its changing exposure status, handle & ignore those.
-	if Type == LTT.LDH.kMisc && Item == DummyItem
+	if Type == LTT.LDH.kMisc && BaseItem == DummyItem
 		DebugLog( "--ItemAdded() = 0.0; Received MISC Dummy item on exposure change" )
 		return 0.0
 	endif
 	DebugLog( "--ItemAdded() t="+t+"; not our item" )
 	return t
-EndFunction
+endfunction

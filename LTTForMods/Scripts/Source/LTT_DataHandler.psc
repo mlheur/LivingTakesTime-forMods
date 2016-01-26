@@ -156,6 +156,25 @@ int property kWeather				= 54 AutoReadOnly
 int property kWordOfPower			= 118 AutoReadOnly
 int property kWorldSpace			= 71 AutoReadOnly
 
+string property skill_OneHanded		= "OneHanded" AutoReadOnly
+string property skill_TwoHanded		= "TwoHanded" AutoReadOnly
+string property skill_Marksman		= "Marksman" AutoReadOnly
+string property skill_Block		= "Block" AutoReadOnly
+string property skill_Smithing		= "Smithing" AutoReadOnly
+string property skill_HeavyArmor	= "HeavyArmor" AutoReadOnly
+string property skill_LightArmor	= "LightArmor" AutoReadOnly
+string property skill_Pickpocket	= "Pickpocket" AutoReadOnly
+string property skill_Lockpicking	= "Lockpicking" AutoReadOnly
+string property skill_Sneak		= "Sneak" AutoReadOnly
+string property skill_Alchemy		= "Alchemy" AutoReadOnly
+string property skill_Speechcraft	= "Speechcraft" AutoReadOnly
+string property skill_Alteration	= "Alteration" AutoReadOnly
+string property skill_Conjuration	= "Conjuration" AutoReadOnly
+string property skill_Destruction	= "Destruction" AutoReadOnly
+string property skill_Illusion		= "Illusion" AutoReadOnly
+string property skill_Restoration	= "Restoration" AutoReadOnly
+string property skill_Enchanting	= "Enchanting" AutoReadOnly
+
 ;///////////////////////////////////////////////////////////////////////////////
 // Variable Declarations
 /;
@@ -716,7 +735,7 @@ endfunction
 // Mod adders, getters & setters
 /;
 bool _lockAddMod = false
-int function addMod( LTT_ModBase Mod, string Name, string ESP, int TestForm, int ACT = -1, int Menus = 0 )
+int function addMod( LTT_ModBase Mod, string Name, string ESP, int TestForm, int ACT = 0, int Menus = 0 )
 	if _lockAddMod
 		return -2
 	endif
@@ -729,9 +748,6 @@ int function addMod( LTT_ModBase Mod, string Name, string ESP, int TestForm, int
 	  +": ACT="+ACT \
 	  +": Menus="+Menus \
 	)
-	if ACT < 0
-		ACT = act_NONE
-	endif
 	; Check if this is already in the table
 	int ID = _modIndex( Name )
 	; or else generate a new one
@@ -782,15 +798,16 @@ string function getModName( int ID )
 	return _modName[ID]
 endfunction
 
-bool function registerModActions( int ID, int ACT = -1 )
-	if ACT < 0
-		ACT = act_NONE
-	endif
+bool function registerModActions( int ID, int ACT = 0 )
 	if ID < 0
 		return false
 	endif
 	_modActions[ID] = ACT
 	return true
+endfunction
+
+bool function wantsAction( int ID, int ACT )
+	return Math.LogicalAnd( _modActions[ID], ACT ) as bool
 endfunction
 
 int function getModPrefix( int ID )
@@ -1225,7 +1242,7 @@ function savePropTable( FISSInterface fiss, string filename )
 endfunction
 
 function loadPropTable( FISSInterface fiss, string filename )
-	LTT.DebugLog( "++savePropTable() filename="+filename )
+	LTT.DebugLog( "++loadPropTable() filename="+filename )
 	fiss.beginLoad( filename )
 	
 	int ID = getLastProp()

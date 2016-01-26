@@ -20,6 +20,8 @@ scriptname LTT_Base extends Quest
 ;///////////////////////////////////////////////////////////////////////////////
 // TODO
 /;
+; Make sure we're not just picking something up or dropping something
+; during ItemAdded and ItemRemoved
 
 ;///////////////////////////////////////////////////////////////////////////////
 // Constants used by any mod
@@ -37,8 +39,8 @@ float property craftBowHrs		= 3.0 AutoReadOnly
 float property craftAmmoHrs		= 1.0 AutoReadOnly
 float property craftMiscHrs		= 1.0 AutoReadOnly
 float property craftImproveHrs		= 1.0 AutoReadOnly
-float property craftBeddingHrs		= 3.0 AutoReadOnly
-int   property craftTorchMins		= 15  AutoReadOnly
+float property craftBeddingHrs		= 0.25 AutoReadOnly
+int   property craftTorchMins		= 15 AutoReadOnly
 
 ;///////////////////////////////////////////////////////////////////////////////
 // Variable Declarations
@@ -57,6 +59,8 @@ bool LTT_verbose	= true ; when set, LTT in alpha testing
 int LTT_verMajor	= 0
 int LTT_verMinor	= 0
 string LTT_SaveFile	= "LTTForMods.xml"
+
+string property SkillUsed = "" Auto
 
 int mcmCellBaseActive	= 0
 int mcmCellPersonMsgs	= 2
@@ -183,16 +187,18 @@ int function getMsgFormat()
 	return 1
 endfunction
 
-bool function advanceTime(float hrsPasesd)
+bool function advanceTime(float hrsPassed)
 	DebugLog( "++advanceTime()" )
-	if !LDH.getBoolProp( LDH.prop_BaseActive ) || LDH.getBoolProp( LDH.prop_Paused ) || hrsPasesd <= 0.0
+	if !LDH.getBoolProp( LDH.prop_BaseActive ) || LDH.getBoolProp( LDH.prop_Paused ) || hrsPassed <= 0.0
 		DebugLog( "--advanceTime(); skipping because we're !active, paused or no time passed" )
 		return true
 	endif
 	
+	hrsPassed *= ExpertiseMultiplier()
+	
 	bool ShowMsg = true
 	float threshold = LDH.getIntProp( LDH.prop_ShowMsgThreshold ) as float
-	float minsPassed = LDH.convertHrsToMins( hrsPasesd )
+	float minsPassed = LDH.convertHrsToMins( hrsPassed )
 	DebugLog( "Checking message threshold"\
 	  +": threshold="+threshold \
 	  +"; minsPassed="+minsPassed \
@@ -207,11 +213,11 @@ bool function advanceTime(float hrsPasesd)
 	; of current time, this was taken from the original RTT code, keeping it
 	int Std = Math.Floor(CurTime)
 	CurTime -= Std 
-	CurTime += (hrsPasesd)
+	CurTime += (hrsPassed)
 	CurTime += Std
 	
-	int Hrs = Math.Floor(hrsPasesd)
-	int Mins =  Math.Floor(LDH.convertHrsToMins(hrsPasesd - Hrs))
+	int Hrs = Math.Floor(hrsPassed)
+	int Mins =  Math.Floor(LDH.convertHrsToMins(hrsPassed - Hrs))
 	
 	DebugLog("Advancing Time" \
 	  +": Hours="+Hrs \
@@ -250,17 +256,19 @@ function increaseSkill(string Skill, float Amt)
 	DebugLog( "--increaseSkill(); success" )
 endfunction
 
-float function ExpertiseMultiplier(String Skill)
+float function ExpertiseMultiplier()
 	DebugLog( "++ExpertiseMultiplier()" )
-	if !LDH.getBoolProp( LDH.prop_ExpertiseReducesTime )
+	if !LDH.getBoolProp( LDH.prop_ExpertiseReducesTime ) || SkillUsed == ""
+		DebugLog( "--ExpertiseMultiplier(); skipped" )
 		return 1
 	endif
-	float SkillPoints = Game.GetPlayer().GetActorValue(Skill)
+	float SkillPoints = Game.GetPlayer().GetActorValue(SkillUsed)
 	if (SkillPoints<0)
 		SkillPoints = 0
 	elseif (SkillPoints>150)
 		SkillPoints = 150
 	endif
+	SkillUsed = ""
 	DebugLog( "--ExpertiseMultiplier(); success" )
 	return (100-(SkillPoints/2))/100
 endfunction
@@ -321,6 +329,7 @@ function ItemAdded (form BaseItem, int Qty, ObjectReference ItemRef, ObjectRefer
 	endif
 	
 	DebugLog( "adding item..." )
+	SkillUsed = ""
 	
 	; iterate through mods and call their instance
 	modID = LDH.getLastMod()
@@ -332,7 +341,7 @@ function ItemAdded (form BaseItem, int Qty, ObjectReference ItemRef, ObjectRefer
 			DebugLog( "mod="+mod \
 			  +"; prefix="+LDH.getModPrefix(modID) \
 			)
-			if mod.isRunnable()
+			if mod.isRunnable() && LDH.wantsAction( modID, LDH.act_ITEMADDED )
 				TimePassed = mod.ItemAdded( BaseItem, Qty, ItemRef, Source, Type, Prefix )
 				if TimePassed >= 0
 					advanceTime( TimePassed )
@@ -388,7 +397,7 @@ function ItemRemoved(form BaseItem, int Qty, ObjectReference ItemRef, ObjectRefe
 	while modID >= 0
 		LTT_ModBase mod = LDH.getMod(modID)
 		if mod
-			if mod.isRunnable()
+			if mod.isRunnable() && LDH.wantsAction( modID, LDH.act_ITEMREMOVED )
 				TimePassed = mod.ItemRemoved( BaseItem, Qty, ItemRef, Destination, Type, Prefix )
 				if TimePassed >= 0
 					advanceTime( TimePassed )
@@ -424,7 +433,7 @@ event OnMenuOpen(string MenuName)
 	while modID >= 0
 		LTT_ModBase mod = LDH.getMod(modID)
 		if mod
-			if mod.isRunnable()
+			if mod.isRunnable() && LDH.wantsAction( modID, LDH.act_MENUOPENED )
 				TimePassed = mod.MenuOpened( menuID )
 				if TimePassed >= 0.0
 					advanceTime( TimePassed )
@@ -456,7 +465,7 @@ event OnMenuClose(String MenuName)
 	while modID >= 0
 		LTT_ModBase mod = LDH.getMod(modID)
 		if mod
-			if mod.isRunnable()
+			if mod.isRunnable() && LDH.wantsAction( modID, LDH.act_MENUCLOSED )
 				TimePassed = mod.MenuOpened( menuID )
 				if TimePassed >= 0.0
 					advanceTime( TimePassed )
