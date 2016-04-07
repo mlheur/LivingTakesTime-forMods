@@ -6,12 +6,16 @@ int	prop_SnowberryMins	= -1
 form	SnowberryExtract
 form 	DummyItem
 
+event OnInit()
+	ESP = "Frostfall.esp"
+	TestForm = ID_DummyItem
+	parent.OnInit()
+endevent
+
 event OnGameReload()
 	LTT = LTT_Factory.LTT_getBase() ; not normally required, but handy if LTT changes between saves
 	DebugLog( "++OnGameReload()" )
 	isLoaded = false
-	ESP = "Frostfall.esp"
-	TestForm = ID_DummyItem
 	RegisterActs = LTT.LDH.act_ITEMADDED
 	RegisterMenus = LTT.LDH.menu_None
 	modID = LTT.LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
@@ -44,7 +48,7 @@ float function ItemAdded( form BaseItem, int Qty, form ItemRef, form Container, 
 		return t
 	endif
 	If BaseItem == SnowberryExtract
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_SnowberryMins ) )
+		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_SnowberryMins ) ) * Qty
 		DebugLog( "--ItemAdded() = "+t+"; Made snowberry extract" )
 		LTT.SkillUsed = LTT.LDH.skill_Alchemy
 		return t

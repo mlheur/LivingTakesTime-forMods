@@ -12,11 +12,14 @@ bool property isInit = false Auto
 
 int function GetVersion()
 	LTT.DebugLog( "++Menu::GetVersion()" )
-	return LTT.getVersion()
 	LTT.DebugLog( "--Menu::GetVersion(); success" )
+	return LTT.getVersion()
 endfunction
 
 event OnGameReload() ; this is called before OnConfigInit() - why???
+;;	; Do a little wait here for any LTT_mods who are getting their
+;;	; first OnInit().
+;;	Utility.Wait( 1.0 )
 	LTT.DebugLog( "++Menu::OnGameReload()" )
 	parent.OnGameReload()
 	LTT.mcmOnGameReload( self )

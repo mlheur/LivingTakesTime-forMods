@@ -1,5 +1,6 @@
 Language	English	French	German	Italian	Spanish	Czech	Polish	Russian	Japanese
 $ERROR	Error
+$E_FISS_DONT_SAVE	Do not save this game, FISS has added faulty values.
 $E_NO_FLOAT_PROP_MAXVALUE	E_NoFloatPropertyMaxValue
 $E_NO_FLOAT_PROP_MINVALUE	E_NoFloatPropertyMinValue
 $E_NO_INT_PROP_MAXVALUE	E_NoIntPropertyMaxValue

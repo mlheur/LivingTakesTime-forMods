@@ -3,18 +3,12 @@ scriptname LTT_CheskoFrostfall extends LTT_ModBase
 ;///////////////////////////////////////////////////////////////////////////////
 // Prop Trackers
 /;
-int prop_StickMins	= -1
 int prop_TorchMins	= -1
 int prop_CookpotHrs	= -1
 int prop_BackpackHrs	= -1
-int prop_BeddingHrs	= -1
 int prop_SmallTentHrs	= -1
 int prop_LargeTentHrs	= -1
-int prop_HatchetHrs	= -1
-int prop_ArrowsHrs	= -1
 int prop_CloakHrs	= -1
-int prop_FurHrs		= -1
-int prop_LaceMins	= -1
 int prop_TanRackMins	= -1
 int prop_MortarHrs	= -1
 int prop_EnchanterHrs	= -1
@@ -48,12 +42,16 @@ float	TentRemovedTime = 0.0
 float	TentRemovedThreshold = 1.0
 int	TentRemovedSize = -1
 
+event OnInit()
+	ESP = "Chesko_Frostfall.esp"
+	TestForm = 0x041045
+	parent.OnInit()
+endevent
+
 event OnGameReload()
 	LTT = LTT_Factory.LTT_getBase() ; not normally required, but handy if LTT changes between saves
 	DebugLog( "++OnGameReload()" )
 	isLoaded = false
-	ESP = ESP
-	TestForm = 0x041045
 	RegisterActs = Math.LogicalOr( LTT.LDH.act_ITEMADDED, LTT.LDH.act_ITEMREMOVED )
 	RegisterMenus = LTT.LDH.menu_None
 	modID = LTT.LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
@@ -63,21 +61,16 @@ event OnGameReload()
 	endif
 
 	prop_CloakHrs = LTT.LDH.addFloatProp( modID, "FF2_CloakHrs", LTT.craftBodyHrs/2, "$FF2_CloakHrs", "$HLP_FF2_CloakHrs", 2, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_StickMins = LTT.LDH.addIntProp( modID, "FF2_StickMins", LTT.LDH.convertHrsToMins( LTT.craftStaffHrs ) as int, "$FF2_StickMins", "$HLP_FF2_StickMins", 3, 0, LTT.LDH.maxMins, "minutes" )
-	prop_TorchMins = LTT.LDH.addIntProp( modID, "FF2_TorchMins", LTT.craftTorchMins, "$FF2_TorchMins", "$HLP_FF2_TorchMins", 9, 0, LTT.LDH.maxMins, "minutes" )
-	prop_CookpotHrs = LTT.LDH.addFloatProp( modID, "FF2_CookpotHrs", LTT.craftMiscHrs, "$FF2_CookpotHrs", "$HLP_FF2_CookpotHrs", 11, 0.0, LTT.LDH.maxHrs, "hours" )
 	prop_BackpackHrs = LTT.LDH.addFloatProp( modID, "FF2_BackpackHrs", LTT.craftShieldHrs, "$FF2_BackpackHrs", "$HLP_FF2_BackpackHrs", 4, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_BeddingHrs = LTT.LDH.addFloatProp( modID, "FF2_BeddingHrs", LTT.craftBeddingHrs, "$FF2_BeddingHrs", "$HLP_FF2_BeddingHrs", 6, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_SmallTentHrs = LTT.LDH.addFloatProp( modID, "FF2_SmallTentHrs", 4.0, "$FF2_SmallTentHrs", "$HLP_FF2_SmallTentHrs", 8, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_LargeTentHrs = LTT.LDH.addFloatProp( modID, "FF2_LargeTentHrs", 6.0, "$FF2_LargeTentHrs", "$HLP_FF2_LargeTentHrs", 10, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_HatchetHrs = LTT.LDH.addFloatProp( modID, "FF2_HatchetHrs", LTT.craftOneHandedHrs, "$FF2_HatchetHrs", "$HLP_FF2_HatchetHrs", 7, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_ArrowsHrs = LTT.LDH.addFloatProp( modID, "FF2_ArrowsHrs", LTT.craftAmmoHrs, "$FF2_ArrowsHrs", "$HLP_FF2_ArrowsHrs", 5, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_LinenMins = LTT.LDH.addIntProp( modID, "FF2_LinenMins", 15, "$FF2_LinenMins", "$HLP_FF2_LinenMins", 15, 0, LTT.LDH.maxMins, "minutes" )
-	prop_FurHrs = LTT.LDH.addFloatProp( modID, "FF2_FurHrs", LTT.craftMiscHrs, "$FF2_FurHrs", "$HLP_FF2_FurHrs", 12, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_LaceMins = LTT.LDH.addIntProp( modID, "FF2_LaceMins", 15, "$FF2_LaceMins", "$HLP_FF2_LaceMins", 14, 0, LTT.LDH.maxMins, "minutes" )
-	prop_TanRackMins = LTT.LDH.addFloatProp( modID, "FF2_TanRackMins", LTT.LDH.convertHrsToMins(LTT.craftMiscHrs) as int, "$FF2_TanRackMins", "$HLP_FF2_TanRackMins", 13, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_MortarHrs = LTT.LDH.addFloatProp( modID, "FF2_MortarHrs", LTT.craftMiscHrs, "$FF2_MortarHrs", "$HLP_FF2_MortarHrs", 16, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_EnchanterHrs = LTT.LDH.addFloatProp( modID, "FF2_EnchanterHrs", LTT.craftMiscHrs, "$FF2_EnchanterHrs", "$HLP_FF2_EnchanterHrs", 17, 0.0, LTT.LDH.maxHrs, "hours" )
+	prop_SmallTentHrs = LTT.LDH.addFloatProp( modID, "FF2_SmallTentHrs", 4.0, "$FF2_SmallTentHrs", "$HLP_FF2_SmallTentHrs", 6, 0.0, LTT.LDH.maxHrs, "hours" )
+	prop_LargeTentHrs = LTT.LDH.addFloatProp( modID, "FF2_LargeTentHrs", 6.0, "$FF2_LargeTentHrs", "$HLP_FF2_LargeTentHrs", 8, 0.0, LTT.LDH.maxHrs, "hours" )
+
+	prop_TorchMins = LTT.LDH.addIntProp( modID, "FF2_TorchMins", LTT.craftTorchMins, "$FF2_TorchMins", "$HLP_FF2_TorchMins", 3, 0, LTT.LDH.maxMins, "minutes" )
+	prop_CookpotHrs = LTT.LDH.addFloatProp( modID, "FF2_CookpotHrs", LTT.craftMiscHrs, "$FF2_CookpotHrs", "$HLP_FF2_CookpotHrs", 5, 0.0, LTT.LDH.maxHrs, "hours" )
+	prop_TanRackMins = LTT.LDH.addIntProp( modID, "FF2_TanRackMins", LTT.LDH.convertHrsToMins(LTT.craftMiscHrs) as int, "$FF2_TanRackMins", "$HLP_FF2_TanRackMins", 7, 0, LTT.LDH.maxMins, "minutes" )
+	prop_LinenMins = LTT.LDH.addIntProp( modID, "FF2_LinenMins", 15, "$FF2_LinenMins", "$HLP_FF2_LinenMins", 9, 0, LTT.LDH.maxMins, "minutes" )
+	prop_EnchanterHrs = LTT.LDH.addFloatProp( modID, "FF2_EnchanterHrs", LTT.craftMiscHrs, "$FF2_EnchanterHrs", "$HLP_FF2_EnchanterHrs", 11, 0.0, LTT.LDH.maxHrs, "hours" )
+	prop_MortarHrs = LTT.LDH.addFloatProp( modID, "FF2_MortarHrs", LTT.craftMiscHrs, "$FF2_MortarHrs", "$HLP_FF2_MortarHrs", 13, 0.0, LTT.LDH.maxHrs, "hours" )
 
 	isLoaded = Load()
 	DebugLog( "--OnGameReload(); success" )
@@ -195,19 +188,19 @@ float function ItemAdded( form BaseItem, int Qty, form ItemRef, form Container, 
 	; Camping Items
 
 	if Cloaks.Find(BaseItem) >= 0
-		t = LTT.LDH.getFloatProp( prop_CloakHrs )
+		t = LTT.LDH.getFloatProp( prop_CloakHrs ) * Qty
 		DebugLog("Cloak. Base time = " + t)
 
 	elseif BaseItem == Stick
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_StickMins ) )
+		t = LTT.LDH.getFloatProp( LTT.Skyrim.prop_CraftStaffHrs ) * Qty
 		DebugLog("Walking stick. Base time = " + t)
 
 	elseif BaseItem == Torch
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_TorchMins ) )
+		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_TorchMins ) ) * Qty
 		DebugLog("Torch. Base time = " + t)
 
 	elseif BaseItem == Cookpot
-		t = LTT.LDH.getFloatProp( prop_CookpotHrs )
+		t = LTT.LDH.getFloatProp( prop_CookpotHrs ) * Qty
 		LTT.SkillUsed = LTT.LDH.skill_Smithing
 		DebugLog("Cookpot. Base time = " + t)
 
@@ -216,7 +209,7 @@ float function ItemAdded( form BaseItem, int Qty, form ItemRef, form Container, 
 			t = 0.0
 			DebugLog("Amulet & Backpack. Base time = " + t)
 		else
-			t = LTT.LDH.getFloatProp( prop_BackpackHrs )
+			t = LTT.LDH.getFloatProp( prop_BackpackHrs ) * Qty
 			DebugLog("Backpack. Base time = " + t)
 		endif
 
@@ -226,7 +219,7 @@ float function ItemAdded( form BaseItem, int Qty, form ItemRef, form Container, 
 			t = 0.0
 			DebugLog("Reduced small tent to 1BR. Base time = " + t)
 		else
-			t = LTT.LDH.getFloatProp( prop_SmallTentHrs )
+			t = LTT.LDH.getFloatProp( prop_SmallTentHrs ) * Qty
 			DebugLog("Small tent. Base time = " + t)
 		endif
 
@@ -236,12 +229,12 @@ float function ItemAdded( form BaseItem, int Qty, form ItemRef, form Container, 
 			t = 0.0
 			DebugLog("Reduced large tent to 1BR. Base time = " + t)
 		else
-			t = LTT.LDH.getFloatProp( prop_LargeTentHrs )
+			t = LTT.LDH.getFloatProp( prop_LargeTentHrs ) * Qty
 			DebugLog("Large tent. Base time = " + t)
 		endif
 
 	elseif SmallTents_MoreBR.Find(BaseItem) >= 0 
-		t = LTT.LDH.getFloatProp( prop_BeddingHrs )
+		t = LTT.LDH.getFloatProp( LTT.Skyrim.prop_CraftBeddingHrs ) * Qty
 		DebugLog("Adding a bedroll to a small tent. Base time = " + t)
 		
 	elseif LargeTents_MoreBR.Find(BaseItem) >= 0
@@ -261,45 +254,40 @@ float function ItemAdded( form BaseItem, int Qty, form ItemRef, form Container, 
 			t = 0.0
 			DebugLog("Reduced large tent. Base time = " + t)
 		else
-			t = LTT.LDH.getFloatProp( prop_BeddingHrs )
+			t = LTT.LDH.getFloatProp( LTT.Skyrim.prop_CraftBeddingHrs ) * Qty
 			DebugLog("Adding a bedroll to a tent. Base time = " + t)
 		endif
 
 	elseif BaseItem == Hatchet
-		t = LTT.LDH.getFloatProp( prop_HatchetHrs )
+		t = LTT.LDH.getFloatProp( LTT.Skyrim.prop_Craft1AxeHrs )
 		LTT.SkillUsed = LTT.LDH.skill_Smithing
 		DebugLog("Stone hatchet. Base time = " + t)
-
-	elseif Type == LTT.LDH.kAmmo
-		t = LTT.LDH.getFloatProp( prop_ArrowsHrs ) / 24
-		LTT.SkillUsed = LTT.LDH.skill_Smithing
-		DebugLog("Arrows. Base time = " + t) ; cfArrowsTime is the time for one whole *batch* (of 24)
 
 	; Materials
 
 	elseif BaseItem == Linen
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_LinenMins ) )
+		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_LinenMins ) ) * Qty
 		DebugLog("Linen wrap. Base time = " + t)
 
 	elseif BaseItem == Pelt
-		t = LTT.LDH.getFloatProp( prop_FurHrs )
+		t = LTT.LDH.getFloatProp( LTT.Skyrim.prop_CraftLeatherHrs ) / 3 * Qty
 		DebugLog("Fur plate. Base time = " + t)
 
 	elseif BaseItem == Lace
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_LaceMins ) )
+		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( LTT.Skyrim.prop_CraftStripMins ) ) * Qty
 		DebugLog("Hide lace. Base time = " + t)
 
 	elseif BaseItem == TanRack
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_TanRackMins ) )
+		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_TanRackMins ) ) * Qty
 		DebugLog("Tanning rack. Base time = " + t)
 
 	elseif BaseItem == Mortar
-		t = LTT.LDH.getFloatProp( prop_MortarHrs )
+		t = LTT.LDH.getFloatProp( prop_MortarHrs ) * Qty
 		LTT.SkillUsed = LTT.LDH.skill_Alchemy
 		DebugLog("Mortar and pestle. Base time = " + t)
 
 	elseif BaseItem == Enchanter
-		t = LTT.LDH.getFloatProp( prop_EnchanterHrs )
+		t = LTT.LDH.getFloatProp( prop_EnchanterHrs ) * Qty
 		LTT.SkillUsed = LTT.LDH.skill_Enchanting
 		DebugLog("Enchanting supplies. They're so enchanting! Base time = " + t)
 	
@@ -312,103 +300,3 @@ float function ItemAdded( form BaseItem, int Qty, form ItemRef, form Container, 
 	DebugLog( "--ItemAdded(); t="+t )
 	return t
 endfunction
-
-;;;DISABLED;;;Bool Function Check_FF_Craft(Form akBaseItem, int aiType, int aiItemCount)
-;;;DISABLED;;;	DebugMode("Check_FF_Craft...")
-;;;DISABLED;;;
-;;;DISABLED;;;	Float t
-;;;DISABLED;;;	Float totalBaseTime
-;;;DISABLED;;;
-;;;DISABLED;;;	If akBaseItem == FF_Items_Pelt
-;;;DISABLED;;;		totalBaseTime = ffPeltTime * aiItemCount
-;;;DISABLED;;;		DebugMode("Cleaned pelt. Base time = " + ffPeltTime + "; x" + aiItemCount + " = " + totalBaseTime)
-;;;DISABLED;;;		TimeCalc(totalBaseTime)
-;;;DISABLED;;;
-;;;DISABLED;;;	ElseIf akBaseItem == FF_Items_Lace
-;;;DISABLED;;;		t = ToMinutes(ffLaceTime)
-;;;DISABLED;;;		totalBaseTime = t * aiItemCount
-;;;DISABLED;;;		DebugMode("Hide lace. Base time = " + t + "; x" + aiItemCount + " = " + totalBaseTime)
-;;;DISABLED;;;		TimeCalc(totalBaseTime)
-;;;DISABLED;;;
-;;;DISABLED;;;	ElseIf akBaseItem == FF_Items_Linen
-;;;DISABLED;;;		t = ToMinutes(ffLinenTime)
-;;;DISABLED;;;		totalBaseTime = t * aiItemCount
-;;;DISABLED;;;		DebugMode("Linen wrap. Base time = " + t + "; x" + aiItemCount + " = " + totalBaseTime)
-;;;DISABLED;;;		TimeCalc(totalBaseTime)
-;;;DISABLED;;;
-;;;DISABLED;;;	ElseIf akBaseItem == FF_Items_Torch
-;;;DISABLED;;;		t = ToMinutes(ffTorchTime)
-;;;DISABLED;;;		totalBaseTime = t * aiItemCount
-;;;DISABLED;;;		DebugMode("Torch. Base time = " + t + "; x" + aiItemCount + " = " + totalBaseTime)
-;;;DISABLED;;;		TimeCalc(totalBaseTime)
-;;;DISABLED;;;
-;;;DISABLED;;;	ElseIf akBaseItem == FF_Items_Stick
-;;;DISABLED;;;		t = ToMinutes(ffStickTime)
-;;;DISABLED;;;		DebugMode("Walking stick. Base time = " + t)
-;;;DISABLED;;;		TimeCalc(t)
-;;;DISABLED;;;
-;;;DISABLED;;;	ElseIf akBaseItem == FF_Items_Cookpot
-;;;DISABLED;;;		DebugMode("Cookpot. Base time = " + ffCookpotTime)
-;;;DISABLED;;;		TimeCalc(ffCookpotTime)
-;;;DISABLED;;;
-;;;DISABLED;;;	ElseIf akBaseItem == FF_Items_TanRack
-;;;DISABLED;;;		t = ToMinutes(ffTanRackTime)
-;;;DISABLED;;;		DebugMode("Tanning rack. Base time = " + t)
-;;;DISABLED;;;		TimeCalc(t)
-;;;DISABLED;;;
-;;;DISABLED;;;	ElseIf akBaseItem == FF_Items_Mortar
-;;;DISABLED;;;		DebugMode("Mortar and pestle. Base time = " + ffMortarTime)
-;;;DISABLED;;;		TimeCalc(ffMortarTime)
-;;;DISABLED;;;
-;;;DISABLED;;;	ElseIf akBaseItem == FF_Items_Ench
-;;;DISABLED;;;		DebugMode("Enchanting supplies. They're so enchanting! Base time = " + ffEnchTime)
-;;;DISABLED;;;		TimeCalc(ffEnchTime)
-;;;DISABLED;;;
-;;;DISABLED;;;	ElseIf FF_Items_Cloaks.Find(akBaseItem) > -1
-;;;DISABLED;;;		DebugMode("Cloak. Base time = " + ffCloakTime)
-;;;DISABLED;;;		TimeCalc(ffCloakTime)
-;;;DISABLED;;;
-;;;DISABLED;;;	ElseIf FF_Items_Backpacks.Find(akBaseItem) > -1
-;;;DISABLED;;;		If FF_Split_Pack
-;;;DISABLED;;;			DebugMode("Backpack, but ignored due to splitter.")
-;;;DISABLED;;;			FF_Split_Pack = False
-;;;DISABLED;;;		Else
-;;;DISABLED;;;			DebugMode("Backpack. Base time = " + ffBackpackTime)
-;;;DISABLED;;;			TimeCalc(ffBackpackTime)
-;;;DISABLED;;;		EndIf
-;;;DISABLED;;;
-;;;DISABLED;;;	ElseIf FF_Items_SmallTents.Find(akBaseItem) > -1
-;;;DISABLED;;;		DebugMode("Small tent. Base time = " + ffSmallTentTime)
-;;;DISABLED;;;		TimeCalc(ffSmallTentTime)
-;;;DISABLED;;;
-;;;DISABLED;;;	ElseIf FF_Items_LargeTents.Find(akBaseItem) > -1
-;;;DISABLED;;;		DebugMode("Large tent. Base time = " + ffLargeTentTime)
-;;;DISABLED;;;		TimeCalc(ffLargeTentTime)
-;;;DISABLED;;;
-;;;DISABLED;;;	ElseIf akBaseItem == FF_Items_Hatchet
-;;;DISABLED;;;		t = ToMinutes(ffHatchetTime)
-;;;DISABLED;;;		DebugMode("Stone hatchet. Base time = " + t)
-;;;DISABLED;;;		TimeCalc(t)
-;;;DISABLED;;;
-;;;DISABLED;;;	ElseIf aiType == 26
-;;;DISABLED;;;		int majorId = akBaseItem.GetFormID()
-;;;DISABLED;;;		int mask = Math.LeftShift(FF_Prefix, 24)
-;;;DISABLED;;;		int minorId = majorId - mask
-;;;DISABLED;;;		If minorId >= 0x04AD67 && minorId <= 0x04AD84
-;;;DISABLED;;;			DebugMode("Splitter. Ignoring next backpack and next jewelry.")
-;;;DISABLED;;;			FF_Split_Pack = True
-;;;DISABLED;;;			FF_Split_Amulet = True
-;;;DISABLED;;;		EndIf
-;;;DISABLED;;;
-;;;DISABLED;;;	ElseIf aiType == 42
-;;;DISABLED;;;		DebugMode("Arrows. Base time = " + ffArrowsTime) ; ffArrowsTime is the time for one whole *batch* (of 24)
-;;;DISABLED;;;		TimeCalc(ffArrowsTime)
-;;;DISABLED;;;
-;;;DISABLED;;;	Else
-;;;DISABLED;;;		DebugMode("No match found. This one's free!")
-;;;DISABLED;;;	EndIf
-;;;DISABLED;;;
-;;;DISABLED;;;	Return True
-;;;DISABLED;;;
-;;;DISABLED;;;EndFunction
-;;;DISABLED;;;

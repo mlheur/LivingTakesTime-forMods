@@ -23,8 +23,10 @@ scriptname LTT_Base extends Quest
 ; Make sure we're not just picking something up or dropping something
 ; during ItemAdded and ItemRemoved
 
+LTT_Skyrim property Skyrim Auto
+
 ;///////////////////////////////////////////////////////////////////////////////
-// Constants used by any mod
+// Constants used by any mod, for consistency
 /;
 float property craftHeadHrs		= 2.0 AutoReadOnly
 float property craftBodyHrs		= 6.0 AutoReadOnly
@@ -39,12 +41,19 @@ float property craftBowHrs		= 3.0 AutoReadOnly
 float property craftAmmoHrs		= 1.0 AutoReadOnly
 float property craftMiscHrs		= 1.0 AutoReadOnly
 float property craftImproveHrs		= 1.0 AutoReadOnly
-float property craftBeddingHrs		= 0.25 AutoReadOnly
+float property craftBeddingHrs		= 0.5 AutoReadOnly
 int   property craftTorchMins		= 15 AutoReadOnly
+int   property eatFoodMins		= 15 AutoReadOnly
+int   property craftFoodMins		= 30 AutoReadOnly
+int   property craftIngredientMins	= 15 AutoReadOnly
 
 ;///////////////////////////////////////////////////////////////////////////////
 // Variable Declarations
 /;
+;;;float	LoadWaitTime			= 0.25
+;;;int	LoadTries			= 100
+float	LockWaitTime			= 0.01
+int	_spinlockTries			= 1000
 
 ;///////////////////////////////////////////////////////////////////////////////
 // Moving much of the lookup tables for attached mods to other source files.
@@ -54,13 +63,20 @@ FISSInterface fiss
 
 bool property isInit	= false Auto
 
-bool LTT_debug		= true ; when set, LTT in beta testing
-bool LTT_verbose	= true ; when set, LTT in alpha testing
+bool property LTT_debug		= true Auto ; when set, LTT in beta testing
+bool property LTT_verbose	= true Auto ; when set, LTT in alpha testing
 int LTT_verMajor	= 0
 int LTT_verMinor	= 0
 string LTT_SaveFile	= "LTTForMods.xml"
 
 string property SkillUsed = "" Auto
+
+LTT_Menu property mcm Auto
+int[]	mcmOID_Index
+int[]	mcmOID_Prop
+int	mcmOID_Count	= -1
+int	mcmOID_Save	= -1
+int	mcmOID_Load	= -1
 
 int mcmCellBaseActive	= 0
 int mcmCellPersonMsgs	= 2
@@ -72,6 +88,16 @@ int mcmCellExpertise	= 6
 int mcmCellLoad		= 10
 int mcmCellSave		= 11
 int mcmCellVersion	= 22
+
+string property station_Cookpot		= "CraftingCookpot" Auto
+string property	station_Smelter		= "CraftingSmelter" Auto
+string property station_ArmorTable	= "CraftingSmithingArmorTable" Auto
+string property station_Forge		= "CraftingSmithingForge" Auto
+string property station_Sharpening	= "CraftingSmthingSharpeningWheel" Auto
+string property station_SkyForge	= "CraftingSmithingSkyforge" Auto
+string property station_TanningRack	= "CraftingTanningRack" Auto
+string property station_Alchemy		= "isAlchemy" Auto
+string property station_Enchanting	= "isEnchanting" Auto
 
 ;///////////////////////////////////////////////////////////////////////////////
 // Properties passed from ESP
@@ -89,14 +115,27 @@ GlobalVariable Property GameHour Auto
 // Event Handlers
 /;
 
+bool _spinlockOnUpdate = false
 event OnUpdate()
+	int lockTries = 0
+	while _spinlockOnUpdate || !isInit
+;;;		DebugLog( "OnUpdate() locked; tries="+lockTries )
+		Utility.WaitMenuMode( LockWaitTime )
+		lockTries += 1
+		if lockTries >= _spinlockTries
+;;;			DebugLog( "OnUpdate() skipped because it could not get a lock after "+lockTries+" tries" )
+			return
+		endif
+	endwhile
+	_spinlockOnUpdate = true
 	DebugLog( "++OnUpdate()" )
 	; Mods should call LTT.RegisterForSingleUpdate() so that we can check
 	; them in after we've loaded.
 	LDH.DumpTables( "start of on update" )
-	reloadMods()
+	mcmOnGameReload( mcm )
 	LDH.DumpTables( "end of on update" )
 	DebugLog( "--OnUpdate(); success" )
+	_spinlockOnUpdate = false
 endevent
 
 ;///////////////////////////////////////////////////////////////////////////////
@@ -144,9 +183,11 @@ function startStation(ObjectReference Station)
 	DebugLog( "++startStation()" )
 	int ID = LDH.getStationKeyword( Station )
 	if ID < 0
-		LDH.setStringState( LDH.state_CraftingStation, LDH.getStation(ID) )
-	else
+		DebugLog( "setting station: KW="+LDH.getStation(LDH.station_Other) )
 		LDH.setStringState( LDH.state_CraftingStation, LDH.getStation(LDH.station_Other) )
+	else
+		DebugLog( "setting station: ID="+ID+"; KW="+LDH.getStation(ID) )
+		LDH.setStringState( LDH.state_CraftingStation, LDH.getStation(ID) )
 	endif
 	DebugLog( "--startStation(); success" )
 endfunction
@@ -162,14 +203,16 @@ endfunction
 // Internal functions
 /;
 
-bool function CheckIncompatibleMods()
+bool function CheckModCompatibility()
 	bool Incompatible = false
 	Log( ">>>>>>>>>>>>>>> Checking MOD Compatibility <<<<<<<<<<<<<<<" )
 	Log( ">>>>>>>>>>>>>>> Ignore any errors about files not existing <<<<<<<<<<<<<<<" )
+	; Check incompatible mods
 	if Game.GetFormFromFile( 0xD62, "ReadingTakesTime.esp" )
 		Debug.MessageBox( "$E_RTT_LOADED_INCOMPATIBLE" )
 		Incompatible = true
 	endif
+
 	Log( ">>>>>>>>>>>>>>> Finished Checking MOD Compatibility <<<<<<<<<<<<<<<" )
 	return Incompatible
 endfunction
@@ -188,13 +231,14 @@ int function getMsgFormat()
 endfunction
 
 bool function advanceTime(float hrsPassed)
-	DebugLog( "++advanceTime()" )
+	DebugLog( "++advanceTime(); hrsPassed="+hrsPassed )
 	if !LDH.getBoolProp( LDH.prop_BaseActive ) || LDH.getBoolProp( LDH.prop_Paused ) || hrsPassed <= 0.0
 		DebugLog( "--advanceTime(); skipping because we're !active, paused or no time passed" )
 		return true
 	endif
 	
 	hrsPassed *= ExpertiseMultiplier()
+	DebugLog( "hrsPassed after ExpertiseMultiplier="+hrsPassed )
 	
 	bool ShowMsg = true
 	float threshold = LDH.getIntProp( LDH.prop_ShowMsgThreshold ) as float
@@ -257,7 +301,7 @@ function increaseSkill(string Skill, float Amt)
 endfunction
 
 float function ExpertiseMultiplier()
-	DebugLog( "++ExpertiseMultiplier()" )
+	DebugLog( "++ExpertiseMultiplier(): Skill="+SkillUsed )
 	if !LDH.getBoolProp( LDH.prop_ExpertiseReducesTime ) || SkillUsed == ""
 		DebugLog( "--ExpertiseMultiplier(); skipped" )
 		return 1
@@ -269,7 +313,7 @@ float function ExpertiseMultiplier()
 		SkillPoints = 150
 	endif
 	SkillUsed = ""
-	DebugLog( "--ExpertiseMultiplier(); success" )
+	DebugLog( "--ExpertiseMultiplier(); multiplier="+(100-(SkillPoints/2))/100 )
 	return (100-(SkillPoints/2))/100
 endfunction
 
@@ -278,19 +322,33 @@ endfunction
 // early as possible.
 /;
 bool _spinlockItems = false
-function ItemAdded (form BaseItem, int Qty, ObjectReference ItemRef, ObjectReference Source)
+function ItemChanged( int ACT, form BaseItem, int Qty, ObjectReference ItemRef, ObjectReference SourceDest)
+	if ( !LDH.getBoolProp( LDH.prop_BaseActive ) || UI.IsMenuOpen("Console") )
+		DebugLog( "--ItemChanged(); !BaseActive, console is open" )
+		return
+	endif
 	int lockTries = 0
 	while _spinlockItems
-		DebugLog( "ItemAdded() locked; tries="+lockTries )
-		Utility.WaitMenuMode( LDH.LockWaitTime )
+		DebugLog( "ItemChanged("+ACT+") locked; tries="+lockTries )
+		Utility.WaitMenuMode( LockWaitTime )
 		lockTries += 1
-		if lockTries >= LDH.LockTries
-			DebugLog( "ItemAdded() skipped because it could not be handled after "+lockTries+" tries" )
+		if lockTries >= _spinlockTries
+			DebugLog( "ItemChanged("+ACT+") skipped because it could not be handled after "+lockTries+" tries" )
 			return
 		endif
 	endwhile
-	DebugLog( "ItemAdded() got lock" )
 	_spinlockItems = true
+	DebugLog( "ItemChanged("+ACT+"); Got lock" )
+	if ACT == LDH.act_ITEMADDED
+		ItemAdded( BaseItem, Qty, ItemRef, SourceDest )
+	elseif ACT == LDH.act_ITEMREMOVED
+		ItemRemoved( BaseItem, Qty, ItemRef, SourceDest )
+	endif
+	DebugLog( "ItemChanged("+ACT+"); Releasing lock" )
+	_spinlockItems = false
+endfunction
+
+function ItemAdded (form BaseItem, int Qty, ObjectReference ItemRef, ObjectReference Source)
 	DebugLog( "++ItemAdded()" \
 	  +": BaseItem="+BaseItem \
 	  +": Name="+BaseItem.GetName() \
@@ -308,23 +366,13 @@ function ItemAdded (form BaseItem, int Qty, ObjectReference ItemRef, ObjectRefer
 	  +"; Prefix="+Prefix\
 	)
 
-	if ( !LDH.getBoolProp( LDH.prop_BaseActive ) || UI.IsMenuOpen("Console") || BaseItem == none )
-		DebugLog( "--ItemAdded(); !BaseActive, console is open, or not an item", true )
-		DebugLog( "ItemAdded() releasing lock" )
-		_spinlockItems = false
-		return
-	endif
 	if (!LDH.getBoolProp(LDH.state_IsLooting) && !LDH.getBoolProp(LDH.state_IsCrafting)) || Source 
 		DebugLog( "--ItemAdded(); not looting or crafting and came from a container, must be taking from a chest/box", true )
-		DebugLog( "ItemAdded() releasing lock" )
-		_spinlockItems = false
 		return
 	endif
 
 	if LDH.removeFreeItem( BaseItem )
 		DebugLog( "--ItemAdded(); Had a free instance of this item in the queue", true )
-		DebugLog( "ItemAdded() releasing lock" )
-		_spinlockItems = false
 		return
 	endif
 	
@@ -346,8 +394,6 @@ function ItemAdded (form BaseItem, int Qty, ObjectReference ItemRef, ObjectRefer
 				if TimePassed >= 0
 					advanceTime( TimePassed )
 					DebugLog( "--ItemAdded(); Handled by a mod: modID="+modID )
-					DebugLog( "ItemAdded() releasing lock" )
-					_spinlockItems = false
 					return
 				endif
 			endif
@@ -355,23 +401,9 @@ function ItemAdded (form BaseItem, int Qty, ObjectReference ItemRef, ObjectRefer
 		modID -= 1
 	endwhile
 	DebugLog( "--ItemAdded(); not handled by anything, what to do?", true )
-	DebugLog( "ItemAdded() releasing lock" )
-	_spinlockItems = false
 endfunction
 
 function ItemRemoved(form BaseItem, int Qty, ObjectReference ItemRef, ObjectReference Destination )
-	int lockTries = 0
-	while _spinlockItems
-		DebugLog( "ItemRemoved() locked; tries="+lockTries )
-		Utility.WaitMenuMode( LDH.LockWaitTime )
-		lockTries += 1
-		if lockTries >= LDH.LockTries
-			DebugLog( "ItemAdded() skipped because it could not be handled after "+lockTries+" tries" )
-			return
-		endif
-	endwhile
-	DebugLog( "ItemRemoved() got lock" )
-	_spinlockItems = true
 	DebugLog( "++ItemRemoved()" \
 	  +": BaseItem="+BaseItem \
 	  +": Name="+BaseItem.GetName() \
@@ -385,13 +417,6 @@ function ItemRemoved(form BaseItem, int Qty, ObjectReference ItemRef, ObjectRefe
 	string ItemName = BaseItem.GetName()
 	int modID = -1
 
-	if ( !LDH.getBoolProp( LDH.prop_BaseActive ) || UI.IsMenuOpen("Console") || BaseItem == none )
-		DebugLog( "--ItemRemoved(); !BaseActive, console is open, or not an item" )
-		DebugLog( "ItemRemoved() releasing lock" )
-		_spinlockItems = false
-		return
-	endif
-
 	; iterate through mods and call their instance
 	modID = LDH.getLastMod()
 	while modID >= 0
@@ -402,8 +427,6 @@ function ItemRemoved(form BaseItem, int Qty, ObjectReference ItemRef, ObjectRefe
 				if TimePassed >= 0
 					advanceTime( TimePassed )
 					DebugLog( "--ItemRemoved(); Handled by a mod: modID="+modID )
-					DebugLog( "ItemRemoved() releasing lock" )
-					_spinlockItems = false
 					return
 				endif
 			endif
@@ -411,8 +434,6 @@ function ItemRemoved(form BaseItem, int Qty, ObjectReference ItemRef, ObjectRefe
 		modID-=1
 	endwhile
 	DebugLog( "--ItemRemoved(); not handled by anything, what to do?" )
-	DebugLog( "ItemRemoved() releasing lock" )
-	_spinlockItems = false
 endfunction
 
 event OnMenuOpen(string MenuName)
@@ -484,12 +505,6 @@ endevent
 //	These are all called from LTT_Menu.  They were put in here for easy
 //	access to LDH and all the internal variables used in LTT_Base.
 /;
-LTT_Menu property mcm Auto
-int[]	mcmOID_Index
-int[]	mcmOID_Prop
-int	mcmOID_Count	= -1
-int	mcmOID_Save	= -1
-int	mcmOID_Load	= -1
 
 function mcmOnConfigInit( LTT_Menu menu )
 	DebugLog( "++mcmOnConfigInit()" )
@@ -510,12 +525,13 @@ function mcmOnVersionUpdate( LTT_Menu menu, int Version )
 endfunction
 
 function mcmOnGameReload( LTT_Menu menu )
+	isInit = false
 	DebugLog( "++mcmOnGameReload()" )
-	LDH.DumpTables( "start of on game reload" )
+;;	LDH.DumpTables( "start of on game reload" )
 	LDH._Init( getVersion() )
 	mcm = menu
 	
-	if CheckIncompatibleMods()
+	if CheckModCompatibility()
 		return
 	endif
 	
@@ -528,6 +544,19 @@ function mcmOnGameReload( LTT_Menu menu )
 	LDH.state_CraftingStation = LDH.addStringState( "Crafting Station", LDH.getStation( LDH.station_None ) )
 	LDH.state_IsPickpocketing = LDH.addBoolState( "Pickpocketing" )
 	
+	; Initialize vanilla crafting stations.  Would normally do this in LTT_Skyrim
+	; but many mods may want to know which of these vanilla stations is in use
+	; and they have no way to access private members of LTT_Skyrim through LTT.fns()
+	LDH.addStation( station_Cookpot )
+	LDH.addStation( station_Smelter )
+	LDH.addStation( station_ArmorTable )
+	LDH.addStation( station_Forge )
+	LDH.addStation( station_Sharpening )
+	LDH.addStation( station_SkyForge )
+	LDH.addStation( station_TanningRack )
+	LDH.addStation( station_Alchemy )
+	LDH.addStation( station_Enchanting )
+	
 	; Properties pertaining to the base mod, but not time passers for
 	; vanilla skyrim
 	LDH.prop_BaseActive = LDH.addBoolProp( -1, "LTT_BaseActive", false, "$LTT_BaseActive", "$HLP_BaseActive", mcmCellBaseActive )
@@ -537,41 +566,70 @@ function mcmOnGameReload( LTT_Menu menu )
 	LDH.prop_PauseKey = LDH.addKeyProp( -1, "LTT_PauseKey", -1, "$LTT_PauseKey", "$HLP_PauseKey", mcmCellPauseKey )
 	LDH.prop_UserDebug = LDH.addBoolProp( -1, "LTT_UserDebug", false, "$LTT_UserDebug", "$HLP_UserDebug", mcmCellUserDebug )
 	LDH.prop_ExpertiseReducesTime = LDH.addBoolProp( -1, "LTT_ExpertiseReducesTime", false, "$LTT_ExpertiseReducesTime", "$HLP_ExpertiseReducesTime", mcmCellExpertise )
+	isInit = true
 	
 	reloadMods( true )
 	
 	LDH.DumpTables( "after on game reload" )
 	
-	isInit = true
 	DebugLog( "--mcmOnGameReload(); success" )
 endfunction
 
+bool _spinlockReloadMods = false
 function reloadMods( bool forceReload = false )
+	int lockTries = 0
+	while _spinlockReloadMods
+;;;		DebugLog( "reloadMods() locked; tries="+lockTries )
+		Utility.WaitMenuMode( LockWaitTime )
+		lockTries += 1
+		if lockTries >= _spinlockTries
+;;;			DebugLog( "reloadMods() skipped because it could not get a lock after "+lockTries+" tries" )
+			return
+		endif
+	endwhile
+	_spinlockReloadMods = true
 	DebugLog( "++reloadMods()" )
 	; iterate through mods and call their instance
 	int i = LDH.getLastMod()
 	while i >= 0
 		DebugLog( "checking mod i="+i )
 		LTT_ModBase mod = LDH.getMod(i)
-		if mod
+		DebugLog( "got mod="+mod )
+		if mod != none
+			DebugLog( "2 got mod="+mod )
+
+			; It's possible to get into a deadlock here if the
+			; mod is doing its own OnInit at the same time.
+			; That mod is trying to call LTT.RegisterForSingleUpdate() or LTT.DebugLog()
+			; and is blocked while we're calling mod.isInit.get() or mod.ReInit().
+			; Try to fix this by putting a utility.wait in the LTT_mod's OnInit
+			; so we can finish first, then this'll get called again after
+			; registering for single update.
 			DebugLog( "mod="+mod \
 			  +"; mod.isInit="+mod.isInit \
 			  +"; mod.isLoaded="+mod.isLoaded \
 			  +"; forceReload="+forceReload \
 			)
+			DebugLog( "3 got mod="+mod )
+			mod.ReInit()
 			if mod.isInit && ( !mod.isLoaded || forceReload )
 				mod.isLoaded = false
 				DebugLog( "calling mod.OnGameReload()" )
 				mod.OnGameReload()
 			endif
+		else
+			DebugLog( "mod == none" )
 		endif
 		i -= 1
 	endwhile
 	
+	; Wait for mods to finish their loads before reloading MCM pages
+	;Utility.Wait( 1.0 )
 	reloadMCMPages()
 		
 	; Reassign Hot Keys
 	DebugLog( "--reloadMods(); success" )
+	_spinlockReloadMods = false
 endfunction
 
 function mcmOnPageReset( string Page )
@@ -745,6 +803,7 @@ function mcmOnOptionSelect( SKI_ConfigBase mcm, int OID )
 		Log( "mcm Option selected of unknown type, should never get here" )
 	endif
 	
+	mcm.ForcePageReset() ; this might be a little heavy-handed, is lazy.
 	DebugLog( "--mcmOnOptionSelect(); success" )
 endfunction
 
@@ -822,8 +881,8 @@ function mcmOnOptionKeyMapChange( SKI_ConfigBase mcm, int OID, int KeyID, string
 	
 	LDH.setIntProp( ID, KeyID )
 	
-	mcm.RegisterForKey( KeyID ) ; I could feed all key events through mcm, or register the mod for its own key events...
-	mcm.ForcePageReset()
+	mcm.RegisterForKey( KeyID )
+	mcm.ForcePageReset() ; this might be a little heavy-handed, is lazy.
 	DebugLog( "--mcmOnOptionKeyMapChange(); success" )
 endfunction
 
@@ -860,8 +919,11 @@ function mcmOnKeyUp( int KeyID, float Duration ) ; might not belong to base, che
 		; LTT_Base is the mod, probably the pause key was pressed.
 		if ID == LDH.prop_PauseKey
 			; toggle pause state.
-			DebugLog( "Changing pause status" )
+			DebugLog( "Changing pause status", true )
 			LDH.setBoolProp( LDH.prop_Paused, !LDH.getBoolProp( LDH.prop_Paused ) )
+		else
+			; No Mod wanted this key, and neither do we, stop watching it.
+			mcm.UnregisterForKey( KeyID )
 		endif
 	endif
 	

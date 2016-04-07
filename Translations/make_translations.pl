@@ -10,7 +10,7 @@ sub error
 	exit(1);
 }
 
-my $ModName = "LTT_Chesko";
+my $ModName = "LTT_Hunterborn";
 
 my $sourcePath = $ModName."_Translations.txt";
 

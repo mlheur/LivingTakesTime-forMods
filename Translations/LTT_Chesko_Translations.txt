@@ -4,16 +4,11 @@ $HLP_FF3_SnowberryMins	Time taken to extract juice from snowberries
 $CF_AddFuelMins	Add Fuel
 $CF_AddKindlingMins	Place Kindling
 $CF_AddTinderMins	Place Tinder
-$CF_ArrowsHrs	Craft Arrows
 $CF_BackpackHrs	Craft Backpack
-$CF_BeddingHrs	Craft Bedding
 $CF_CloakHrs	Craft Cloaks
 $CF_CookpotHrs	Craft Cookpots
 $CF_EnchanterHrs	Craft Enchanter
 $CF_PerkImproves	Campfire Perks Decreases Time
-$CF_FurHrs	Craft Fur Plate
-$CF_HatchetHrs	Craft Stone Hatchet
-$CF_LaceMins	Craft Hide Lace
 $CF_LargeTentHrs	Craft Large Tents
 $CF_LightFireMins	Light Campfire
 $CF_LinenMins	Craft Linen
@@ -21,22 +16,16 @@ $CF_MakeKindlingMins	Craft Kindling
 $CF_MakeTinderMins	Craft Tinder
 $CF_MortarHrs	Craft Mortar & Pestle
 $CF_SmallTentHrs	Craft Small Tents
-$CF_StickMins	Craft Walking Stick
 $CF_TanRackMins	Craft Tanning Rack
 $CF_TorchMins	Craft Torch	
 $HLP_CF_AddFuelMins	Time taken to refuel or add more fuel to a campfire
 $HLP_CF_AddKindlingMins	Time taken to place kindling in an empty campfire
 $HLP_CF_AddTinderMins	Time taken to arrange tinder in a campfire
-$HLP_CF_ArrowsHrs	Time taken to craft 24 arrows
 $HLP_CF_BackpackHrs	Time taken to craft a backpack
-$HLP_CF_BeddingHrs	Time taken to craft bedding or add bedding to a tent
 $HLP_CF_CloakHrs	Time taken to craft a cloak
 $HLP_CF_CookpotHrs	Time taken to craft a cookpot
 $HLP_CF_EnchanterHrs	Time taken to craft a portable enchanting station
 $HLP_CF_PerkImproves	If enabled, as the campfire perks increases, time taken for certain tasks decrease\ne.g. Firecraft perk improves making, placing and sparking tinder; Trailblazer perk improves crafting of walking sticks
-$HLP_CF_FurHrs	Time taken to craft a fur plate
-$HLP_CF_HatchetHrs	Time taken to craft a stone hatchet
-$HLP_CF_LaceMins	Time taken to craft hide lace
 $HLP_CF_LargeTentHrs	Time taken to craft any large tent
 $HLP_CF_LightFireMins	Time taken to light a fire the old fasioned way\nIf using a torch or spell the amount of time is reduced
 $HLP_CF_LinenMins	Time taken to turn clothing into raw linen
@@ -44,7 +33,6 @@ $HLP_CF_MakeKindlingMins	Time taken to turn materials into a piece of kindling
 $HLP_CF_MakeTinderMins	Time taken to turn materials into tinder
 $HLP_CF_MortarHrs	Time taken to craft a portable mortar and pestle
 $HLP_CF_SmallTentHrs	Time taken to craft any small tent
-$HLP_CF_StickMins	Time taken to craft a walking stick
 $HLP_CF_TanRackMins	Time taken to craft a tanning rack
 $HLP_CF_TorchMins	Time taken to craft a torch
 $WL_ChasisHrs	Lantern Chassis
@@ -53,35 +41,23 @@ $WL_WearableMins	Lantern Belt
 $HLP_WL_ChasisHrs	Time taken to construct a lantern's frame
 $HLP_WL_OilMins	Time taken to extract a full bottle of oil
 $HLP_WL_WearableMins	Time taken to construct a lantern belt
-$FF2_ArrowsHrs	Craft Arrows
 $FF2_BackpackHrs	Craft Backpack
-$FF2_BeddingHrs	Craft Bedroll
 $FF2_CloakHrs	Craft Cloak
 $FF2_CookpotHrs	Craft Cookpot
 $FF2_EnchanterHrs	Craft Enchanter
-$FF2_FurHrs	Craft Pelts
-$FF2_HatchetHrs	Craft Hatchet
-$FF2_LaceMins	Craft Hide Lace
 $FF2_LargeTentHrs	Craft Large Tents
 $FF2_LinenMins	Craft Linen
 $FF2_MortarHrs	Craft Mortar & Pestle
 $FF2_SmallTentHrs	Craft Small Tents
-$FF2_StickMins	Craft Walking Stick
 $FF2_TanRackMins	Craft Tanning Rack
 $FF2_TorchMins	Craft Torch
-$HLP_FF2_ArrowsHrs	Time taken to craft 24 arrows
 $HLP_FF2_BackpackHrs	Time taken to craft a backpack
-$HLP_FF2_BeddingHrs	Time taken to add bedding to a tent
 $HLP_FF2_CloakHrs	Time taken to craft a cloak
 $HLP_FF2_CookpotHrs	Time taken to craft a cookpot
 $HLP_FF2_EnchanterHrs	Time taken to craft a portable enchanting station
-$HLP_FF2_FurHrs	Time taken to craft a pelt from furs
-$HLP_FF2_HatchetHrs	Time taken to craft a stone hatchet or woodcutter's axe
-$HLP_FF2_LaceMins	Time taken to craft hide lace
 $HLP_FF2_LargeTentHrs	Time taken to craft any large tent
 $HLP_FF2_LinenMins	Time taken to turn clothing into raw linen
 $HLP_FF2_MortarHrs	Time taken to craft a portable mortar and pestle
 $HLP_FF2_SmallTentHrs	Time taken to craft any small tent
-$HLP_FF2_StickMins	Time taken to craft a walking stick
 $HLP_FF2_TanRackMins	Time taken to craft a tanning rack
 $HLP_FF2_TorchMins	Time taken to craft a torch

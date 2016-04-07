@@ -1,0 +1,21 @@
+Language	English	French	German	Italian	Spanish	Czech	Polish	Russian	Japanese
+$HB_CraftAmmoHrs	Craft Ammo
+$HB_CraftBedrollHrs	Craft a Bedroll 
+$HB_CraftDrinkMins	Brew a drink
+$HB_CraftIngrMins	Improve Ingredients
+$HB_CraftLeatherHrs	Craft Leather
+$HB_CraftStripMins	Craft Leather Strips
+$HB_ScimToolHrs	Craft Scrimshaw Tools
+$HB_ScrimBitsMins	Craft Bits of Bone
+$HB_ScrimIdolHrs	Craft Idols
+$HB_CraftTallowMins	Craft Candles
+$HLP_HB_CraftAmmoHrs	Time taken to craft 24 ammo, should be taken straight from LTT_Skyrim like armor and weapons
+$HLP_HB_CraftBedrollHrs	Time taken to craft a bedroll
+$HLP_HB_CraftDrinkMins	Time taken to make a drink; check if this competes with RND or LTT_Skyrim cooking
+$HLP_HB_CraftIngrMins	Time taken to improve or polish alchemy ingredients at a tanning rack
+$HLP_HB_CraftLeatherHrs	Time taken to turn hides into leather
+$HLP_HB_CraftStripMins	Time taken to craft leather strips from leather, should be taken straight from LTT_Skyrim
+$HLP_HB_ScimToolHrs	Time taken to make scrimshaw tools like flute and knucklebones
+$HLP_HB_ScrimBitsMins	Time taken to make 3 bits of bone from bones or antlers
+$HLP_HB_ScrimIdolHrs	Time taken to craft an idol from bones
+$HLP_HB_CraftTallowMins	Time taken to craft candles from animal fats if appropriate mods are running

@@ -13,12 +13,11 @@ LTT_Base Property LTT Auto
 ;///////////////////////////////////////////////////////////////////////////////
 // Constants
 /;
-int	property maxMins			= 1440 AutoReadOnly ; 24 hours
-float	property maxHrs				= 24.0 AutoReadOnly
-float	property LoadWaitTime			= 0.25 AutoReadOnly
-int	property LoadTries			= 100 AutoReadonly
-float	property LockWaitTime			= 0.01 AutoReadOnly
-int	property LockTries			= 1000 AutoReadOnly
+int	property maxMins		= 1440 AutoReadOnly ; 24 hours
+float	property maxHrs			= 24.0 AutoReadOnly
+float	property maxMult		= 10.0 AutoReadOnly
+float	LockWaitTime			= 0.01
+int	_spinlockTries			= 1000
 
 int property kANIO				= 83 AutoReadOnly
 int property kARMA				= 102 AutoReadOnly
@@ -345,22 +344,6 @@ string[] _stationKeyword ; The keyword to reference from the ESP, unique name
 int property station_None	= 0 AutoReadOnly
 int property station_Other	= 1 AutoReadOnly
 
-;;;;;
-;;;
-;;; TODO
-;;; The following should be moved to LTT_Skyrim
-;;;
-int property station_Smelting	= -1 Auto
-int property station_Cooking	= -1 Auto
-int property station_Tanning	= -1 Auto
-int property station_Forging	= -1 Auto
-int property station_Tempering	= -1 Auto
-int property station_Sharpening	= -1 Auto
-int property station_SkyForge	= -1 Auto
-int property station_Mixing	= -1 Auto
-int property station_Enchanting	= -1 Auto
-;;;;;
-
 ;///////////////////////////////////////////////////////////////////////////////
 // Menus are like stations, let mod register a menu to be checked against
 // Because of the bitfields required, the menu indexes will be fairly hard-coded
@@ -400,15 +383,17 @@ float function convertHrsToMins( float Hrs )
 EndFunction
 
 int function getFormPrefix( form f )
-	LTT.DebugLog( "++getFormPrefix()"\
+	int PFX = -1
+	DebugLog( "++getFormPrefix()"\
 	  +": form="+f\
 	)
 	if f == none
-		LTT.DebugLog( "--getFormPrefix(); failed" )
+		DebugLog( "--getFormPrefix(); failed" )
 		return -1
 	endif
-	LTT.DebugLog( "--getFormPrefix(); success" )
-	return Math.RightShift(f.GetFormID(), 24)
+	PFX = Math.RightShift(f.GetFormID(), 24)
+	DebugLog( "--getFormPrefix(); PFX="+PFX )
+	return PFX
 endfunction
 
 ;///////////////////////////////////////////////////////////////////////////////
@@ -429,14 +414,22 @@ endfunction
 ;///////////////////////////////////////////////////////////////////////////////
 // Similar to timers, but track a certain player statistic changing
 /;
-
-int function addStat( string Name ) ; called only by LTT_Base
-	LTT.DebugLog( "++addStat()" \
+bool _spinlockAddStat = false
+int function addStat( string Name )
+	int lockTries = 0
+	while _spinlockAddStat
+;;;		DebugLog( "addStat() locked; tries="+lockTries )
+		Utility.WaitMenuMode( LockWaitTime )
+		lockTries += 1
+		if lockTries >= _spinlockTries
+;;;			DebugLog( "addStat() skipped because it could not get a lock after "+lockTries+" tries" )
+			return -1
+		endif
+	endwhile
+	_spinlockAddStat = true
+	DebugLog( "++addStat()" \
 	  +": Name="+Name \
 	)
-	while ! isInit
-		Utility.WaitMenuMode(LoadWaitTime)
-	endwhile
 	int ID = _statIndex( Name )
 	if ID < 0
 		ID = _statCount
@@ -444,11 +437,13 @@ int function addStat( string Name ) ; called only by LTT_Base
 	endif
 	if ID >= _maxStats
 		LTT.Log( "Development Error: Ran out of Time Passer tablespace, update _maxStats in LTT_DataHandler.psc" )
-		LTT.DebugLog( "--addStat(); failed" )
+		DebugLog( "--addStat(); failed" )
+		_spinlockAddStat = false
 		return -1
 	endif
 	_statName[ID] = Name
-	LTT.DebugLog( "--addStat(); success ID="+ID )
+	DebugLog( "--addStat(); success ID="+ID )
+	_spinlockAddStat = false
 	return ID
 endfunction
 
@@ -459,14 +454,19 @@ int function startStat( int ID )
 	_statStart[ID] = Game.QueryStat( _statName[ID] )
 endfunction
 
-int function endStat( int ID )
+int function endStat( int ID, bool update = true )
 	if ID < 0
 		return -1
 	endif
 	int End = Game.QueryStat( _statName[ID] )
 	int Diff = End - _statStart[ID]
-	_statStart[ID] = END
+	if update
+		_statStart[ID] = END
+	endif
 	return( Diff )
+endfunction
+int function peekStat( int ID )
+	return endStat( ID, false )
 endfunction
 
 ;///////////////////////////////////////////////////////////////////////////////
@@ -492,8 +492,20 @@ int function getLastProp()
 endfunction
 
 ; returns the index of the property in the table, -1 on error
+bool _spinlockAddStringProp = false
 int function addStringProp( int modID, string Name, string Default, string Title, string Helper, int MCMCell, float MinValue = 0.0, float MaxValue = 0.0, string Units = "", int PropType = -1 )
-	LTT.DebugLog( "++addStringProp()" \
+	int lockTries = 0
+	while _spinlockAddStringProp
+;;;		DebugLog( "addStringProp() locked; tries="+lockTries )
+		Utility.WaitMenuMode( LockWaitTime )
+		lockTries += 1
+		if lockTries >= _spinlockTries
+;;;			DebugLog( "addStringProp() skipped because it could not get a lock after "+lockTries+" tries" )
+			return -1
+		endif
+	endwhile
+	_spinlockAddStringProp = true
+	DebugLog( "++addStringProp()" \
 	  +": modID="+modID \
 	  +": Name="+Name \
 	  +": Default="+Default \
@@ -519,7 +531,8 @@ int function addStringProp( int modID, string Name, string Default, string Title
 	endif
 	if ID >= _maxProps
 		LTT.Log( "Development Error: Ran out of Prop tablespace, update _maxProps in LTT_DataHandler.psc" )
-		LTT.DebugLog( "--addStringProp(); failed" )
+		DebugLog( "--addStringProp(); failed" )
+		_spinlockAddStringProp = false
 		return -1
 	endif
 	; Set mod details
@@ -541,7 +554,8 @@ int function addStringProp( int modID, string Name, string Default, string Title
 	else
 		_propPage[ID]		= _modName[modID]
 	endif
-	LTT.DebugLog( "--addStringProp(); success ID="+ID )
+	DebugLog( "--addStringProp(); success ID="+ID )
+	_spinlockAddStringProp = false
 	return ID
 endfunction
 int function addIntProp( int modID, string Name, int Default, string Title, string Helper, int MCMCell, int MinValue, int MaxValue, string Units, int PropType = -1 )
@@ -611,7 +625,7 @@ float function getFloatProp( int ID )
 	return( getStringProp( ID ) as float )
 endfunction
 bool function getBoolProp( int ID )
-	;LTT.DebugLog( "++getBoolProp() ID="+ID ) ; Can't do this because Debug calls getBoolProp...
+	;DebugLog( "++getBoolProp() ID="+ID ) ; Can't do this because Debug calls getBoolProp...
 	;Debug.Trace( "[LTT] ++getBoolProp() ID="+ID )
 	;
 	; Damn papyrus. Take a false bool, cast it to a string and back to a
@@ -624,7 +638,7 @@ bool function getBoolProp( int ID )
 	if S == "False"
 		V = false
 	endif
-	;LTT.DebugLog( "--getBoolProp() V="+V ) ; Can't do this because Debug calls getBoolProp...
+	;DebugLog( "--getBoolProp() V="+V ) ; Can't do this because Debug calls getBoolProp...
 	;Debug.Trace( "[LTT] --getBoolProp() V="+V )
 	return( V )
 endfunction
@@ -734,13 +748,21 @@ endfunction
 ;///////////////////////////////////////////////////////////////////////////////
 // Mod adders, getters & setters
 /;
-bool _lockAddMod = false
+bool _spinlockAddMod = false
 int function addMod( LTT_ModBase Mod, string Name, string ESP, int TestForm, int ACT = 0, int Menus = 0 )
-	if _lockAddMod
-		return -2
-	endif
-	_lockAddMod = true
-	LTT.DebugLog( "++addMod()" \
+	int lockTries = 0
+	while _spinlockAddMod
+;;;		DebugLog( "addMod() locked; tries="+lockTries )
+		Utility.WaitMenuMode( LockWaitTime )
+		lockTries += 1
+		if lockTries >= _spinlockTries
+;;;			DebugLog( "addMod() skipped because it could not get a lock after "+lockTries+" tries" )
+			return -1
+		endif
+	endwhile
+	_spinlockAddMod = true
+	int ID = -1
+	DebugLog( "++addMod()" \
 	  +": Mod="+Mod \
 	  +": Name="+Name \
 	  +": ESP="+ESP \
@@ -749,15 +771,28 @@ int function addMod( LTT_ModBase Mod, string Name, string ESP, int TestForm, int
 	  +": Menus="+Menus \
 	)
 	; Check if this is already in the table
-	int ID = _modIndex( Name )
+	DebugLog( "before index search" \
+	  +": ID="+ID \
+	  +": Name="+Name \
+	)
+	ID = _modIndex( Name )
 	; or else generate a new one
+	DebugLog( "after index search" \
+	  +": ID="+ID \
+	  +": Name="+Name \
+	)
 	if ID < 0
 		ID = _modCount
 		_modCount += 1
 	endif
+	DebugLog( "after adding new index" \
+	  +": ID="+ID \
+	  +": Name="+Name \
+	)
 	if ID >= _maxMods
 		LTT.Log( "Development Error: Ran out of mod tablespace, update _maxMods in LTT_DataHandler.psc" )
-		LTT.DebugLog( "--addMod(); failed" )
+		DebugLog( "--addMod(); failed" )
+		_spinlockAddMod = false
 		return -1
 	endif
 	; Set mod details
@@ -769,9 +804,9 @@ int function addMod( LTT_ModBase Mod, string Name, string ESP, int TestForm, int
 		_modActions[ID] = ACT
 		_modMenus[ID]	= Menus
 	endif
-	LTT.reloadMCMPages()
-	LTT.DebugLog( "--addMod(); success ID="+ID )
-	_lockAddMod = false
+;;;	LTT.reloadMCMPages()
+	DebugLog( "--addMod(); success ID="+ID )
+	_spinlockAddMod = false
 	return ID
 endfunction
 
@@ -811,10 +846,21 @@ bool function wantsAction( int ID, int ACT )
 endfunction
 
 int function getModPrefix( int ID )
+	DebugLog( "++getModPrefix() ID="+ID )
 	if ID < 0
+		DebugLog( "--getModPrefix(); failed" )
 		return -1
 	endif
+	DebugLog( "--getModPrefix(); PFX="+_modPrefix[ID] )
 	return _modPrefix[ID]
+endfunction
+
+bool function setModPrefix( int ID, int PFX )
+	if ID < 0
+		return false
+	endif
+	_modPrefix[ID] = PFX
+	return true
 endfunction
 
 bool function isModRegisterdForMenu( int ID, int Menu )
@@ -855,14 +901,11 @@ endfunction
 // stations and scripts where this is used, it should be OK.
 /;
 function addFreeItem( form BaseItem )
-	while ! isInit
-		Utility.WaitMenuMode(LoadWaitTime)
-	endwhile
 	_freeItems[_freeItemCount] = BaseItem
 	_freeItemCount += 1
 endfunction
 bool function removeFreeItem( form BaseItem )
-	LTT.DebugLog( "++removeFreeItem()" \
+	DebugLog( "++removeFreeItem()" \
 	  +": BaseItem="+BaseItem\
 	)
 	bool removed = false
@@ -890,7 +933,7 @@ bool function removeFreeItem( form BaseItem )
 			_freeItems[LastFreeI] = _freeItems[i]
 		endif
 	endwhile
-	LTT.DebugLog( "--removeFreeItem() removed="+removed )
+	DebugLog( "--removeFreeItem() removed="+removed )
 	return removed
 endfunction
 
@@ -900,15 +943,24 @@ endfunction
 /;
 
 ; returns the index of the state in the table, -1 on error
+bool _spinlockAddStringState = false
 int function addStringState( string Name, string Value = "$E_STATE_NOT_SET", form f = none );
-	LTT.DebugLog( "++addStringState():"\
+	int lockTries = 0
+	while _spinlockAddStringState
+;;;		DebugLog( "addStringState() locked; tries="+lockTries )
+		Utility.WaitMenuMode( LockWaitTime )
+		lockTries += 1
+		if lockTries >= _spinlockTries
+;;;			DebugLog( "addStringState() skipped because it could not get a lock after "+lockTries+" tries" )
+			return -1
+		endif
+	endwhile
+	_spinlockAddStringState = true
+	DebugLog( "++addStringState():"\
 	  +" Name="+Name\
 	  +" Value="+Value\
 	  +" Form="+f\
 	)
-	while ! isInit
-		Utility.WaitMenuMode(LoadWaitTime)
-	endwhile
 	int ID = _stateIndex( Name )
 	if ID < 0
 		ID = _stateCount
@@ -916,13 +968,15 @@ int function addStringState( string Name, string Value = "$E_STATE_NOT_SET", for
 	endif
 	if ID >= _maxStates
 		LTT.Log( "Development Error: Ran out of State tablespace, update _maxStates in LTT_DataHandler.psc" )
-		LTT.DebugLog( "--addStringState(); failed" )
+		DebugLog( "--addStringState(); failed" )
+		_spinlockAddStringState = false
 		return -1
 	endif
 	_stateName[ID] = Name
 	_stateValue[ID] = Value
 	_stateForm[ID] = f
-	LTT.DebugLog( "--addStringState(); success" )
+	DebugLog( "--addStringState(); success" )
+	_spinlockAddStringState = false
 	return ID
 endfunction
 int function addFormState( string Name, form Value = none )
@@ -940,10 +994,13 @@ endfunction
 
 ; returns whether or not the state was set properly
 bool function setStringState( int ID, string Value )
+	DebugLog( "++setStringState(): ID="+ID+"; Value="+Value )
 	if ID < 0
+		DebugLog( "--setStringState()=false" )
 		return false
 	endif
 	_stateValue[ID] = Value
+	DebugLog( "--setStringState()=true" )
 	return true
 endfunction
 bool function setFormState( int ID, form Value )
@@ -965,9 +1022,12 @@ endfunction
 
 ; returns state value, "$ERROR" on error
 string function getStringState( int ID )
+	DebugLog( "++getStringState() ID="+ID )
 	if ID < 0
+		DebugLog( "--getStringState()="+"$ERROR" )
 		return "$ERROR"
 	endif
+		DebugLog( "--getStringState()="+_stateValue[ID] )
 	return _stateValue[ID]
 endfunction
 form function getFormState( int ID )
@@ -991,8 +1051,20 @@ endfunction
 /;
 
 ; returns the index of the station in the table, -1 on error
+bool _spinlockAddStation = false
 int function addStation( string KW ) ;, string Name )
-	LTT.DebugLog( "++addStation()" \
+	int lockTries = 0
+	while _spinlockAddStation
+;;;		DebugLog( "addStation() locked; tries="+lockTries )
+		Utility.WaitMenuMode( LockWaitTime )
+		lockTries += 1
+		if lockTries >= _spinlockTries
+;;;			DebugLog( "addStation() skipped because it could not get a lock after "+lockTries+" tries" )
+			return -1
+		endif
+	endwhile
+	_spinlockAddStation = true
+	DebugLog( "++addStation()" \
 	  +": KW="+KW \
 	)
 	int ID = _stationIndex( KW )
@@ -1002,12 +1074,14 @@ int function addStation( string KW ) ;, string Name )
 	endif
 	if ID >= _maxStations
 		LTT.Log( "Development Error: Ran out of Crafting Station tablespace, update _maxStationss in LTT_DataHandler.psc" )
-		LTT.DebugLog( "--addStation(); failed" )
+		DebugLog( "--addStation(); failed" )
+		_spinlockAddStation = false
 		return -1
 	endif
 	_stationKeyword[ID] = KW
 ;;;DISABLE;;;	_stationName[ID] = Name
-	LTT.DebugLog( "--addStation(); success ID="+ID )
+	DebugLog( "--addStation(); success ID="+ID )
+	_spinlockAddStation = false
 	return ID
 endfunction
 
@@ -1021,20 +1095,26 @@ endfunction
 
 ; returns the ESP keyword of the station in the table, "other" if not found
 string function getStation( int ID )
+	DebugLog( "++getStation() ID="+ID )
 	if ID < 0
+		DebugLog( "--getStation()="+_stationKeyword[station_Other] )
 		return _stationKeyword[station_Other]
 	endif
+	DebugLog( "--getStation()="+_stationKeyword[ID] )
 	return _stationKeyword[ID]
 endfunction
 
 int function getStationKeyword( ObjectReference Station )
+	DebugLog( "++getStationKeyword() Station="+Station )
 	int i = 0
 	while i < _stationCount
 		if Station.HasKeywordString( _stationKeyword[i] )
+			DebugLog( "--getStationKeyword()="+i )
 			return i
 		endif
 		i+=1
 	endwhile
+	DebugLog( "--getStationKeyword()="+station_Other )
 	return station_Other
 endfunction
 
@@ -1071,17 +1151,17 @@ endfunction
 int function getMenuIndex( int Menu )
 	int Divisor = Menu
 	int i = 0
-;;	LTT.DebugLog( "++getMenuIndex() Menu="+Menu, false )
+;;	DebugLog( "++getMenuIndex() Menu="+Menu, false )
 	while ( i < 32 )
-;;		LTT.DebugLog( "  getMenuIndex: i="+i+"; Divisor="+Divisor )
+;;		DebugLog( "  getMenuIndex: i="+i+"; Divisor="+Divisor )
 		if Divisor == 1 || Divisor == -1
-;;			LTT.DebugLog( "--getMenuIndex(); "+(i+1), false )
+;;			DebugLog( "--getMenuIndex(); "+(i+1), false )
 			return i+1
 		endif
 		i+=1
 		Divisor/=2
 	endwhile
-;;	LTT.DebugLog( "--getMenuIndex(); "+-1, false )
+;;	DebugLog( "--getMenuIndex(); "+-1, false )
 	return -1
 endfunction
 
@@ -1094,10 +1174,10 @@ endfunction
 /;
 
 function _Init( int Version )
-	LTT.DebugLog( "++LDH::_Init()" )
+	DebugLog( "++LDH::_Init()" )
 	
 	if isInit ; should also check for version changes
-		LTT.DebugLog( "--LDH::_Init(); already configured" )
+		DebugLog( "--LDH::_Init(); already configured" )
 		return
 	endif
 	
@@ -1179,7 +1259,7 @@ function _Init( int Version )
 	
 	isInit = true
 
-	LTT.DebugLog( "--LDH::_Init(); success" )
+	DebugLog( "--LDH::_Init(); success" )
 endfunction
 
 ; Find indexes into tables based on names - these are private because they
@@ -1216,12 +1296,12 @@ int function _stationIndex( string Name )
 endfunction
 
 function savePropTable( FISSInterface fiss, string filename )
-	LTT.DebugLog( "++savePropTable() filename="+filename )
+	DebugLog( "++savePropTable() filename="+filename )
 	fiss.beginSave( filename, LTT.mcm.ModName )
 	
 	int ID = getLastProp()
 	while ID >= 0
-		LTT.DebugLog( "Saving" \
+		DebugLog( "Saving" \
 		  +"ID="+ID \
 		  +"Name="+_propName[ID] \
 		  +"Value="+_propValue[ID] \
@@ -1235,20 +1315,20 @@ function savePropTable( FISSInterface fiss, string filename )
 		LTT.Log( "Save results: "+result )
 		Debug.MessageBox( "Save failed\n"+result )
 	else
-		LTT.DebugLog( "Save results: "+result )
+		DebugLog( "Save results: "+result )
 		Debug.MessageBox( "Saved successfully" )
 	endif
-	LTT.DebugLog( "--savePropTable(); success" )
+	DebugLog( "--savePropTable(); success" )
 endfunction
 
 function loadPropTable( FISSInterface fiss, string filename )
-	LTT.DebugLog( "++loadPropTable() filename="+filename )
+	DebugLog( "++loadPropTable() filename="+filename )
 	fiss.beginLoad( filename )
 	
 	int ID = getLastProp()
 	while ID >= 0
 		_propValue[ID] = fiss.loadString( _propName[ID] )
-		LTT.DebugLog( "Loaded" \
+		DebugLog( "Loaded" \
 		  +": ID="+ID \
 		  +"; Name="+_propName[ID] \
 		  +"; Value="+_propValue[ID] \
@@ -1260,6 +1340,8 @@ function loadPropTable( FISSInterface fiss, string filename )
 			if mod
 				mod.handlePropToggle( ID, getBoolProp(ID) )		
 			endif
+		elseif _propType[ID] == propType_Key
+			LTT.mcm.RegisterForKey( _propValue[ID] as int )
 		endif
 		id -= 1
 	endwhile
@@ -1268,20 +1350,25 @@ function loadPropTable( FISSInterface fiss, string filename )
 	if result
 		LTT.Log( "Load results: "+result )
 		Debug.MessageBox( "Load failed\n"+result )
+		Debug.MessageBox( "$E_FISS_DONT_SAVE" )
 	else
-		LTT.DebugLog( "Load results: "+result )
+		DebugLog( "Load results: "+result )
 		Debug.MessageBox( "Loaded successfully" )
 	endif
-	LTT.DebugLog( "--loadPropTable(); success" )
+	
+	DebugLog( "--loadPropTable(); success" )
 endfunction
 
 function DumpTables( string Msg = "" )
 	int i=0
+	if !LTT.LTT_verbose
+		return
+	endif
 	if Msg
-		LTT.DebugLog( "DumpTables: "+Msg )
+		DebugLog( "DumpTables: "+Msg )
 	endif
 	while( i < _propCount )
-		LTT.DebugLog( "Dumping Props i="+i\
+		DebugLog( "Dumping Props i="+i\
 		  +"; _propName=["+_propName[i]+"]"\
 		  +"; _propPage=["+_propPage[i]+"]"\
 		  +"; _propTitle=["+_propTitle[i]+"]"\
@@ -1298,7 +1385,7 @@ function DumpTables( string Msg = "" )
 	endwhile
 	i=0
 	while( i < _modCount )
-		LTT.DebugLog( "Dumping Mods i="+i\
+		DebugLog( "Dumping Mods i="+i\
 		  +"; _modName=["+_modName[i]+"]"\
 		  +"; _modESP=["+_modESP[i]+"]"\
 		  +"; _modPrefix=["+_modPrefix[i]+"]"\
@@ -1309,11 +1396,24 @@ function DumpTables( string Msg = "" )
 	endwhile
 	i=0
 	while( i < _stateCount )
-		LTT.DebugLog( "Dumping States i="+i\
+		DebugLog( "Dumping States i="+i\
 		  +"; _stateName=["+_stateName[i]+"]"\
 		  +"; _stateValue=["+_stateValue[i]+"]"\
 		  +"; _stateForm=["+_stateForm[i]+"]"\
 		)
 		i+=1
 	endwhile
+	i=0
+	while( i < _statCount )
+		DebugLog( "Dumping Tracked Stats i="+i\
+		  +"; _statName=["+_statName[i]+"]"\
+		  +"; _statStart=["+_statStart[i]+"]"\
+		)
+		i+=1
+	endwhile
+endfunction
+
+function DebugLog( string msg, bool verbose = false )
+	msg = "[LDH] "+msg
+	LTT.DebugLog( msg, verbose )
 endfunction

@@ -1,0 +1,9 @@
+Language	English	French	German	Italian	Spanish	Czech	Polish	Russian	Japanese
+$LC_ArcaneHrs	Craft Arcane Candlestick
+$LC_BasicMins	Convert Basic Candlestick
+$LC_BrewMins	Render a Candle
+$LC_ForgeHrs	Craft Normal Candlestick
+$HLP_LC_ArcaneHrs	Time taken to craft an arcane candle holder at a forge
+$HLP_LC_BasicMins	Time taken to convert every day objects into a candle holder
+$HLP_LC_BrewMins	Time taken to turn everyday items into a candle
+$HLP_LC_ForgeHrs	Time taken to craft a normal candle holder at a forge

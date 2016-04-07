@@ -4,7 +4,6 @@ scriptname LTT_ModBase extends Quest
 //	Base class to extend for mods using LivingTakesTime for Mods
 ///////////////////////////////////////////////////////////////////////////////;
 
-import LTT_Factory
 LTT_Base property LTT Auto
 string property ModName Auto
 
@@ -13,13 +12,37 @@ string property ModName Auto
 /;
 int	property modID		= -1 Auto ; self's Mod index in lookup table
 string	property ESP		= "$E_SET_ESP_FILE" Auto
-int	property TestForm	= 0xf Auto
+int	property TestForm	= -1 Auto
 int	property RegisterActs	= 0 Auto
 int	property RegisterMenus	= 0 Auto
 
-bool	property isLoaded	= false Auto
 bool	property isInit		= false Auto
 int		 prop_Enabled	= -1
+
+float	LoadWaitTime			= 0.25
+int	LoadTries			= 100
+float	LockWaitTime			= 0.01
+int	_spinlockTries			= 1000
+
+bool property isLoaded
+	bool function get()
+		DebugLog( "++isLoaded::get()" )
+		if !isInit || !LTT
+			DebugLog( "--isLoaded::get() = false; !isInit or !LTT" )
+			return false
+		elseif LTT.LDH.getModPrefix( modID ) >= 0
+			DebugLog( "--isLoaded::get() = true" )
+			return true
+		endif
+		DebugLog( "--isLoaded::get() = false; catchall" )
+		return false
+	endfunction
+	function set( bool V )
+		if !V
+			LTT.LDH.setModPrefix( modID, -1 )
+		endif
+	endfunction
+endproperty
 
 ;///////////////////////////////////////////////////////////////////////////////
 // Event Handlers
@@ -28,43 +51,45 @@ int		 prop_Enabled	= -1
 //	acts.
 /;
 
+;;;bool _spinlockOnInit = false
 event OnInit()
-	LTT = LTT_getBase()
+	; Wait her just in case LTT's OnGameReload is called, because
+	; these OnInits always run first and we really want LTT to be ready first
+	Utility.Wait( 1.0 )
+	LTT = LTT_Factory.LTT_getBase()
+	IsInit = false
 	DebugLog( "++OnInit()" )
 	; Wait until LTT has finished its Init
 	int tries=0
 	while !LTT.isInit
-		Utility.WaitMenuMode( LTT.LDH.LoadWaitTime )
+		Utility.WaitMenuMode( LoadWaitTime )
 		tries += 1
-		if tries > LTT.LDH.LoadTries
-			DebugLog( self+"--OnInit(); failed too many tries" )
+		if tries > LoadTries
+			DebugLog( "--OnInit(); failed too many tries" )
 			LTT = none
 			return
 		endif
 	endwhile
-	tries = 0
-	modID = -1
-	while modID < 0
-		modID = LTT.LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
-		if modID == -1 ; We couldn't be added to the Mod table.
-			DebugLog( "--OnInit(); unable to successfully addMod()" )
-			return
-		else ; if modID == -2
-			Utility.WaitMenuMode( LTT.LDH.LoadWaitTime )
-			tries += 1
-			if tries > LTT.LDH.LoadTries
-				DebugLog( self+"--OnInit(); failed too many tries to addMod" )
-				LTT = none
-				return
-			endif
-		endif
-	endwhile
-	prop_Enabled = LTT.LDH.addBoolProp( modID, ModName+"_Enabled", false, "$LTT_ModEnabled", "$HLP_ModEnabled", 0 )
-	isInit = true
-	isLoaded = false
-	LTT.RegisterForSingleUpdate( 0.0 )
+	modID = LTT.LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
+	DebugLog( "Registering for OnUpdate" )
+	LTT.RegisterForSingleUpdate( 0.5 )
+	DebugLog( "Registered... for OnUpdate" )
 	DebugLog( "--OnInit(); success" )
 endevent
+
+function ReInit()
+	DebugLog( "++ReInit()" )
+	LTT = LTT_Factory.LTT_getBase()
+	IsInit = false
+	if !testESP()
+		DebugLog( "--ReInit(); ESP load failed" )
+		return
+	endif
+	modID = LTT.LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
+	prop_Enabled = LTT.LDH.addBoolProp( modID, ModName+"_Enabled", false, "$LTT_ModEnabled", "$HLP_ModEnabled", 0 )
+	DebugLog( "--ReInit(); success" )
+	IsInit = true
+endfunction
 
 bool function isRunnable()
 	LTT.DebugLog( self+"isRunnable()" \
@@ -73,7 +98,29 @@ bool function isRunnable()
 	  +"; enabled="+LTT.LDH.getBoolProp( prop_Enabled ) \
 	  +"; prefix="+LTT.LDH.getModPrefix( modID ) \
 	)
-	return( isInit && isLoaded && LTT.LDH.getBoolProp( prop_Enabled ) && LTT.LDH.getModPrefix( modID ) >= 0 )
+	return( isInit && isLoaded && LTT.LDH.getBoolProp( prop_Enabled ) )
+endfunction
+
+bool function testESP()
+	DebugLog( "++testESP()" )
+	; Check if the mod's ESP exists
+	LTT.Log( ">>>>>>>>>>>>>>> Checking "+self+" MOD Compatibility <<<<<<<<<<<<<<<" )
+	LTT.Log( ">>>>>>>>>>>>>>> Ignore any errors about files not existing <<<<<<<<<<<<<<<" )
+	DebugLog( "Testing for ESP: TestForm="+TestForm+"; ESP="+ESP )
+	if TestForm < 0
+		DebugLog( "--testESP(); TestForm not provided" )
+		LTT.Log( ">>>>>>>>>>>>>>> Finished Checking MOD Compatibility <<<<<<<<<<<<<<<" )
+		return false
+	else
+		if !Game.GetFormFromFile( TestForm, ESP )
+			DebugLog( "--testESP(); ESP not loaded" )
+			LTT.Log( ">>>>>>>>>>>>>>> Finished Checking MOD Compatibility <<<<<<<<<<<<<<<" )
+			return false
+		endif
+	endif
+	LTT.Log( ">>>>>>>>>>>>>>> Finished Checking MOD Compatibility <<<<<<<<<<<<<<<" )
+	DebugLog( "--testESP(); success" )
+	return true
 endfunction
 
 event OnGameReload()
@@ -105,6 +152,7 @@ endfunction
 // will be sent to the mod's handlers.
 /;
 bool function Load()
+	IsLoaded = false
 	return false
 endfunction
 

@@ -14,12 +14,16 @@ form	Wearable
 form	Chassis
 form	Oil
 
+event OnInit()
+	ESP = "Chesko_WearableLantern.esp"
+	TestForm = 0x12C9 ; lantern belt (wearable)
+	parent.OnInit()
+endevent
+
 event OnGameReload()
 	LTT = LTT_Factory.LTT_getBase() ; not normally required, but handy if LTT changes between saves
 	DebugLog( "++OnGameReload()" )
 	isLoaded = false
-	ESP = "Chesko_WearableLantern.esp"
-	TestForm = 0x12C9 ; misc blank item
 	RegisterActs = LTT.LDH.act_ITEMADDED
 	RegisterMenus = LTT.LDH.menu_None
 	modID = LTT.LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
