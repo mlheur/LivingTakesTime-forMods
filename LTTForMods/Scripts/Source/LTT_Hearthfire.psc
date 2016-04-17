@@ -12,22 +12,23 @@ endevent
 
 event OnGameReload()
 	LTT = LTT_Factory.LTT_getBase()
-	DebugLog( "++OnGameReload()" )
+	DebugLog( "++OnGameReload()", 4 )
 	
 	isLoaded = false
-	RegisterActs = LTT.LDH.act_ITEMADDED
-	RegisterMenus = LTT.LDH.menu_None
-	modID = LTT.LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
+	RegisterActs = LTT.act_ITEMADDED
+	RegisterMenus = LTT.menu_None
+	modID = LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
 	if modID < 0 ; We couldn't be added to the Mod table.
-		DebugLog( "--OnGameReload(); unable to successfully addMod()" )
+		DebugLog( "--OnGameReload(); unable to successfully addMod()", 4 )
 		return
 	endif
 	
 	isLoaded = Load()
-	DebugLog( "--OnGameReload(); success" )
+	DebugLog( "--OnGameReload(); success", 4 )
 endevent
 
 bool function Load()
+	DebugLog( "++Load()", 4 )
 	HF_Exclusions = new Form[26]
 	HF_Exclusions[0]	= Game.GetFormFromFile(0x000030DF, ESP);House - Workbench
 	HF_Exclusions[1]	= Game.GetFormFromFile(0x00003121, ESP);House - Remove Workbench
@@ -58,19 +59,21 @@ bool function Load()
 	int i = 25
 	while i >= 0
 		if !HF_Exclusions[i]
+			DebugLog( "--Load() failed: "+i, 0 )
 			return false
 		endif
 		i-=1
 	endwhile
+	DebugLog( "--Load() success", 4 )
 	return true
 endfunction
 
 float function ItemAdded( form BaseItem, int Qty, form ItemRef, form Container, int Type, int Prefix )
-	DebugLog( "++ItemAdded()" )
+	DebugLog( "++ItemAdded()", 4 )
 	float t = -1.0
 	if HF_Exclusions.find( BaseItem )
 		t = 0.0
 	endif
-	DebugLog( "--ItemAdded() t="+t )
+	DebugLog( "--ItemAdded() t="+t, 4 )
 	return t
 endfunction

@@ -18,25 +18,25 @@ endEvent
 
 event OnGameReload()
 	LTT = LTT_Factory.LTT_getBase()
-	DebugLog( "++OnGameReload()" )
+	DebugLog( "++OnGameReload()", 4 )
 	isLoaded = false
-	RegisterActs = LTT.LDH.act_ITEMADDED
-	RegisterMenus = LTT.LDH.menu_None
-	modID = LTT.LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
+	RegisterActs = LTT.act_ITEMADDED
+	RegisterMenus = LTT.menu_None
+	modID = LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
 	if modID < 0 ; We couldn't be added to the Mod table.
-		DebugLog( "--OnGameReload(); unable to successfully addMod()" )
+		DebugLog( "--OnGameReload(); unable to successfully addMod()", 0 )
 		return
 	endif
-	prop_LCBrewMins = LTT.LDH.addIntProp( modID, "LC_BrewMins", LTT.craftIngredientMins, "$LC_BrewMins", "$HLP_LC_BrewMins", 2, 0, LTT.LDH.maxMins, "minutes" )	
-	prop_LCBasicMins = LTT.LDH.addIntProp( modID, "LC_BasicMins", 10, "$LC_BasicMins", "$HLP_LC_BasicMins", 4, 0, LTT.LDH.maxMins, "minutes" )
-	prop_LCForgeHrs = LTT.LDH.addFloatProp( modID, "LC_ForgeHrs", 2.0, "$LC_ForgeHrs", "$HLP_LC_ForgeHrs", 3, 0, LTT.LDH.maxHrs, "hours" )
-	prop_LCArcaneHrs = LTT.LDH.addFloatProp( modID, "LC_ArcaneHrs", 4.0, "$LC_ArcaneHrs", "$HLP_LC_ArcaneHrs", 5, 0, LTT.LDH.maxHrs, "hours" )
+	prop_LCBrewMins = LDH.addIntProp( modID, "LC_BrewMins", LTT.craftIngredientMins, "$LC_BrewMins", "$HLP_LC_BrewMins", 2, 0, LTT.maxMins, "minutes" )	
+	prop_LCBasicMins = LDH.addIntProp( modID, "LC_BasicMins", 10, "$LC_BasicMins", "$HLP_LC_BasicMins", 4, 0, LTT.maxMins, "minutes" )
+	prop_LCForgeHrs = LDH.addFloatProp( modID, "LC_ForgeHrs", 2.0, "$LC_ForgeHrs", "$HLP_LC_ForgeHrs", 3, 0, LTT.maxHrs, "hours" )
+	prop_LCArcaneHrs = LDH.addFloatProp( modID, "LC_ArcaneHrs", 4.0, "$LC_ArcaneHrs", "$HLP_LC_ArcaneHrs", 5, 0, LTT.maxHrs, "hours" )
 	isLoaded = Load()
-	DebugLog( "--OnGameReload(); success" )
+	DebugLog( "--OnGameReload(); success", 4 )
 endEvent
 
 bool function Load()
-	DebugLog( "++Load()" )
+	DebugLog( "++Load()", 4 )
 	int Err = 0
 	int i = 0
 	LC_Candle	= Game.GetFormFromFile(0x00234E, ESP)
@@ -71,44 +71,44 @@ bool function Load()
 	endWhile
 	
 	if Err > 0
-		DebugLog( "--Load(); failed to load items: "+Err )
+		DebugLog( "--Load(); failed to load items: "+Err, 0 )
 		return false
 	endif
 	
-	DebugLog( "--Load(); success" )
+	DebugLog( "--Load(); success", 4 )
 	return true
 endFunction
 
 float function ItemAdded( form BaseItem, int Qty, form ItemRef, form Container, int Type, int Prefix )
-	DebugLog( "++ItemAdded()" )
+	DebugLog( "++ItemAdded()", 4 )
 	float t = -1.0
-	if Prefix != LTT.LDH.getModPrefix( modID )
-		DebugLog( "--ItemAdded() t="+t+"; not our item" )
+	if Prefix != LDH.getModPrefix( modID )
+		DebugLog( "--ItemAdded() t="+t+"; not our item", 4 )
 		return t
 	endif
 	
 	if BaseItem == LC_Candle
 		; boil down fat to a candle
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_LCBrewMins ) ) * Qty
+		t = LDH.convertMinsToHrs( LDH.getIntProp( prop_LCBrewMins ) ) * Qty
 	elseif LC_Basic.find( BaseItem ) > -1
 		; turn a basic object into a candle holder
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_LCBasicMins ) ) * Qty
+		t = LDH.convertMinsToHrs( LDH.getIntProp( prop_LCBasicMins ) ) * Qty
 	elseif LC_Arcane.find( BaseItem ) > -1
 		; forge a new candlestick
-		t = LTT.LDH.getFloatProp( prop_LCArcaneHrs ) * Qty
+		t = LDH.getFloatProp( prop_LCArcaneHrs ) * Qty
 		LTT.SkillUsed = "smithing"
 	else ; forged a candlestick
 		; forge an arcane candlestick
-		t = LTT.LDH.getFloatProp( prop_LCForgeHrs ) * Qty
+		t = LDH.getFloatProp( prop_LCForgeHrs ) * Qty
 		LTT.SkillUsed = "smithing" 
 	endif
 	
 	; If not at a crafting station, then just picking up a candle
-	if LTT.LDH.getStringState( LTT.LDH.state_CraftingStation ) == ""
+	if LDH.getStringState( LTT.state_CraftingStation ) == ""
 		t = 0.0
 	endif
 
-	DebugLog( "--ItemAdded() t="+t )
+	DebugLog( "--ItemAdded() t="+t, 4 )
 	return t
 endFunction
 

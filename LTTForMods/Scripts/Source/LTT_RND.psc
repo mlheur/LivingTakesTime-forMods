@@ -2,22 +2,26 @@ scriptname LTT_RND extends LTT_ModBase
 
 int	fID_Bedroll		= 0x0177CD
 
-int prop_WaterskinHrs	= -1
-int prop_CookpotHrs	= -1
-int prop_TinderboxHrs	= -1
-int prop_TentHrs	= -1
-int prop_MilkBucketMins	= -1
-int prop_EatSnackMult	= -1
-int prop_EatMediumMins	= -1
-int prop_EatFillingMult	= -1
-int prop_EatDrinkMins	= -1
-int prop_CookSnackMult	= -1
-int prop_CookMediumMult	= -1
-int prop_CookFillingMult	= -1
-int prop_CookWaterMult	= -1
-int prop_CookSaltMult	= -1
+int prop_WaterskinHrs		= -1
+int prop_CookpotHrs		= -1
+int prop_TinderboxHrs		= -1
+int prop_TentHrs		= -1
+int prop_MilkBucketMins		= -1
 
-int stat_FoodEaten	= -1
+int prop_EatSnackMult		= -1
+int prop_EatMediumMult		= -1
+int prop_EatFillingMult		= -1
+
+int prop_EatDrinkMins		= -1
+
+int prop_CookSnackMult		= -1
+int prop_CookMediumMins		= -1
+int prop_CookFillingMult	= -1
+
+int prop_CookWaterMult		= -1
+int prop_CookSaltMult		= -1
+
+int stat_FoodEaten		= -1
 
 form	Waterskin
 form	Cookpot
@@ -43,44 +47,47 @@ endevent
 
 event OnGameReload()
 	LTT = LTT_Factory.LTT_getBase() ; not normally required, but handy if LTT changes between saves
-	DebugLog( "++OnGameReload()" )
+	DebugLog( "++OnGameReload()", 4 )
 	isLoaded = false
-	RegisterActs = LTT.LDH.act_ITEMADDED;
-	RegisterActs = Math.LogicalOr( RegisterActs, LTT.LDH.act_ITEMREMOVED )
-	RegisterActs = Math.LogicalOr( RegisterActs, LTT.LDH.act_MENUOPENED )
-	RegisterMenus = LTT.LDH.menu_None
-	modID = LTT.LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
+	RegisterActs = LTT.act_ITEMADDED;
+	RegisterActs = Math.LogicalOr( RegisterActs, LTT.act_ITEMREMOVED )
+;;DIS	RegisterActs = Math.LogicalOr( RegisterActs, LTT.act_MENUOPENED )
+	RegisterMenus = LTT.menu_None
+	modID = LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
 	if modID < 0 ; We couldn't be added to the Mod table.
-		DebugLog( "--OnGameReload(); unable to successfully addMod()" )
+		DebugLog( "--OnGameReload(); unable to successfully addMod()", 0 )
 		return
 	endif
 
-	prop_WaterskinHrs = LTT.LDH.addFloatProp( modID, "RND_WaterskinHrs", 1.0, "$RND_WaterskinHrs", "$HLP_RND_WaterskinHrs", 2, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_CookpotHrs = LTT.LDH.addFloatProp( modID, "RND_CookpotHrs", LTT.craftMiscHrs, "$RND_CookpotHrs", "$HLP_RND_CookpotHrs", 4, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_MilkBucketMins = LTT.LDH.addIntProp( modID, "RND_MilkBucketMins", 15, "$RND_MilkBucketMins", "$HLP_RND_MilkBucketMins", 6, 0, LTT.LDH.maxMins, "minutes" )
+	prop_WaterskinHrs = LDH.addFloatProp( modID, "RND_WaterskinHrs", 1.0, "$RND_WaterskinHrs", "$HLP_RND_WaterskinHrs", 2, 0.0, LTT.maxHrs, "hours" )
+	prop_CookpotHrs = LDH.addFloatProp( modID, "RND_CookpotHrs", LTT.craftMiscHrs, "$RND_CookpotHrs", "$HLP_RND_CookpotHrs", 4, 0.0, LTT.maxHrs, "hours" )
+	prop_MilkBucketMins = LDH.addIntProp( modID, "RND_MilkBucketMins", 15, "$RND_MilkBucketMins", "$HLP_RND_MilkBucketMins", 6, 0, LTT.maxMins, "minutes" )
 
-	prop_TinderboxHrs = LTT.LDH.addFloatProp( modID, "RND_TinderboxHrs", LTT.craftMiscHrs, "$RND_TinderboxHrs", "$HLP_RND_TinderboxHrs", 3, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_TentHrs = LTT.LDH.addFloatProp( modID, "RND_TentHrs", 4.0, "$RND_TentHrs", "$HLP_RND_TentHrs", 5, 0.0, LTT.LDH.maxHrs, "hours" )
+	prop_TinderboxHrs = LDH.addFloatProp( modID, "RND_TinderboxHrs", LTT.craftMiscHrs, "$RND_TinderboxHrs", "$HLP_RND_TinderboxHrs", 3, 0.0, LTT.maxHrs, "hours" )
+	prop_TentHrs = LDH.addFloatProp( modID, "RND_TentHrs", 4.0, "$RND_TentHrs", "$HLP_RND_TentHrs", 5, 0.0, LTT.maxHrs, "hours" )
 
-	prop_EatSnackMult = LTT.LDH.addFloatProp( modID, "RND_EatSnackMult", (1/3), "$RND_EatSnackMults", "$HLP_RND_EatSnackMult", 11, 0, LTT.LDH.maxMins, "multiplier" )
-	prop_EatMediumMins = LTT.LDH.addIntProp( modID, "RND_EatMediumMins", LTT.eatFoodMins, "$RND_EatMediumMins", "$HLP_RND_EatMediumMins", 13, 0, LTT.LDH.maxMins, "minutes" )
-	prop_EatFillingMult = LTT.LDH.addFloatProp( modID, "RND_EatFillingMult", 3.0, "$RND_EatFillingMult", "$HLP_RND_EatFillingMult", 15, 0, LTT.LDH.maxMins, "multiplier" )
-	prop_EatDrinkMins = LTT.LDH.addIntProp( modID, "RND_EatDrinkMins", LTT.eatFoodMins / 6, "$RND_EatDrinkMins", "$HLP_RND_EatDrinkMins", 17, 0, LTT.LDH.maxMins, "minutes" )
+	prop_EatSnackMult = LDH.addFloatProp( modID, "RND_EatSnackMult", (1/3), "$RND_EatSnackMult", "$HLP_RND_EatSnackMult", 11, 0, LTT.maxMult, "multiplier" )
+	prop_EatMediumMult = LDH.addFloatProp( modID, "RND_EatMediumMult", 1.0, "$RND_EatMediumMult", "$HLP_RND_EatMediumMult", 13, 0, LTT.maxMult, "multiplier" )
+	prop_EatFillingMult = LDH.addFloatProp( modID, "RND_EatFillingMult", 3.0, "$RND_EatFillingMult", "$HLP_RND_EatFillingMult", 15, 0, LTT.maxMins, "multiplier" )
 
-	prop_CookSnackMult = LTT.LDH.addFloatProp( modID, "RND_CookSnackMult", 0.5, "$RND_CookSnackMult", "$HLP_RND_CookSnackMult", 10, 0, LTT.LDH.maxMult, "multiplier" )
-	prop_CookMediumMult = LTT.LDH.addFloatProp( modID, "RND_CookMediumMult", 1.0, "$RND_CookMediumMult", "$HLP_RND_CookMediumMult", 12, 0, LTT.LDH.maxMult, "multiplier" )
-	prop_CookFillingMult = LTT.LDH.addFloatProp( modID, "RND_CookFillingMult", 1.5, "$RND_CookFillingMult", "$HLP_RND_CookFillingMult", 14, 0, LTT.LDH.maxMult, "multiplier" )
-	prop_CookWaterMult = LTT.LDH.addFloatProp( modID, "RND_CookWaterMult", (2/3), "$RND_CookWaterMult", "$HLP_RND_CookWaterMult", 16, 0, LTT.LDH.maxMult, "multiplier" )
-	prop_CookSaltMult = LTT.LDH.addFloatProp( modID, "RND_CookSaltMult", 3.0, "$RND_CookSaltMult", "$HLP_RND_CookSaltMult", 18, 0, LTT.LDH.maxMult, "multiplier" )
+	prop_EatDrinkMins = LDH.addIntProp( modID, "RND_EatDrinkMins", LTT.eatFoodMins / 6, "$RND_EatDrinkMins", "$HLP_RND_EatDrinkMins", 17, 0, LTT.maxMins, "minutes" )
+
+	prop_CookSnackMult = LDH.addFloatProp( modID, "RND_CookSnackMult", 0.5, "$RND_CookSnackMult", "$HLP_RND_CookSnackMult", 10, 0, LTT.maxMult, "multiplier" )
+	prop_CookMediumMins = LDH.addIntProp( modID, "RND_CookMediumMins", 30, "$RND_CookMediumMins", "$HLP_RND_CookMediumMins", 12, 0, LTT.maxMins, "minutes" )
+	prop_CookFillingMult = LDH.addFloatProp( modID, "RND_CookFillingMult", 1.5, "$RND_CookFillingMult", "$HLP_RND_CookFillingMult", 14, 0, LTT.maxMult, "multiplier" )
+
+	prop_CookWaterMult = LDH.addFloatProp( modID, "RND_CookWaterMult", (2/3), "$RND_CookWaterMult", "$HLP_RND_CookWaterMult", 16, 0, LTT.maxMult, "multiplier" )
+	prop_CookSaltMult = LDH.addFloatProp( modID, "RND_CookSaltMult", 3.0, "$RND_CookSaltMult", "$HLP_RND_CookSaltMult", 18, 0, LTT.maxMult, "multiplier" )
 	
-	stat_FoodEaten = LTT.LDH.addStat( "Food Eaten" )
+	stat_FoodEaten = LDH.addStat( "Food Eaten" )
+	DebugLog( "added stat_FoodEaten, index="+stat_FoodEaten, 3 )
 
 	isLoaded = Load()
-	DebugLog( "--OnGameReload(); success" )
+	DebugLog( "--OnGameReload(); success", 4 )
 endevent
 
 bool function Load()
-	DebugLog( "++Load()" )
+	DebugLog( "++Load()", 4 )
 	Cookpot		= Game.GetForm(0x318FB) ; "Cast Iron Pot" [MISC:000318FB]
 	Waterskin	= Game.GetFormFromFile(0x46497, ESP) ; "Waterskin" [ALCH:03046497]
 	Tinderbox	= Game.GetFormFromFile(0x3067C, ESP) ; "Tinderbox" [MISC:0303067C]
@@ -129,13 +136,13 @@ bool function Load()
 	mgefFoods[4]		= mgefFruit
 
 	if !Cookpot || !Waterskin || !Tinderbox || !Bedroll || !Tent || !MilkBucket
-		DebugLog( "--Load(); failed on items" )
+		DebugLog( "--Load(); failed on items, 0" )
 		return false
 	endif
 	int i = 10
 	while i >= 0
 		if !Water[i]
-			DebugLog( "--Load(); failed on Water["+i+"]" )
+			DebugLog( "--Load(); failed on Water["+i+"]", 0 )
 			return false
 		endif
 		i -= 1
@@ -143,7 +150,7 @@ bool function Load()
 	i = 3
 	while i >= 0
 		if !mgefDrinks[i]
-			DebugLog( "--Load(); failed on mgefDrinks["+i+"]" )
+			DebugLog( "--Load(); failed on mgefDrinks["+i+"]", 0 )
 			return false
 		endif
 		i -= 1
@@ -151,7 +158,7 @@ bool function Load()
 	i = 5
 	while i >= 0
 		if !Salt[i]
-			DebugLog( "--Load(); failed on Salt["+i+"]" )
+			DebugLog( "--Load(); failed on Salt["+i+"]", 0 )
 			return false
 		endif
 		i -= 1
@@ -159,123 +166,109 @@ bool function Load()
 	i = 4
 	while i >= 0
 		if !mgefFoods[i]
-			DebugLog( "--Load(); failed on mgefFoods["+i+"]" )
+			DebugLog( "--Load(); failed on mgefFoods["+i+"]", 0 )
 			return false
 		endif
 		i -= 1
 	endwhile
 
-	DebugLog( "--Load(); success" )
+	DebugLog( "--Load(); success", 4 )
 	return true
 endfunction
 
-float function MenuOpened( int MenuID )
-	DebugLog( "++MenuOpened() starting food eaten" )
-	LTT.LDH.startStat( stat_FoodEaten )
-	DebugLog( "--MenuOpened()=-1.0" )
-	return -1.0
-endfunction
+;;DISfloat function MenuOpened( int MenuID )
+;;DIS	DebugLog( "++MenuOpened() starting food eaten", 4 )
+;;DIS	LDH.startStat( stat_FoodEaten )
+;;DIS	DebugLog( "--MenuOpened()=-1.0", 4 )
+;;DIS	return -1.0
+;;DISendfunction
 
 float function EatFood( int i )
-	DebugLog( "++EatFood()" )
+	DebugLog( "++EatFood()", 4 )
 	float t = 0.0
 	if mgefFoods[i] == mgefSnack
 		DebugLog( "eaten snack!" )
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_EatMediumMins ) ) * LTT.LDH.getFloatProp( prop_EatSnackMult )
+		t = LDH.convertMinsToHrs( LDH.getIntProp( LTT.Skyrim.prop_EatMins ) ) * LDH.getFloatProp( prop_EatSnackMult )
 
 	elseif mgefFoods[i] == mgefMedium
 		DebugLog( "eaten medium!" )
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_EatMediumMins ) )
+		t = LDH.convertMinsToHrs( LDH.getIntProp( LTT.Skyrim.prop_EatMins ) )
 
 	elseif mgefFoods[i] == mgefFilling
 		DebugLog( "eaten filling!" )
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_EatMediumMins ) ) * LTT.LDH.getFloatProp( prop_EatFillingMult )
+		t = LDH.convertMinsToHrs( LDH.getIntProp( LTT.Skyrim.prop_EatMins ) ) * LDH.getFloatProp( prop_EatFillingMult )
 
 	endif
-	DebugLog( "--EatFood(); t="+t )
+	DebugLog( "--EatFood(); t="+t, 4 )
 	return t
 endfunction
 
 float function EatDrink( int i )
-	DebugLog( "++AddDrink()" )
+	DebugLog( "++AddDrink()", 4 )
 	float t = 0.0
-;	mgefDrinks[0]	= Game.GetFormFromFile(0x6437, ESP) as MagicEffect ; "Small Bottle" [MGEF:02006437]
-;	mgefDrinks[1]	= Game.GetFormFromFile(0x1114F, ESP) as MagicEffect ; "Medium Bottle" [MGEF:0201114F]
-;	mgefDrinks[2]	= Game.GetFormFromFile(0x11150, ESP) as MagicEffect ; "Large Bottle" [MGEF:02011150]
-;	mgefDrinks[3]	= Game.GetFormFromFile(0xFB9F, ESP) as MagicEffect ; "Decrease Thirst" [MGEF:0200FB9F]
-;	mgefDrinks[4]	= Game.GetFormFromFile(0x6442A, ESP) as MagicEffect ; "Seawater" [MGEF:0206442A]
-;	mgefDrinks[5]	= Game.GetFormFromFile(0x1BDD6, ESP) as MagicEffect ; "Skooma" [MGEF:0201BDD6]
-;	prop_CookWaterMins = LTT.LDH.addIntProp( modID, "RND_CookWaterMins", LTT.craftFoodMins / 6, "$RND_CookWaterMins", "$HLP_RND_CookWaterMins", mcmCellCookWater, 0, LTT.LDH.maxMins, "minutes" )
-;	prop_CookDrinkMins = LTT.LDH.addIntProp( modID, "RND_CookDrinkMins", LTT.craftFoodMins / 6, "$RND_CookDrinkMins", "$HLP_RND_CookDrinkMins", mcmCellCookDrink, 0, LTT.LDH.maxMins, "minutes" )
 
 ; TODO test food sizes, especially soups (medium bottles), ales & fruits (small bottles), 
 
 	if i == 0 ; small bottle
 		DebugLog( "small bottle!" )
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_EatDrinkMins ) )
+		t = LDH.convertMinsToHrs( LDH.getIntProp( prop_EatDrinkMins ) )
 
 	elseif i == 1 ; medium bottle
 		DebugLog( "medium bottle!" )
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_EatDrinkMins ) ) * 2
+		t = LDH.convertMinsToHrs( LDH.getIntProp( prop_EatDrinkMins ) ) * 2
 
 	elseif i == 2 ; large bottle
 		DebugLog( "large bottle!" )
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_EatDrinkMins ) ) * 3
+		t = LDH.convertMinsToHrs( LDH.getIntProp( prop_EatDrinkMins ) ) * 3
 
 	elseif i == 5 ; skooma
 		DebugLog( "skooma!" )
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_EatDrinkMins ) ) * 100
+		t = LDH.convertMinsToHrs( LDH.getIntProp( prop_EatDrinkMins ) ) * 100
 
 	endif
-	DebugLog( "--AddDrink(); t="+t )
+	DebugLog( "--AddDrink(); t="+t, 4 )
 	return t
 endfunction
 
 float function ItemRemoved( form BaseItem, int Qty, form ItemRef, form Container, int Type, int Prefix )
-	DebugLog( "++ItemRemoved()" )
+	DebugLog( "++ItemRemoved()", 4 )
 	float t = -1.0
 
-	if Type == LTT.LDH.kPotion
-		LTT.LDH.DumpTables( "Checking before if food was eaten" )
-		int QtyEaten = LTT.LDH.endStat( stat_FoodEaten )
+	if Type == LTT.kPotion
+		LDH.DumpStats( "Checking before if food was eaten" )
+		int QtyEaten = LDH.endStat( stat_FoodEaten )
 		DebugLog( "QtyEaten="+QtyEaten+"; Qty="+Qty )
 		if QtyEaten > 0
-			; TODO need to check if Qty and/or QtyEaten are both used when looting & eating many items.
 			MagicEffect eff = CheckFoodEffect( BaseItem as Potion )
-			DebugLog( "Food?" )
 			int i = mgefFoods.Find( eff )
+			DebugLog( "Testing food: i="+i, 3 )
 			if i >= 0
 				t = EatFood( i ) * QtyEaten
-			else
-				DebugLog( "No" )
 			endif
-			DebugLog( "Drink?" )
 			i = mgefDrinks.Find( eff )
-			if i >= 0
+			DebugLog( "Testing drink: i="+i+" t="+t, 3 )
+			if i >= 0 && t < 0
 				t = EatDrink( i ) * QtyEaten
-			else
-				DebugLog( "No" )
 			endif
 		endif
-		LTT.LDH.DumpTables( "Checking after if food was eaten" )
+		LDH.DumpStats( "Checking after if food was eaten" )
 	endif
 
-	DebugLog( "--ItemRemoved(); t="+t )
+	DebugLog( "--ItemRemoved(); t="+t, 4 )
 	return t
 endfunction
 
 float function ItemAdded( form BaseItem, int Qty, form ItemRef, form Container, int Type, int Prefix )
-	DebugLog( "++ItemAdded()" )
+	DebugLog( "++ItemAdded()", 4 )
 	float t = -1.0
 	int i = -1
 	
-	
 	; Check for drinks before non-RND items.
-	if Type == LTT.LDH.kPotion && LTT.LDH.getStringState( LTT.LDH.state_CraftingStation ) == LTT.station_Cookpot
+	if Type == LTT.kPotion && LDH.getStringState( LTT.state_CraftingStation ) == LTT.station_Cookpot
 		DebugLog( "Is potion and am using cookpot" )
 		
 		if Water.Find( BaseItem ) >= 0 ; Check for water before drinks
-			t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( LTT.Skyrim.prop_CraftDrinkMins ) ) * LTT.LDH.getFloatProp( prop_CookWaterMult ) * Qty
+			t = LDH.convertMinsToHrs( LDH.getIntProp( LTT.Skyrim.prop_CraftDrinkMins ) ) * LDH.getFloatProp( prop_CookWaterMult ) * Qty
 			DebugLog( "Boiled water: t="+t )
 			
 		elseif (BaseItem as Potion).isFood()
@@ -300,103 +293,99 @@ float function ItemAdded( form BaseItem, int Qty, form ItemRef, form Container, 
 			endif
 		endif
 	
-	elseif Prefix != LTT.LDH.getModPrefix( modID ) && BaseItem != Cookpot
-		DebugLog( "--ItemAdded() t="+t+"; not our item" )
+	elseif Prefix != LDH.getModPrefix( modID ) && BaseItem != Cookpot
+		DebugLog( "--ItemAdded() t="+t+"; not our item", 2 )
 		return t
 	
 	elseif Salt.Find( BaseItem ) >= 0
-			t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( LTT.Skyrim.prop_CraftDrinkMins ) ) * LTT.LDH.getFloatProp( prop_CookSaltMult ) * Qty
+			t = LDH.convertMinsToHrs( LDH.getIntProp( LTT.Skyrim.prop_CraftDrinkMins ) ) * LDH.getFloatProp( prop_CookSaltMult ) * Qty
 		DebugLog( "Distilled salt: t="+t )
 	
 	elseif BaseItem == MilkBucket
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_MilkBucketMins ) ) * Qty
+		t = LDH.convertMinsToHrs( LDH.getIntProp( prop_MilkBucketMins ) ) * Qty
 		DebugLog( "Milk Bucket: t="+t )
 	
 	elseif BaseItem == Tinderbox
-		t = LTT.LDH.getFloatProp( prop_TinderboxHrs ) * Qty
+		t = LDH.getFloatProp( prop_TinderboxHrs ) * Qty
 		DebugLog( "Tinderbox: t="+t )
 	
 	elseif BaseItem == Cookpot
-		t = LTT.LDH.getFloatProp( prop_CookpotHrs ) * Qty
+		t = LDH.getFloatProp( prop_CookpotHrs ) * Qty
 		DebugLog( "Cookpot: t="+t )
 	
 	elseif BaseItem == Bedroll
-		t = LTT.LDH.getFloatProp( LTT.Skyrim.prop_CraftBeddingHrs ) * Qty
+		t = LDH.getFloatProp( LTT.Skyrim.prop_CraftBeddingHrs ) * Qty
 		DebugLog( "Bedroll: t="+t )
 	
 	elseif BaseItem == Tent
-		t = LTT.LDH.getFloatProp( prop_TentHrs ) * Qty
+		t = LDH.getFloatProp( prop_TentHrs ) * Qty
 		DebugLog( "Tent: t="+t )
 	
 	elseif BaseItem == Waterskin
-		;if LTT.LDH.getStringState( LDH.state_CraftingStation )
-		if LTT.LDH.getBoolState( LTT.LDH.state_IsCrafting )
-			t = LTT.LDH.getFloatProp( prop_WaterskinHrs ) * Qty
+		;if LDH.getStringState( state_CraftingStation )
+		if LDH.getBoolState( LTT.state_IsCrafting )
+			t = LDH.getFloatProp( prop_WaterskinHrs ) * Qty
 			DebugLog( "Crafted waterskin: t="+t )
 		else
 			t = 0.0
 			DebugLog( "Filled waterskin" )
 		endif
 	
-	elseif Type == LTT.LDH.kMisc
+	elseif Type == LTT.kMisc
 		t = 0.0
 		DebugLog( "Unknown misc item, but it belongs to RND" )
 		
 	endif
-	DebugLog( "--ItemAdded(); t="+t )
+	DebugLog( "--ItemAdded(); t="+t, 4 )
 	return t
 endfunction
 
 float function AddFood( int i )
-	DebugLog( "++AddFood()" )
+	DebugLog( "++AddFood()", 4 )
 	float t = 0.0
 	if mgefFoods[i] == mgefSnack
 		DebugLog( "cooked snack!" )
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( LTT.Skyrim.prop_EatMins ) ) * LTT.LDH.getFloatProp( prop_CookSnackMult )
+		t = LDH.convertMinsToHrs( LDH.getIntProp( prop_CookMediumMins ) ) * LDH.getFloatProp( prop_CookSnackMult )
 
 	elseif mgefFoods[i] == mgefMedium
 		DebugLog( "cooked medium!" )
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( LTT.Skyrim.prop_EatMins ) ) * LTT.LDH.getFloatProp( prop_CookMediumMult )
+		t = LDH.convertMinsToHrs( LDH.getIntProp( prop_CookMediumMins ) )
 
 	elseif mgefFoods[i] == mgefFilling
 		DebugLog( "cooked filling!" )
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( LTT.Skyrim.prop_EatMins ) ) * LTT.LDH.getFloatProp( prop_CookFillingMult )
+		t = LDH.convertMinsToHrs( LDH.getIntProp( prop_CookMediumMins ) ) * LDH.getFloatProp( prop_CookFillingMult )
 
 	endif
-	DebugLog( "--AddFood(); t="+t )
+	DebugLog( "--AddFood(); t="+t, 4 )
 	return t
 endfunction
 
 float function AddDrink( int i )
-	DebugLog( "++AddDrink()" )
+	DebugLog( "++AddDrink()", 4 )
 	float t = 0.0
-;	mgefDrinks[3]	= Game.GetFormFromFile(0xFB9F, ESP) as MagicEffect ; "Decrease Thirst" [MGEF:0200FB9F]
-;	mgefDrinks[4]	= Game.GetFormFromFile(0x6442A, ESP) as MagicEffect ; "Seawater" [MGEF:0206442A]
-;	prop_CookWaterMins = LTT.LDH.addIntProp( modID, "RND_CookWaterMins", LTT.craftFoodMins / 6, "$RND_CookWaterMins", "$HLP_RND_CookWaterMins", mcmCellCookWater, 0, LTT.LDH.maxMins, "minutes" )
-;	prop_CookDrinkMins = LTT.LDH.addIntProp( modID, "RND_CookDrinkMins", LTT.craftFoodMins / 6, "$RND_CookDrinkMins", "$HLP_RND_CookDrinkMins", mcmCellCookDrink, 0, LTT.LDH.maxMins, "minutes" )
 	if i == 0 ; small bottle
 		DebugLog( "small bottle!" )
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( LTT.Skyrim.prop_CraftDrinkMins ) ) * LTT.LDH.getFloatProp( prop_CookWaterMult )
+		t = LDH.convertMinsToHrs( LDH.getIntProp( LTT.Skyrim.prop_CraftDrinkMins ) ) * LDH.getFloatProp( prop_CookWaterMult )
 
 	elseif i == 1 ; medium bottle
 		DebugLog( "medium bottle!" )
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( LTT.Skyrim.prop_CraftDrinkMins ) ) * LTT.LDH.getFloatProp( prop_CookWaterMult ) * 2.0
+		t = LDH.convertMinsToHrs( LDH.getIntProp( LTT.Skyrim.prop_CraftDrinkMins ) ) * LDH.getFloatProp( prop_CookWaterMult ) * 2.0
 
 	elseif i == 2 ; large bottle
 		DebugLog( "large bottle!" )
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( LTT.Skyrim.prop_CraftDrinkMins ) ) * LTT.LDH.getFloatProp( prop_CookWaterMult ) * 3.0
+		t = LDH.convertMinsToHrs( LDH.getIntProp( LTT.Skyrim.prop_CraftDrinkMins ) ) * LDH.getFloatProp( prop_CookWaterMult ) * 3.0
 
 	elseif i == 5 ; skooma
 		DebugLog( "skooma!" )
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( LTT.Skyrim.prop_CraftDrinkMins ) ) * LTT.LDH.getFloatProp( prop_CookWaterMult ) * 100.0
+		t = LDH.convertMinsToHrs( LDH.getIntProp( LTT.Skyrim.prop_CraftDrinkMins ) ) * LDH.getFloatProp( prop_CookWaterMult ) * 100.0
 
 	endif
-	DebugLog( "--AddDrink(); t="+t )
+	DebugLog( "--AddDrink(); t="+t, 4 )
 	return t
 endfunction
 
 MagicEffect function CheckFoodEffect(Potion akFood)
-	DebugLog( "++CheckFoodEffect()" )
+	DebugLog( "++CheckFoodEffect()", 4 )
 	int n = akFood.GetNumEffects()
 	MagicEffect eff
 	MagicEffect result = None
@@ -409,7 +398,7 @@ MagicEffect function CheckFoodEffect(Potion akFood)
 			result = eff
 		endif
 	endwhile
-	DebugLog( "--CheckFoodEffect(); result="+result )
+	DebugLog( "--CheckFoodEffect(); result="+result, 4 )
 	Return result
 endfunction
 

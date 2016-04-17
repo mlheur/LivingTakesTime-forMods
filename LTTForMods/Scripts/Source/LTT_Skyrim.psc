@@ -71,125 +71,125 @@ endevent
 
 event OnGameReload()
 	LTT = LTT_Factory.LTT_getBase() ; not normally required, but handy if LTT changes between saves
-	DebugLog( "++OnGameReload()" )
+	DebugLog( "++OnGameReload()", 4 )
 	isLoaded = false
-	RegisterActs = Math.LogicalOr( LTT.LDH.act_ITEMADDED, LTT.LDH.act_ITEMREMOVED )
-	RegisterMenus = LTT.LDH.menu_Inventory
-	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.LDH.menu_Magic )
-	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.LDH.menu_Journal )
-	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.LDH.menu_Map )
-	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.LDH.menu_Barter )
-	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.LDH.menu_Barter )
-	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.LDH.menu_Gift )
-	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.LDH.menu_LevelUp )
-	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.LDH.menu_Lockpicking )
-	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.LDH.menu_Container )
-	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.LDH.menu_Crafting )
-	modID = LTT.LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
+	RegisterActs = Math.LogicalOr( LTT.act_ITEMADDED, LTT.act_ITEMREMOVED )
+	RegisterMenus = LTT.menu_Inventory
+	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.menu_Magic )
+	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.menu_Journal )
+	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.menu_Map )
+	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.menu_Barter )
+	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.menu_Barter )
+	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.menu_Gift )
+	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.menu_LevelUp )
+	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.menu_Lockpicking )
+	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.menu_Container )
+	RegisterMenus = Math.LogicalOr( RegisterMenus, LTT.menu_Crafting )
+	modID = LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
 	if modID < 0 ; We couldn't be added to the Mod table.
-		DebugLog( "--OnGameReload(); unable to successfully addMod()" )
+		DebugLog( "--OnGameReload(); unable to successfully addMod()", 0 )
 		return
 	endif
 	
-	prop_CraftHeadHrs = LTT.LDH.addFloatProp( modID, "SK_CraftHeadHrs", LTT.craftHeadHrs, "$SK_CraftHeadHrs", "$HLP_SK_CraftHeadHrs", 1, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_CraftBodyHrs = LTT.LDH.addFloatProp( modID, "SK_CraftBodyHrs", LTT.craftBodyHrs, "$SK_CraftBodyHrs", "$HLP_SK_CraftBodyHrs", 3, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_CraftHandHrs = LTT.LDH.addFloatProp( modID, "SK_CraftHandHrs", LTT.craftLimbHrs, "$SK_CraftHandHrs", "$HLP_SK_CraftHandHrs", 5, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_CraftFootHrs = LTT.LDH.addFloatProp( modID, "SK_CraftFootHrs", LTT.craftLimbHrs, "$SK_CraftFootHrs", "$HLP_SK_CraftFootHrs", 7, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_CraftShieldHrs = LTT.LDH.addFloatProp( modID, "SK_CraftShieldHrs", LTT.craftShieldHrs, "$SK_CraftShieldHrs", "$HLP_SK_CraftShieldHrs", 9, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_CraftJewelryHrs = LTT.LDH.addFloatProp( modID, "SK_CraftJewelryHrs", LTT.craftJewelryHrs, "$SK_CraftJewelryHrs", "$HLP_SK_CraftJewelryHrs", 11, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_CraftMiscHrs = LTT.LDH.addFloatProp( modID, "SK_CraftMiscHrs", LTT.craftMiscHrs, "$SK_CraftMiscHrs", "$HLP_SK_CraftMiscHrs", 13, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_ImproveArmorHrs = LTT.LDH.addFloatProp( modID, "SK_ImproveArmorHrs", LTT.craftMiscHrs, "$SK_ImproveArmorHrs", "$HLP_SK_ImproveArmorHrs", 15, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_ImrpoveWeaponHrs = LTT.LDH.addFloatProp( modID, "SK_ImrpoveWeaponHrs", LTT.craftMiscHrs, "$SK_ImrpoveWeaponHrs", "$HLP_SK_ImrpoveWeaponHrs", 17, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_EnchantHrs = LTT.LDH.addFloatProp( modID, "SK_EnchantHrs", LTT.craftMiscHrs, "$SK_EnchantHrs", "$HLP_SK_EnchantHrs", 19, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_BrewHrsHrs = LTT.LDH.addFloatProp( modID, "SK_BrewHrsHrs", LTT.craftMiscHrs, "$SK_BrewHrsHrs", "$HLP_SK_BrewHrsHrs", 21, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_CraftDrinkMins = LTT.LDH.addIntProp( modID, "SK_CraftDrinkMins", 5, "$SK_CraftDrinkMins", "$HLP_SK_CraftDrinkMins", 23, 0, LTT.LDH.maxMins, "minutes" )
-	prop_CraftBeddingHrs = LTT.LDH.addFloatProp( modID, "SK_CraftBeddingHrs", LTT.craftMiscHrs, "$SK_CraftBeddingHrs", "$HLP_SK_CraftBeddingHrs", 25, 0.0, LTT.LDH.maxHrs, "hours" )
+	prop_CraftHeadHrs = LDH.addFloatProp( modID, "SK_CraftHeadHrs", LTT.craftHeadHrs, "$SK_CraftHeadHrs", "$HLP_SK_CraftHeadHrs", 1, 0.0, LTT.maxHrs, "hours" )
+	prop_CraftBodyHrs = LDH.addFloatProp( modID, "SK_CraftBodyHrs", LTT.craftBodyHrs, "$SK_CraftBodyHrs", "$HLP_SK_CraftBodyHrs", 3, 0.0, LTT.maxHrs, "hours" )
+	prop_CraftHandHrs = LDH.addFloatProp( modID, "SK_CraftHandHrs", LTT.craftLimbHrs, "$SK_CraftHandHrs", "$HLP_SK_CraftHandHrs", 5, 0.0, LTT.maxHrs, "hours" )
+	prop_CraftFootHrs = LDH.addFloatProp( modID, "SK_CraftFootHrs", LTT.craftLimbHrs, "$SK_CraftFootHrs", "$HLP_SK_CraftFootHrs", 7, 0.0, LTT.maxHrs, "hours" )
+	prop_CraftShieldHrs = LDH.addFloatProp( modID, "SK_CraftShieldHrs", LTT.craftShieldHrs, "$SK_CraftShieldHrs", "$HLP_SK_CraftShieldHrs", 9, 0.0, LTT.maxHrs, "hours" )
+	prop_CraftJewelryHrs = LDH.addFloatProp( modID, "SK_CraftJewelryHrs", LTT.craftJewelryHrs, "$SK_CraftJewelryHrs", "$HLP_SK_CraftJewelryHrs", 11, 0.0, LTT.maxHrs, "hours" )
+	prop_CraftMiscHrs = LDH.addFloatProp( modID, "SK_CraftMiscHrs", LTT.craftMiscHrs, "$SK_CraftMiscHrs", "$HLP_SK_CraftMiscHrs", 13, 0.0, LTT.maxHrs, "hours" )
+	prop_ImproveArmorHrs = LDH.addFloatProp( modID, "SK_ImproveArmorHrs", LTT.craftMiscHrs, "$SK_ImproveArmorHrs", "$HLP_SK_ImproveArmorHrs", 15, 0.0, LTT.maxHrs, "hours" )
+	prop_ImrpoveWeaponHrs = LDH.addFloatProp( modID, "SK_ImrpoveWeaponHrs", LTT.craftMiscHrs, "$SK_ImrpoveWeaponHrs", "$HLP_SK_ImrpoveWeaponHrs", 17, 0.0, LTT.maxHrs, "hours" )
+	prop_EnchantHrs = LDH.addFloatProp( modID, "SK_EnchantHrs", LTT.craftMiscHrs, "$SK_EnchantHrs", "$HLP_SK_EnchantHrs", 19, 0.0, LTT.maxHrs, "hours" )
+	prop_BrewHrsHrs = LDH.addFloatProp( modID, "SK_BrewHrsHrs", LTT.craftMiscHrs, "$SK_BrewHrsHrs", "$HLP_SK_BrewHrsHrs", 21, 0.0, LTT.maxHrs, "hours" )
+	prop_CraftDrinkMins = LDH.addIntProp( modID, "SK_CraftDrinkMins", 5, "$SK_CraftDrinkMins", "$HLP_SK_CraftDrinkMins", 23, 0, LTT.maxMins, "minutes" )
+	prop_CraftBeddingHrs = LDH.addFloatProp( modID, "SK_CraftBeddingHrs", LTT.craftMiscHrs, "$SK_CraftBeddingHrs", "$HLP_SK_CraftBeddingHrs", 25, 0.0, LTT.maxHrs, "hours" )
 
-	prop_CraftDaggerHrs = LTT.LDH.addFloatProp( modID, "SK_CraftDaggerHrs", LTT.craftDaggerHrs, "$SK_CraftDaggerHrs", "$HLP_SK_CraftDaggerHrs", 2, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_Craft1SwordHrs = LTT.LDH.addFloatProp( modID, "SK_Craft1SwordHrs", LTT.craftOneHandedHrs, "$SK_Craft1SwordHrs", "$HLP_SK_Craft1SwordHrs", 4, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_Craft1AxeHrs = LTT.LDH.addFloatProp( modID, "SK_Craf1AxeHrs", LTT.craftOneHandedHrs, "$SK_Craf1AxeHrs", "$HLP_SK_Craf1AxeHrs", 6, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_Craft1MaceHrs = LTT.LDH.addFloatProp( modID, "SK_Craft1MaceHrs", LTT.craftOneHandedHrs, "$SK_Craft1MaceHrs", "$HLP_SK_Craft1MaceHrs", 8, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_Craft2SwordHrs = LTT.LDH.addFloatProp( modID, "SK_Craft2SwordHrs", LTT.craftTwoHandedHrs, "$SK_Craft2SwordHrs", "$HLP_SK_Craft2SwordHrs", 10, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_Craft2AxeHrs = LTT.LDH.addFloatProp( modID, "SK_Craft2AxeHrs", LTT.craftTwoHandedHrs, "$SK_Craft2AxeHrs", "$HLP_SK_Craft2AxeHrs", 12, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_Craft2MaceHrs = LTT.LDH.addFloatProp( modID, "SK_Craft2MaceHrs", LTT.craftTwoHandedHrs, "$SK_Craft2MaceHrs", "$HLP_SK_Craft2MaceHrs", 14, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_CraftStaffHrs = LTT.LDH.addFloatProp( modID, "SK_CraftStaffHrs", LTT.craftTwoHandedHrs, "$SK_CraftStaffHrs", "$HLP_SK_CraftStaffHrs", 16, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_CraftBowsHrs = LTT.LDH.addFloatProp( modID, "SK_CraftBowsHrs", LTT.craftOneHandedHrs, "$SK_CraftBowsHrs", "$HLP_SK_CraftBowsHrs", 18, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_CraftAmmoHrs = LTT.LDH.addFloatProp( modID, "SK_CraftAmmoHrs", LTT.craftAmmoHrs, "$SK_CraftAmmoHrs", "$HLP_SK_CraftAmmoHrs", 20, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_CraftLeatherHrs = LTT.LDH.addFloatProp( modID, "SK_CraftLeatherHrs", LTT.craftMiscHrs, "$SK_CraftLeatherHrs", "$HLP_SK_CraftLeatherHrs", 22, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_CraftStripMins = LTT.LDH.addIntProp( modID, "SK_CraftStripMins", 5, "$SK_CraftStripMins", "$HLP_SK_CraftStripMins", 24, 0, LTT.LDH.maxMins, "minutes" )
+	prop_CraftDaggerHrs = LDH.addFloatProp( modID, "SK_CraftDaggerHrs", LTT.craftDaggerHrs, "$SK_CraftDaggerHrs", "$HLP_SK_CraftDaggerHrs", 2, 0.0, LTT.maxHrs, "hours" )
+	prop_Craft1SwordHrs = LDH.addFloatProp( modID, "SK_Craft1SwordHrs", LTT.craftOneHandedHrs, "$SK_Craft1SwordHrs", "$HLP_SK_Craft1SwordHrs", 4, 0.0, LTT.maxHrs, "hours" )
+	prop_Craft1AxeHrs = LDH.addFloatProp( modID, "SK_Craf1AxeHrs", LTT.craftOneHandedHrs, "$SK_Craf1AxeHrs", "$HLP_SK_Craf1AxeHrs", 6, 0.0, LTT.maxHrs, "hours" )
+	prop_Craft1MaceHrs = LDH.addFloatProp( modID, "SK_Craft1MaceHrs", LTT.craftOneHandedHrs, "$SK_Craft1MaceHrs", "$HLP_SK_Craft1MaceHrs", 8, 0.0, LTT.maxHrs, "hours" )
+	prop_Craft2SwordHrs = LDH.addFloatProp( modID, "SK_Craft2SwordHrs", LTT.craftTwoHandedHrs, "$SK_Craft2SwordHrs", "$HLP_SK_Craft2SwordHrs", 10, 0.0, LTT.maxHrs, "hours" )
+	prop_Craft2AxeHrs = LDH.addFloatProp( modID, "SK_Craft2AxeHrs", LTT.craftTwoHandedHrs, "$SK_Craft2AxeHrs", "$HLP_SK_Craft2AxeHrs", 12, 0.0, LTT.maxHrs, "hours" )
+	prop_Craft2MaceHrs = LDH.addFloatProp( modID, "SK_Craft2MaceHrs", LTT.craftTwoHandedHrs, "$SK_Craft2MaceHrs", "$HLP_SK_Craft2MaceHrs", 14, 0.0, LTT.maxHrs, "hours" )
+	prop_CraftStaffHrs = LDH.addFloatProp( modID, "SK_CraftStaffHrs", LTT.craftTwoHandedHrs, "$SK_CraftStaffHrs", "$HLP_SK_CraftStaffHrs", 16, 0.0, LTT.maxHrs, "hours" )
+	prop_CraftBowsHrs = LDH.addFloatProp( modID, "SK_CraftBowsHrs", LTT.craftOneHandedHrs, "$SK_CraftBowsHrs", "$HLP_SK_CraftBowsHrs", 18, 0.0, LTT.maxHrs, "hours" )
+	prop_CraftAmmoHrs = LDH.addFloatProp( modID, "SK_CraftAmmoHrs", LTT.craftAmmoHrs, "$SK_CraftAmmoHrs", "$HLP_SK_CraftAmmoHrs", 20, 0.0, LTT.maxHrs, "hours" )
+	prop_CraftLeatherHrs = LDH.addFloatProp( modID, "SK_CraftLeatherHrs", LTT.craftMiscHrs, "$SK_CraftLeatherHrs", "$HLP_SK_CraftLeatherHrs", 22, 0.0, LTT.maxHrs, "hours" )
+	prop_CraftStripMins = LDH.addIntProp( modID, "SK_CraftStripMins", 5, "$SK_CraftStripMins", "$HLP_SK_CraftStripMins", 24, 0, LTT.maxMins, "minutes" )
 
-	prop_LootMult = LTT.LDH.addFloatProp( modID, "SK_LootMult", 1.0, "$SK_LootMult", "$HLP_SK_LootMult", 28, 0.0, LTT.LDH.maxMult, "multiplier" )
-	prop_LootIC = LTT.LDH.addBoolProp( modID, "SK_LootIC", false, "$SK_LootIC", "$HLP_SK_LootIC", 30 )
-	prop_LootLightArmMins = LTT.LDH.addIntProp( modID, "SK_LootLightArmMins", 15, "$SK_LootLightArmMins", "$HLP_SK_LootLightArmMins", 32, 0, LTT.LDH.maxMins, "minutes" )
-	prop_LootHeavyArmMins = LTT.LDH.addIntProp( modID, "SK_LootHeavyArmMins", 45, "$SK_LootHeavyArmMins", "$HLP_SK_LootHeavyArmMins", 34, 0, LTT.LDH.maxMins, "minutes" )
+	prop_LootMult = LDH.addFloatProp( modID, "SK_LootMult", 1.0, "$SK_LootMult", "$HLP_SK_LootMult", 28, 0.0, LTT.maxMult, "multiplier" )
+	prop_LootIC = LDH.addBoolProp( modID, "SK_LootIC", false, "$SK_LootIC", "$HLP_SK_LootIC", 30 )
+	prop_LootLightArmMins = LDH.addIntProp( modID, "SK_LootLightArmMins", 15, "$SK_LootLightArmMins", "$HLP_SK_LootLightArmMins", 32, 0, LTT.maxMins, "minutes" )
+	prop_LootHeavyArmMins = LDH.addIntProp( modID, "SK_LootHeavyArmMins", 45, "$SK_LootHeavyArmMins", "$HLP_SK_LootHeavyArmMins", 34, 0, LTT.maxMins, "minutes" )
 
-	prop_PickPocketMult = LTT.LDH.addFloatProp( modID, "SK_PickPocketMult", 1.0, "$SK_PickPocketMult", "$HLP_SK_PickPocketMult", 29, 0.0, LTT.LDH.maxMult, "multiplier" )
-	prop_PickPocketIC = LTT.LDH.addBoolProp( modID, "SK_PickPocketIC", false, "$SK_PickPocketIC", "$HLP_SK_PickPocketIC", 31 )
-	prop_LockpickMult = LTT.LDH.addFloatProp( modID, "SK_LockpickMult", 1.0, "$SK_LockpickMult", "$HLP_SK_LockpickMult", 33, 0.0, LTT.LDH.maxMult, "multiplier" )
-	prop_LockpickIC = LTT.LDH.addBoolProp( modID, "SK_LockpickIC", false, "$SK_LockpickIC", "$HLP_SK_LockpickIC", 35 )
+	prop_PickPocketMult = LDH.addFloatProp( modID, "SK_PickPocketMult", 1.0, "$SK_PickPocketMult", "$HLP_SK_PickPocketMult", 29, 0.0, LTT.maxMult, "multiplier" )
+	prop_PickPocketIC = LDH.addBoolProp( modID, "SK_PickPocketIC", false, "$SK_PickPocketIC", "$HLP_SK_PickPocketIC", 31 )
+	prop_LockpickMult = LDH.addFloatProp( modID, "SK_LockpickMult", 1.0, "$SK_LockpickMult", "$HLP_SK_LockpickMult", 33, 0.0, LTT.maxMult, "multiplier" )
+	prop_LockpickIC = LDH.addBoolProp( modID, "SK_LockpickIC", false, "$SK_LockpickIC", "$HLP_SK_LockpickIC", 35 )
 
-	prop_LevelMult = LTT.LDH.addFloatProp( modID, "SK_LevelMult", 1.0, "$SK_LevelMult", "$HLP_SK_LevelMult", 38, 0.0, LTT.LDH.maxMult, "multiplier" )
-	prop_LevelHrs = LTT.LDH.addFloatProp( modID, "SK_LevelHrs", 8.0, "$SK_LevelHrs", "$HLP_SK_LevelHrs", 40, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_LevelIC = LTT.LDH.addBoolProp( modID, "SK_LevelIC", false, "$SK_LevelIC", "$HLP_SK_LevelIC", 42 )
+	prop_LevelMult = LDH.addFloatProp( modID, "SK_LevelMult", 1.0, "$SK_LevelMult", "$HLP_SK_LevelMult", 38, 0.0, LTT.maxMult, "multiplier" )
+	prop_LevelHrs = LDH.addFloatProp( modID, "SK_LevelHrs", 8.0, "$SK_LevelHrs", "$HLP_SK_LevelHrs", 40, 0.0, LTT.maxHrs, "hours" )
+	prop_LevelIC = LDH.addBoolProp( modID, "SK_LevelIC", false, "$SK_LevelIC", "$HLP_SK_LevelIC", 42 )
 
-	prop_TrainMult = LTT.LDH.addFloatProp( modID, "SK_TrainMult", 1.0, "$SK_TrainMult", "$HLP_SK_TrainMult", 39, 0.0, LTT.LDH.maxMult, "multiplier" )
-	prop_TrainHrs = LTT.LDH.addFloatProp( modID, "SK_TrainHrs", 4.0, "$SK_TrainHrs", "$HLP_SK_TrainHrs", 41, 0.0, LTT.LDH.maxHrs, "hours" )
+	prop_TrainMult = LDH.addFloatProp( modID, "SK_TrainMult", 1.0, "$SK_TrainMult", "$HLP_SK_TrainMult", 39, 0.0, LTT.maxMult, "multiplier" )
+	prop_TrainHrs = LDH.addFloatProp( modID, "SK_TrainHrs", 4.0, "$SK_TrainHrs", "$HLP_SK_TrainHrs", 41, 0.0, LTT.maxHrs, "hours" )
 
-	prop_InvMult = LTT.LDH.addFloatProp( modID, "SK_InvMult", 1.0, "$SK_InvMult", "$HLP_SK_InvMult", 46, 0.0, LTT.LDH.maxMult, "multiplier" )
-	prop_MagMult = LTT.LDH.addFloatProp( modID, "SK_MagMult", 1.0, "$SK_MagMult", "$HLP_SK_MagMult", 48, 0.0, LTT.LDH.maxMult, "multiplier" )
-	prop_JournalMult = LTT.LDH.addFloatProp( modID, "SK_JournalMult", 1.0, "$SK_JournalMult", "$HLP_SK_JournalMult", 50, 0.0, LTT.LDH.maxMult, "multiplier" )
-	prop_MapMult = LTT.LDH.addFloatProp( modID, "SK_MapMult", 1.0, "$SK_MapMult", "$HLP_SK_MapMult", 52, 0.0, LTT.LDH.maxMult, "multiplier" )
-	prop_EatMins = LTT.LDH.addIntProp( modID, "SK_EatMins", 30, "$SK_EatMins", "$HLP_SK_EatMins", 54, 0, LTT.LDH.maxMins, "minutes" )
-	prop_BarterMult = LTT.LDH.addFloatProp( modID, "SK_BarterMult", 1.0, "$SK_BarterMult", "$HLP_SK_BarterMult", 56, 0.0, LTT.LDH.maxMult, "multiplier" )
-	prop_GiftMult = LTT.LDH.addFloatProp( modID, "SK_GiftMult", 1.0, "$SK_GiftMult", "$HLP_SK_GiftMult", 58, 0.0, LTT.LDH.maxMult, "multiplier" )
+	prop_InvMult = LDH.addFloatProp( modID, "SK_InvMult", 1.0, "$SK_InvMult", "$HLP_SK_InvMult", 46, 0.0, LTT.maxMult, "multiplier" )
+	prop_MagMult = LDH.addFloatProp( modID, "SK_MagMult", 1.0, "$SK_MagMult", "$HLP_SK_MagMult", 48, 0.0, LTT.maxMult, "multiplier" )
+	prop_JournalMult = LDH.addFloatProp( modID, "SK_JournalMult", 1.0, "$SK_JournalMult", "$HLP_SK_JournalMult", 50, 0.0, LTT.maxMult, "multiplier" )
+	prop_MapMult = LDH.addFloatProp( modID, "SK_MapMult", 1.0, "$SK_MapMult", "$HLP_SK_MapMult", 52, 0.0, LTT.maxMult, "multiplier" )
+	prop_EatMins = LDH.addIntProp( modID, "SK_EatMins", 30, "$SK_EatMins", "$HLP_SK_EatMins", 54, 0, LTT.maxMins, "minutes" )
+	prop_BarterMult = LDH.addFloatProp( modID, "SK_BarterMult", 1.0, "$SK_BarterMult", "$HLP_SK_BarterMult", 56, 0.0, LTT.maxMult, "multiplier" )
+	prop_GiftMult = LDH.addFloatProp( modID, "SK_GiftMult", 1.0, "$SK_GiftMult", "$HLP_SK_GiftMult", 58, 0.0, LTT.maxMult, "multiplier" )
 
-	prop_InvIC = LTT.LDH.addBoolProp( modID, "SK_InvIC", false, "$SK_InvIC", "$HLP_SK_InvIC", 47 )
-	prop_MagIC = LTT.LDH.addBoolProp( modID, "SK_MagIC", false, "$SK_MagIC", "$HLP_SK_MagIC", 49 )
-	prop_JournalIC = LTT.LDH.addBoolProp( modID, "SK_JournalIC", false, "$SK_JournalIC", "$HLP_SK_JournalIC", 51 )
-	prop_MapIC = LTT.LDH.addBoolProp( modID, "SK_MapIC", false, "$SK_MapIC", "$HLP_SK_MapIC", 53 )
-	prop_EatIC = LTT.LDH.addBoolProp( modID, "SK_EatIC", false, "$SK_EatIC", "$HLP_SK_EatIC", 55 )
+	prop_InvIC = LDH.addBoolProp( modID, "SK_InvIC", false, "$SK_InvIC", "$HLP_SK_InvIC", 47 )
+	prop_MagIC = LDH.addBoolProp( modID, "SK_MagIC", false, "$SK_MagIC", "$HLP_SK_MagIC", 49 )
+	prop_JournalIC = LDH.addBoolProp( modID, "SK_JournalIC", false, "$SK_JournalIC", "$HLP_SK_JournalIC", 51 )
+	prop_MapIC = LDH.addBoolProp( modID, "SK_MapIC", false, "$SK_MapIC", "$HLP_SK_MapIC", 53 )
+	prop_EatIC = LDH.addBoolProp( modID, "SK_EatIC", false, "$SK_EatIC", "$HLP_SK_EatIC", 55 )
 
-	prop_ReadMult = LTT.LDH.addFloatProp( modID, "SK_ReadMult", 1.0, "$SK_ReadMult", "$HLP_SK_ReadMult", 62, 0.0, LTT.LDH.maxMult, "multiplier" )
-	prop_SpellHrs = LTT.LDH.addFloatProp( modID, "SK_SpellHrs", 4.0, "$SK_SpellHrs", "$HLP_SK_SpellHrs", 64, 0.0, LTT.LDH.maxHrs, "hours" )
+	prop_ReadMult = LDH.addFloatProp( modID, "SK_ReadMult", 1.0, "$SK_ReadMult", "$HLP_SK_ReadMult", 62, 0.0, LTT.maxMult, "multiplier" )
+	prop_SpellHrs = LDH.addFloatProp( modID, "SK_SpellHrs", 4.0, "$SK_SpellHrs", "$HLP_SK_SpellHrs", 64, 0.0, LTT.maxHrs, "hours" )
 
-	prop_ReadIC = LTT.LDH.addBoolProp( modID, "SK_ReadIC", false, "$SK_ReadIC", "$HLP_SK_ReadIC", 63 )
-	prop_ReadSpeechMult = LTT.LDH.addFloatProp( modID, "SK_ReadSpeechMult", 1.0, "$SK_ReadSpeechMult", "$HLP_SK_ReadSpeechMult", 65, 0.0, LTT.LDH.maxMult, "multiplier" )
+	prop_ReadIC = LDH.addBoolProp( modID, "SK_ReadIC", false, "$SK_ReadIC", "$HLP_SK_ReadIC", 63 )
+	prop_ReadSpeechMult = LDH.addFloatProp( modID, "SK_ReadSpeechMult", 1.0, "$SK_ReadSpeechMult", "$HLP_SK_ReadSpeechMult", 65, 0.0, LTT.maxMult, "multiplier" )
 	
 	isLoaded = Load()
-	DebugLog( "--OnGameReload(); success" )
+	DebugLog( "--OnGameReload(); success", 4 )
 endevent
 
 bool function Load()
-	DebugLog( "++Load()" )
-	DebugLog( "--Load(); success" )
+	DebugLog( "++Load()", 4 )
+	DebugLog( "--Load(); success", 4 )
 	return true
 endfunction
 
 float function ItemAdded( form BaseItem, int Qty, form ItemRef, form Container, int Type, int Prefix )
-	DebugLog( "++ItemAdded()" )
+	DebugLog( "++ItemAdded()", 4 )
 	float t = -1.0
-	DebugLog( "--ItemAdded() t="+t+"; not our item" )
+	DebugLog( "--ItemAdded() t="+t+"; not our item", 4 )
 	return t
 endfunction
 
 float function ItemRemoved( form BaseItem, int Qty, form ItemRef, form Container, int Type, int Prefix )
-	DebugLog( "++ItemRemoved()" )
+	DebugLog( "++ItemRemoved()", 4 )
 	float t = -1.0
-	DebugLog( "--ItemRemoved(); t="+t )
+	DebugLog( "--ItemRemoved(); t="+t, 4 )
 	return t
 endfunction
 
 float function MenuOpened( int MenuID )
-	DebugLog( "++MenuOpened()" )
+	DebugLog( "++MenuOpened()", 4 )
 	float t = -1.0
-	DebugLog( "--MenuOpened()=-1.0" )
+	DebugLog( "--MenuOpened()=-1.0", 4 )
 	return t
 endfunction
 
 float function MenuClosed( int MenuID )
-	DebugLog( "++MenuClosed()" )
+	DebugLog( "++MenuClosed()", 4 )
 	float t = -1.0
-	DebugLog( "--MenuClosed()=-1.0" )
+	DebugLog( "--MenuClosed()=-1.0", 4 )
 	return t
 endfunction
 

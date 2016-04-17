@@ -10,49 +10,59 @@ sub error
 	exit(1);
 }
 
-my $ModName = "LTT_Hunterborn";
+# Run on all *_translations.txt in pwd
+#my $ModName = "LTT_Hunterborn";
+
+
 
 my $sourcePath = $ModName."_Translations.txt";
+my $dstdir = "../LTTForMods/Interface/Translations/";
 
-open SOURCE, "<:utf8", $sourcePath or error("Cannot open $sourcePath: $!");
+@sources = <*>;
+foreach $sourcePath (@sources) {
+	next unless $sourcePath =~ /_Translations.txt\s*$/i;
+	$modname = $sourcePath;
+	$modname =~ s/_Translations.txt\s*$//i;
 
-my @langs = split("\t", <SOURCE>);
-shift @langs;
+	open SOURCE, "<:utf8", $sourcePath or error("Cannot open $sourcePath: $!");
 
-my @files;
+	my @langs = split("\t", <SOURCE>);
+	shift @langs;
 
-foreach $lang (@langs) {
-	chomp($lang);
-	$lang = lc($lang);
-	local *FILE;
-	local $fileName = $ModName."_".$lang.".txt";
-	open(FILE, ">:raw:encoding(UCS2-LE):crlf:utf8", "$fileName");
-	print FILE ("\x{FEFF}"); # print BOM
-	push(@files,*FILE);
-}
+	my @files;
 
-while (my $line = <SOURCE>) {
-	chomp($line);
-	local @buf = split("\t", $line);
-	local $key = shift @buf;
-	
-	next unless $key and $key =~ /^\$/;
+	foreach $lang (@langs) {
+		chomp($lang);
+		$lang = lc($lang);
+		local *FILE;
+		local $fileName = $modname."_".$lang.".txt";
+		open(FILE, ">:raw:encoding(UCS2-LE):crlf:utf8", $dstdir."$fileName");
+		print FILE ("\x{FEFF}"); # print BOM
+		push(@files,*FILE);
+	}
 
-	local $i=0;
+	while (my $line = <SOURCE>) {
+		chomp($line);
+		local @buf = split("\t", $line);
+		local $key = shift @buf;
+		
+		next unless $key and $key =~ /^\$/;
+
+		local $i=0;
+
+		foreach $file (@files) {
+			local $str = $buf[$i] ? $buf[$i] : $buf[0]; # fall back to english if no translate present
+			print $file ($key . "\t" . $str . "\n") unless $str eq "\$";
+			$i++;
+		}
+	}
+	close(SOURCE);
 
 	foreach $file (@files) {
-		local $str = $buf[$i] ? $buf[$i] : $buf[0]; # fall back to english if no translate present
-		print $file ($key . "\t" . $str . "\n") unless $str eq "\$";
-		$i++;
+		close $file;
 	}
 }
-close(SOURCE);
 
-foreach $file (@files) {
-	close $file;
-}
-
-print "Done.\n\n";
-
-getc(STDIN);
+#print "Done.\n\n";
+#getc(STDIN);
 exit(0);

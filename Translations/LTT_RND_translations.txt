@@ -1,33 +1,29 @@
 Language	English	French	German	Italian	Spanish	Czech	Polish	Russian	Japanese
-$RND_BedrollHrs	Craft Bedrolls
-$RND_CookDrinkMins	Cook Beverages
-$RND_CookFillingMins	Cook Filling Meals
-$RND_CookMediumMins	Cook Medium Meals
-$RND_CookSaltMins	Evaporate Salt Water
-$RND_CookSnackMins	Cook Snacks
-$RND_CookWaterMins	Boil Potable Water
-$RND_CookpotHrs	Craft Cookpot
-$RND_EatDrinkMins	Drink a Beverage
-$RND_EatFillingMins	Eat A Filling Meal
-$RND_EatMediumMins	Eat A Medium Meal
-$RND_EatSnackMins	Eat A Snack
-$RND_MilkBucketMins	Craft A Milk Bucket
-$RND_TentHrs	Craft A Tent
-$RND_TinderboxHrs	Craft A Tinderbox
-$RND_WaterskinHrs	Craft A Waterskin
-$HLP_RND_BedrollHrs	Time taken to craft a bedroll
-$HLP_RND_CookDrinkMins	Time taken to prepare a small beverage, double or triple for larger quantities
-$HLP_RND_CookFillingMins	Time taken to prepare a filling meal
-$HLP_RND_CookMediumMins	Time taken to prepare a medium meal
-$HLP_RND_CookSaltMins	Time taken to evaporate salt water into salt
-$HLP_RND_CookSnackMins	Time taken to prepare a snack
-$HLP_RND_CookWaterMins	Time taken to make potable water from unclean water sources
+$HLP_RND_CookFillingMult	Proportion of time compared to a medium meal\ne.g. 2.0 takes twice as long
+$HLP_RND_CookMediumMins	Time taken to cook a medium meal
+$HLP_RND_CookSaltMult	Proportion of time compared to making a regular drink\ne.g. 3.0 takes three times as long because all water must evaporate
+$HLP_RND_CookSnackMult	Proportion of time compared to a medium meal\ne.g. 0.5 takes half as long
+$HLP_RND_CookWaterMult	Proportion of time compared to Skyrim's craft drink value
 $HLP_RND_CookpotHrs	Time taken to craft a cookpot
 $HLP_RND_EatDrinkMins	Time taken to drink a full beverage
-$HLP_RND_EatFillingMins	Time taken to eat a filling meal
-$HLP_RND_EatMediumMins	Time taken to eat a medium meal
-$HLP_RND_EatSnackMins	Time taken to eat a snack
+$HLP_RND_EatFillingMult	Proportion of time compared to a medium meal\ne.g. 2.0 takes twice as long
+$HLP_RND_EatMediumMult	Proportion of time compared to Skyrim's time to eat a medium meal\ne.g. 1.1 takes 10% longer, 0.9 takes 10% less
+$HLP_RND_EatSnackMult	Proportion of time compared to a medium meal\ne.g. 0.5 takes half as long
 $HLP_RND_MilkBucketMins	Time taken to craft a milk bucket from an ordinary bucket
 $HLP_RND_TentHrs	Time taken to craft a traveller's tent
 $HLP_RND_TinderboxHrs	Time taken to craft a tinderbox
 $HLP_RND_WaterskinHrs	Time taken to craft a waterskin
+$RND_CookFillingMult	Cook Filling Meals
+$RND_CookMediumMins	Cook Medium Meals
+$RND_CookSaltMult	Evaporate Salt Water
+$RND_CookSnackMult	Cook Snacks
+$RND_CookWaterMult	Boil Potable Water
+$RND_CookpotHrs	Craft Cookpot
+$RND_EatDrinkMins	Drink a Beverage
+$RND_EatFillingMult	Eat A Filling Meal
+$RND_EatMediumMult	Eat A Medium Meal
+$RND_EatSnackMult	Eat A Snack
+$RND_MilkBucketMins	Craft A Milk Bucket
+$RND_TentHrs	Craft A Tent
+$RND_TinderboxHrs	Craft A Tinderbox
+$RND_WaterskinHrs	Craft A Waterskin

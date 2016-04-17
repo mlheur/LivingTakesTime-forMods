@@ -74,43 +74,43 @@ endevent
 
 event OnGameReload()
 	LTT = LTT_Factory.LTT_getBase() ; not normally required, but handy if LTT changes between saves
-	DebugLog( "++OnGameReload()" )
+	DebugLog( "++OnGameReload()", 4 )
 	isLoaded = false
-	RegisterActs = Math.LogicalOr( LTT.LDH.act_ITEMADDED, LTT.LDH.act_ITEMREMOVED )
-	RegisterMenus = LTT.LDH.menu_None
-	modID = LTT.LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
+	RegisterActs = Math.LogicalOr( LTT.act_ITEMADDED, LTT.act_ITEMREMOVED )
+	RegisterMenus = LTT.menu_None
+	modID = LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
 	if modID < 0 ; We couldn't be added to the Mod table.
-		DebugLog( "--OnGameReload(); unable to successfully addMod()" )
+		DebugLog( "--OnGameReload(); unable to successfully addMod()", 0 )
 		return
 	endif
 
-	prop_CloakHrs = LTT.LDH.addFloatProp( modID, "CF_CloakHrs", LTT.craftBodyHrs/2, "$CF_CloakHrs", "$HLP_CF_CloakHrs", 2, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_BackpackHrs = LTT.LDH.addFloatProp( modID, "CF_BackpackHrs", LTT.craftShieldHrs, "$CF_BackpackHrs", "$HLP_CF_BackpackHrs", 4, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_LargeTentHrs = LTT.LDH.addFloatProp( modID, "CF_LargeTentHrs", 6.0, "$CF_LargeTentHrs", "$HLP_CF_LargeTentHrs", 6, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_SmallTentHrs = LTT.LDH.addFloatProp( modID, "CF_SmallTentHrs", 4.0, "$CF_SmallTentHrs", "$HLP_CF_SmallTentHrs", 8, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_MortarHrs = LTT.LDH.addFloatProp( modID, "CF_MortarHrs", LTT.craftMiscHrs, "$CF_MortarHrs", "$HLP_CF_MortarHrs", 10, 0.0, LTT.LDH.maxHrs, "hours" )
+	prop_CloakHrs = LDH.addFloatProp( modID, "CF_CloakHrs", LTT.craftBodyHrs/2, "$CF_CloakHrs", "$HLP_CF_CloakHrs", 2, 0.0, LTT.maxHrs, "hours" )
+	prop_BackpackHrs = LDH.addFloatProp( modID, "CF_BackpackHrs", LTT.craftShieldHrs, "$CF_BackpackHrs", "$HLP_CF_BackpackHrs", 4, 0.0, LTT.maxHrs, "hours" )
+	prop_LargeTentHrs = LDH.addFloatProp( modID, "CF_LargeTentHrs", 6.0, "$CF_LargeTentHrs", "$HLP_CF_LargeTentHrs", 6, 0.0, LTT.maxHrs, "hours" )
+	prop_SmallTentHrs = LDH.addFloatProp( modID, "CF_SmallTentHrs", 4.0, "$CF_SmallTentHrs", "$HLP_CF_SmallTentHrs", 8, 0.0, LTT.maxHrs, "hours" )
+	prop_MortarHrs = LDH.addFloatProp( modID, "CF_MortarHrs", LTT.craftMiscHrs, "$CF_MortarHrs", "$HLP_CF_MortarHrs", 10, 0.0, LTT.maxHrs, "hours" )
 
-	prop_TorchMins = LTT.LDH.addIntProp( modID, "CF_TorchMins", LTT.craftTorchMins, "$CF_TorchMins", "$HLP_CF_TorchMins", 3, 0, LTT.LDH.maxMins, "minutes" )
-	prop_CookpotHrs = LTT.LDH.addFloatProp( modID, "CF_CookpotHrs", LTT.craftMiscHrs, "$CF_CookpotHrs", "$HLP_CF_CookpotHrs", 5, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_TanRackMins = LTT.LDH.addFloatProp( modID, "CF_TanRackMins", LTT.LDH.convertHrsToMins(LTT.craftMiscHrs) as int, "$CF_TanRackMins", "$HLP_CF_TanRackMins", 7, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_LinenMins = LTT.LDH.addIntProp( modID, "CF_LinenMins", 15, "$CF_LinenMins", "$HLP_CF_LinenMins", 9, 0, LTT.LDH.maxMins, "minutes" )
-	prop_EnchanterHrs = LTT.LDH.addFloatProp( modID, "CF_EnchanterHrs", LTT.craftMiscHrs, "$CF_EnchanterHrs", "$HLP_CF_EnchanterHrs", 11, 0.0, LTT.LDH.maxHrs, "hours" )
+	prop_TorchMins = LDH.addIntProp( modID, "CF_TorchMins", LTT.craftTorchMins, "$CF_TorchMins", "$HLP_CF_TorchMins", 3, 0, LTT.maxMins, "minutes" )
+	prop_CookpotHrs = LDH.addFloatProp( modID, "CF_CookpotHrs", LTT.craftMiscHrs, "$CF_CookpotHrs", "$HLP_CF_CookpotHrs", 5, 0.0, LTT.maxHrs, "hours" )
+	prop_TanRackMins = LDH.addFloatProp( modID, "CF_TanRackMins", LDH.convertHrsToMins(LTT.craftMiscHrs) as int, "$CF_TanRackMins", "$HLP_CF_TanRackMins", 7, 0.0, LTT.maxHrs, "hours" )
+	prop_LinenMins = LDH.addIntProp( modID, "CF_LinenMins", 15, "$CF_LinenMins", "$HLP_CF_LinenMins", 9, 0, LTT.maxMins, "minutes" )
+	prop_EnchanterHrs = LDH.addFloatProp( modID, "CF_EnchanterHrs", LTT.craftMiscHrs, "$CF_EnchanterHrs", "$HLP_CF_EnchanterHrs", 11, 0.0, LTT.maxHrs, "hours" )
 
-	prop_PerkImproves = LTT.LDH.addBoolProp( modID, "CF_PerkImproves", false, "$CF_PerkImproves", "$HLP_CF_PerkImproves", 14 )
-	prop_MakeTinderMins = LTT.LDH.addIntProp( modID, "CF_MakeTinderMins", 15, "$CF_MakeTinderMins", "$HLP_CF_MakeTinderMins", 16, 0, LTT.LDH.maxMins, "minutes" )
-	prop_MakeKindlingMins = LTT.LDH.addIntProp( modID, "CF_MakeKindlingMins", 5, "$CF_MakeKindlingMins", "$HLP_CF_MakeKindlingMins", 18, 0, LTT.LDH.maxMins, "minutes" )
-	prop_LightFireMins = LTT.LDH.addIntProp( modID, "CF_LightFireMins", 25, "$CF_LightFireMins", "$HLP_CF_LightFireMins", 20, 0, LTT.LDH.maxMins, "minutes" )
+	prop_PerkImproves = LDH.addBoolProp( modID, "CF_PerkImproves", false, "$CF_PerkImproves", "$HLP_CF_PerkImproves", 14 )
+	prop_MakeTinderMins = LDH.addIntProp( modID, "CF_MakeTinderMins", 15, "$CF_MakeTinderMins", "$HLP_CF_MakeTinderMins", 16, 0, LTT.maxMins, "minutes" )
+	prop_MakeKindlingMins = LDH.addIntProp( modID, "CF_MakeKindlingMins", 5, "$CF_MakeKindlingMins", "$HLP_CF_MakeKindlingMins", 18, 0, LTT.maxMins, "minutes" )
+	prop_LightFireMins = LDH.addIntProp( modID, "CF_LightFireMins", 25, "$CF_LightFireMins", "$HLP_CF_LightFireMins", 20, 0, LTT.maxMins, "minutes" )
 
-	prop_AddTinderMins = LTT.LDH.addIntProp( modID, "CF_AddTinderMins", 15, "$CF_AddTinderMins", "$HLP_CF_AddTinderMins", 17, 0, LTT.LDH.maxMins, "minutes" )
-	prop_AddKindlingMins = LTT.LDH.addIntProp( modID, "CF_AddKindlingMins", 10, "$CF_AddKindlingMins", "$HLP_CF_AddKindlingMins", 19, 0, LTT.LDH.maxMins, "minutes" )
-	prop_AddFuelMins = LTT.LDH.addIntProp( modID, "CF_AddFuelMins", 5, "$CF_AddFuelMins", "$HLP_CF_AddFuelMins", 21, 0, LTT.LDH.maxMins, "minutes" )
+	prop_AddTinderMins = LDH.addIntProp( modID, "CF_AddTinderMins", 15, "$CF_AddTinderMins", "$HLP_CF_AddTinderMins", 17, 0, LTT.maxMins, "minutes" )
+	prop_AddKindlingMins = LDH.addIntProp( modID, "CF_AddKindlingMins", 10, "$CF_AddKindlingMins", "$HLP_CF_AddKindlingMins", 19, 0, LTT.maxMins, "minutes" )
+	prop_AddFuelMins = LDH.addIntProp( modID, "CF_AddFuelMins", 5, "$CF_AddFuelMins", "$HLP_CF_AddFuelMins", 21, 0, LTT.maxMins, "minutes" )
 
 	isLoaded = Load()
-	DebugLog( "--OnGameReload(); success" )
+	DebugLog( "--OnGameReload(); success", 4 )
 endevent
 
 bool function Load()
-	DebugLog( "++Load()" )
+	DebugLog( "++Load()", 4 )
 	BlankItem 		= Game.GetFormFromFile(0x468D3, ESP) ; _Camp_BlankItem [MISC:240468D3]
 
 	Cloaks = new Form[4]
@@ -175,18 +175,18 @@ bool function Load()
 	DebugLog( "FurPlate="+FurPlate )
 	
 	if !FirecraftRank || !BlankItem || !FurPlate || !Lace || !Linen
-		DebugLog( "--Load(); failed" )
+		DebugLog( "--Load(); failed", 0 )
 		return false
 	endif
-	DebugLog( "--Load(); success" )
+	DebugLog( "--Load(); success", 4 )
 	return true
 endfunction
 
 float function ItemRemoved( form BaseItem, int Qty, form ItemRef, form Container, int Type, int Prefix )
-	DebugLog( "++ItemRemoved()" )
+	DebugLog( "++ItemRemoved()", 4 )
 	float t = -1.0
-	if Prefix != LTT.LDH.getModPrefix( modID )
-		DebugLog( "--ItemRemoved(); Not our item: t="+t )
+	if Prefix != LDH.getModPrefix( modID )
+		DebugLog( "--ItemRemoved(); Not our item: t="+t, 4 )
 		return t
 	endif
 
@@ -219,8 +219,8 @@ float function ItemRemoved( form BaseItem, int Qty, form ItemRef, form Container
 	; If a backpack & amulet is removed then we are probably deconstructing
 	elseif BaseItem.HasKeyword( Backpack as Keyword ) && minorID >= 0x2D81D && minorID <= 0x2F8Ea
 		t = 0.0
-		LTT.LDH.addFreeItem( Backpack ) ; For the backpack
-		LTT.LDH.addFreeItem( BackpackReclaim ) ; For the amulet
+		LDH.addFreeItem( Backpack ) ; For the backpack
+		LDH.addFreeItem( BackpackReclaim ) ; For the amulet
 		DebugLog("Reclaim Backpack")
 		DebugLog("Amulet & Backpack. Base time = " + t)
 	
@@ -230,72 +230,72 @@ float function ItemRemoved( form BaseItem, int Qty, form ItemRef, form Container
 		TentRemovedTime = Utility.GetCurrentRealTime()
 	endif
 	
-	DebugLog( "--ItemRemoved(); t="+t )
+	DebugLog( "--ItemRemoved(); t="+t, 4 )
 	return t
 endfunction
 
 float function ItemAdded( form BaseItem, int Qty, form ItemRef, form Container, int Type, int Prefix )
-	DebugLog( "++ItemAdded()" )
+	DebugLog( "++ItemAdded()", 4 )
 	float t = -1.0
-	if Prefix != LTT.LDH.getModPrefix( modID ) && BaseItem != FurPlate && BaseItem != Lace
-		DebugLog( "--ItemAdded() t="+t+"; item not usable" )
+	if Prefix != LDH.getModPrefix( modID ) && BaseItem != FurPlate && BaseItem != Lace
+		DebugLog( "--ItemAdded() t="+t+"; not our item", 4 )
 		return t
 	endif
 	
-	if Type == LTT.LDH.kBook
+	if Type == LTT.kBook
 		t = handleFirepit( BaseItem, Prefix )
 	endif
 	if t >= 0.0
-		DebugLog( "--ItemAdded() t="+t+"; was in a firepit" )
+		DebugLog( "--ItemAdded() t="+t+"; was in a firepit", 4 )
 		return t
-	elseif LTT.LDH.getStringState( LTT.LDH.state_craftingStation ) == station_Campfire
+	elseif LDH.getStringState( LTT.state_craftingStation ) == station_Campfire
 		t = handleCampfireCrafting( BaseItem, Type, Prefix, Qty ) * Qty
 		if t > 0
 			t *= Qty
 		endif
 	endif
 	
-	DebugLog( "--ItemAdded(); t="+t )
+	DebugLog( "--ItemAdded(); t="+t, 4 )
 	return t
 endfunction
 
 float function handleCampfireCrafting(form BaseItem, int Type, int Prefix, int Qty )
-	DebugLog( "++handleCampfireCrafting()" )
+	DebugLog( "++handleCampfireCrafting()", 4 )
 	float t = -1.0
 	int i = -1
 	int minorId = BaseItem.GetFormID() - Math.LeftShift( Prefix, 24 )
 
 	if BaseItem == BlankItem
-		DebugLog( "--handleCampfireCrafting(); blank item" )
+		DebugLog( "--handleCampfireCrafting(); blank item", 4 )
 		return 0.0
 	endif
 
 	; Camping Items
 
 	if Cloaks.Find(BaseItem) >= 0
-		t = LTT.LDH.getFloatProp( prop_CloakHrs )
+		t = LDH.getFloatProp( prop_CloakHrs )
 		DebugLog("Cloak. Base time = " + t)
 
 	elseif BaseItem == Stick
-		t = PerkModifier( LTT.LDH.getFloatProp( LTT.Skyrim.prop_CraftStaffHrs ), TrailblazerRank, TrailblazerPercent )
+		t = PerkModifier( LDH.getFloatProp( LTT.Skyrim.prop_CraftStaffHrs ), TrailblazerRank, TrailblazerPercent )
 		DebugLog("Walking stick. Base time = " + t)
 
 	elseif BaseItem == Torch
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_TorchMins ) )
+		t = LDH.convertMinsToHrs( LDH.getIntProp( prop_TorchMins ) )
 		DebugLog("Torch. Base time = " + t)
 
 	elseif BaseItem == TorchDeconstruct
 		t = 0.0
 		while ( i > 0 )
-			LTT.LDH.addFreeItem( Kindling )
-			LTT.LDH.addFreeItem( Linen )
+			LDH.addFreeItem( Kindling )
+			LDH.addFreeItem( Linen )
 			i -= 1
 		endwhile
 		DebugLog("Splitting Torch")
 
 	elseif BaseItem == Cookpot
-		t = LTT.LDH.getFloatProp( prop_CookpotHrs )
-		LTT.SkillUsed = LTT.LDH.skill_Smithing
+		t = LDH.getFloatProp( prop_CookpotHrs )
+		LTT.SkillUsed = LTT.skill_Smithing
 		DebugLog("Cookpot. Base time = " + t)
 
 	elseif BaseItem.HasKeyword( Backpack as Keyword )
@@ -303,12 +303,12 @@ float function handleCampfireCrafting(form BaseItem, int Type, int Prefix, int Q
 			t = 0.0
 			DebugLog("Amulet & Backpack. Base time = " + t)
 		else
-			t = PerkModifier( LTT.LDH.getFloatProp( prop_BackpackHrs ), TrailblazerRank, TrailblazerPercent )
+			t = PerkModifier( LDH.getFloatProp( prop_BackpackHrs ), TrailblazerRank, TrailblazerPercent )
 			DebugLog("Backpack. Base time = " + t)
 		endif
 
 	elseif BaseItem == RoughBedding
-		t = LTT.LDH.getFloatProp( LTT.Skyrim.prop_CraftBeddingHrs ) / (3/2)
+		t = LDH.getFloatProp( LTT.Skyrim.prop_CraftBeddingHrs ) / (3/2)
 		DebugLog("Rough bedding. Base time = " + t)
 
 	elseif SmallTents_1BR.Find(BaseItem) >= 0
@@ -317,7 +317,7 @@ float function handleCampfireCrafting(form BaseItem, int Type, int Prefix, int Q
 			t = 0.0
 			DebugLog("Reduced small tent to 1BR. Base time = " + t)
 		else
-			t = LTT.LDH.getFloatProp( prop_SmallTentHrs )
+			t = LDH.getFloatProp( prop_SmallTentHrs )
 			DebugLog("Small tent. Base time = " + t)
 		endif
 
@@ -327,12 +327,12 @@ float function handleCampfireCrafting(form BaseItem, int Type, int Prefix, int Q
 			t = 0.0
 			DebugLog("Reduced large tent to 1BR. Base time = " + t)
 		else
-			t = LTT.LDH.getFloatProp( prop_LargeTentHrs )
+			t = LDH.getFloatProp( prop_LargeTentHrs )
 			DebugLog("Large tent. Base time = " + t)
 		endif
 
 	elseif SmallTents_MoreBR.Find(BaseItem) >= 0 
-		t = LTT.LDH.getFloatProp( LTT.Skyrim.prop_CraftBeddingHrs )
+		t = LDH.getFloatProp( LTT.Skyrim.prop_CraftBeddingHrs )
 		DebugLog("Adding a bedroll to a small tent. Base time = " + t)
 		
 	elseif LargeTents_MoreBR.Find(BaseItem) >= 0
@@ -352,51 +352,51 @@ float function handleCampfireCrafting(form BaseItem, int Type, int Prefix, int Q
 			t = 0.0
 			DebugLog("Reduced large tent. Base time = " + t)
 		else
-			t = LTT.LDH.getFloatProp( LTT.Skyrim.prop_CraftBeddingHrs )
+			t = LDH.getFloatProp( LTT.Skyrim.prop_CraftBeddingHrs )
 			DebugLog("Adding a bedroll to a tent. Base time = " + t)
 		endif
 
 	elseif BaseItem == Hatchet
-		t = LTT.LDH.getFloatProp( LTT.Skyrim.prop_Craft1AxeHrs )
-		LTT.SkillUsed = LTT.LDH.skill_Smithing
+		t = LDH.getFloatProp( LTT.Skyrim.prop_Craft1AxeHrs )
+		LTT.SkillUsed = LTT.skill_Smithing
 		DebugLog("Stone hatchet. Base time = " + t)
 
 	; Materials
 
 	elseif BaseItem == Linen
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_LinenMins ) )
+		t = LDH.convertMinsToHrs( LDH.getIntProp( prop_LinenMins ) )
 		DebugLog("Linen wrap. Base time = " + t)
 
 	elseif BaseItem == FurPlate
-		t = LTT.LDH.getFloatProp( LTT.Skyrim.prop_CraftLeatherHrs ) / 2
+		t = LDH.getFloatProp( LTT.Skyrim.prop_CraftLeatherHrs ) / 2
 		DebugLog("Fur plate. Base time = " + t)
 
 	elseif BaseItem == Lace
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( LTT.Skyrim.prop_CraftStripMins ) )
+		t = LDH.convertMinsToHrs( LDH.getIntProp( LTT.Skyrim.prop_CraftStripMins ) )
 		DebugLog("Hide lace. Base time = " + t)
 
 	elseif BaseItem == TanRack
-		t = PerkModifier( LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_TanRackMins ) ), TrailblazerRank, TrailblazerPercent )
+		t = PerkModifier( LDH.convertMinsToHrs( LDH.getIntProp( prop_TanRackMins ) ), TrailblazerRank, TrailblazerPercent )
 		DebugLog("Tanning rack. Base time = " + t)
 
 	elseif BaseItem == Mortar
-		t = LTT.LDH.getFloatProp( prop_MortarHrs )
-		LTT.SkillUsed = LTT.LDH.skill_Alchemy
+		t = LDH.getFloatProp( prop_MortarHrs )
+		LTT.SkillUsed = LTT.skill_Alchemy
 		DebugLog("Mortar and pestle. Base time = " + t)
 
 	elseif BaseItem == Enchanter
-		t = LTT.LDH.getFloatProp( prop_EnchanterHrs )
-		LTT.SkillUsed = LTT.LDH.skill_Enchanting
+		t = LDH.getFloatProp( prop_EnchanterHrs )
+		LTT.SkillUsed = LTT.skill_Enchanting
 		DebugLog("Enchanting supplies. They're so enchanting! Base time = " + t)
 
 	; Firecraft
 	
 	elseif Tinder.Find(BaseItem) >= 0 ; Making tinder
-		t = LTT.LDH.convertMinsToHrs( PerkModifier( LTT.LDH.getIntProp( prop_MakeTinderMins ), FirecraftRank, FirecraftPercent ) )
+		t = LDH.convertMinsToHrs( PerkModifier( LDH.getIntProp( prop_MakeTinderMins ), FirecraftRank, FirecraftPercent ) )
 		DebugLog("Tinder. Base time = " + t)
 
 	elseif BaseItem == Kindling ; Making kindling
-		t = LTT.LDH.convertMinsToHrs( PerkModifier( LTT.LDH.getIntProp( prop_MakeKindlingMins ), FirecraftRank, FirecraftPercent ) )
+		t = LDH.convertMinsToHrs( PerkModifier( LDH.getIntProp( prop_MakeKindlingMins ), FirecraftRank, FirecraftPercent ) )
 		DebugLog("Kindling. Base time = " + t)
 
 	elseif CampfireWeather.Find(BaseItem) >= 0; Weather is added when sitting at a fire pit
@@ -405,12 +405,12 @@ float function handleCampfireCrafting(form BaseItem, int Type, int Prefix, int Q
 
 	endif
 	
-	DebugLog( "--handleCampfireCrafting() t="+t )
+	DebugLog( "--handleCampfireCrafting() t="+t, 4 )
 	return t
 endfunction
 
 float function handleFirepit( form BaseItem, int Prefix )
-	DebugLog( "++handleFirepit()" )
+	DebugLog( "++handleFirepit()", 4 )
 	; Get the base editor ID of the object, rather than have a list of all ~150 'books'
 	; This really only works if the items are sequential.
 	float t = -1.0
@@ -445,31 +445,31 @@ float function handleFirepit( form BaseItem, int Prefix )
 	DebugLog( "Act="+Act )
 	
 	if Act == 0
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_LightFireMins ) * FirecraftPercent )
+		t = LDH.convertMinsToHrs( LDH.getIntProp( prop_LightFireMins ) * FirecraftPercent )
 	elseif Act == 1
-		t = LTT.LDH.convertMinsToHrs( PerkModifier( LTT.LDH.getIntProp( prop_LightFireMins ), FirecraftRank, FirecraftPercent ) )
+		t = LDH.convertMinsToHrs( PerkModifier( LDH.getIntProp( prop_LightFireMins ), FirecraftRank, FirecraftPercent ) )
 	elseif Act == 2
-		t = LTT.LDH.convertMinsToHrs( PerkModifier( LTT.LDH.getIntProp( prop_AddTinderMins ), FirecraftRank, FirecraftPercent ) )
+		t = LDH.convertMinsToHrs( PerkModifier( LDH.getIntProp( prop_AddTinderMins ), FirecraftRank, FirecraftPercent ) )
 	elseif Act == 3
-		t = LTT.LDH.convertMinsToHrs( PerkModifier( LTT.LDH.getIntProp( prop_AddKindlingMins ), FirecraftRank, FirecraftPercent ) )
+		t = LDH.convertMinsToHrs( PerkModifier( LDH.getIntProp( prop_AddKindlingMins ), FirecraftRank, FirecraftPercent ) )
 	elseif Act == 4
-		t = LTT.LDH.convertMinsToHrs( PerkModifier( LTT.LDH.getIntProp( prop_AddFuelMins ), FirecraftRank, FirecraftPercent ) )
+		t = LDH.convertMinsToHrs( PerkModifier( LDH.getIntProp( prop_AddFuelMins ), FirecraftRank, FirecraftPercent ) )
 	endif
 
-	DebugLog( "--handleFirepit(): t="+t )
+	DebugLog( "--handleFirepit(): t="+t, 4 )
 	return t
 endFunction
 
 float function PerkModifier( float TV, GlobalVariable gPerk, float Percent )
-	DebugLog( "++PerkModifier()" )
+	DebugLog( "++PerkModifier()", 4 )
 	float NewTV = TV
-	if LTT.LDH.getBoolProp( prop_PerkImproves )
+	if LDH.getBoolProp( prop_PerkImproves )
 		float modifier = gPerk.GetValue() * Percent
 		if modifier > 0.9
 			modifier = 0.9
 		endif
 		NewTV = TV - ( TV * modifier )
 	endif
-	DebugLog( "--PerkModifier(); NewTV="+NewTV )
+	DebugLog( "--PerkModifier(); NewTV="+NewTV, 4 )
 	return NewTV
 endfunction

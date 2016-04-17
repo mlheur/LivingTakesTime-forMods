@@ -20,7 +20,7 @@ FormList	HB_PetLures
 GlobalVariable	HB_Skinning
 GlobalVariable	HB_Harvesting
 
-string Scrimshaw = "_DS_KW_CraftingScrimshaw"
+string[] ScrimshawBenches
 
 event OnInit()
 	ESP = "Hunterborn.esp"
@@ -30,29 +30,34 @@ endevent
 
 event OnGameReload()
 	LTT = LTT_Factory.LTT_getBase() ; not normally required, but handy if LTT changes between saves
-	DebugLog( "++OnGameReload()" )
+	DebugLog( "++OnGameReload()", 4 )
 	isLoaded = false
-	RegisterActs = LTT.LDH.act_ITEMADDED
-	RegisterMenus = LTT.LDH.menu_None
-	modID = LTT.LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
+	RegisterActs = LTT.act_ITEMADDED
+	RegisterMenus = LTT.menu_None
+	modID = LDH.addMod( self, ModName, ESP, TestForm, RegisterActs, RegisterMenus )
 	if modID < 0 ; We couldn't be added to the Mod table.
-		DebugLog( "--OnGameReload(); unable to successfully addMod()" )
+		DebugLog( "--OnGameReload(); unable to successfully addMod()", 0 )
 		return
 	endif
-	prop_HBScrimBitsMins = LTT.LDH.addFloatProp( modID, "HB_ScrimBitsMins", LTT.craftIngredientMins / 3, "$HB_ScrimBitsMins", "$HLP_HB_ScrimBitsMins", 2, 0, LTT.LDH.maxMins, "minutes" )
-	prop_HBScrimIdolHrs = LTT.LDH.addFloatProp( modID, "HB_ScrimIdolHrs", LTT.craftStaffHrs, "$HB_ScrimIdolHrs", "$HLP_HB_ScrimIdolHrs", 4, 0.0, LTT.LDH.maxHrs, "hours" )	
-	prop_HBScrimToolHrs = LTT.LDH.addFloatProp( modID, "HB_ScimToolHrs", LTT.craftDaggerHrs, "$HB_ScimToolHrs", "$HLP_HB_ScimToolHrs", 6, 0.0, LTT.LDH.maxHrs, "hours" )
-	prop_HBCraftIngrMins = LTT.LDH.addIntProp( modID, "HB_CraftIngrMins", LTT.craftIngredientMins, "$HB_CraftIngrMins", "$HLP_HB_CraftIngrMins", 8, 0, LTT.LDH.maxMins, "minutes" )	
-	prop_HBCraftTallowMins = LTT.LDH.addIntProp( modID, "HB_CraftTallowMins", LTT.craftIngredientMins, "$HB_CraftTallowMins", "$HLP_HB_CraftTallowMins", 10, 0, LTT.LDH.maxMins, "minutes" )	
-	LTT.LDH.addStation( Scrimshaw )
+	prop_HBScrimBitsMins = LDH.addFloatProp( modID, "HB_ScrimBitsMins", LTT.craftIngredientMins / 3, "$HB_ScrimBitsMins", "$HLP_HB_ScrimBitsMins", 2, 0, LTT.maxMins, "minutes" )
+	prop_HBScrimIdolHrs = LDH.addFloatProp( modID, "HB_ScrimIdolHrs", LTT.craftStaffHrs, "$HB_ScrimIdolHrs", "$HLP_HB_ScrimIdolHrs", 4, 0.0, LTT.maxHrs, "hours" )	
+	prop_HBScrimToolHrs = LDH.addFloatProp( modID, "HB_ScimToolHrs", LTT.craftDaggerHrs, "$HB_ScimToolHrs", "$HLP_HB_ScimToolHrs", 6, 0.0, LTT.maxHrs, "hours" )
+	prop_HBCraftIngrMins = LDH.addIntProp( modID, "HB_CraftIngrMins", LTT.craftIngredientMins, "$HB_CraftIngrMins", "$HLP_HB_CraftIngrMins", 8, 0, LTT.maxMins, "minutes" )	
+	prop_HBCraftTallowMins = LDH.addIntProp( modID, "HB_CraftTallowMins", LTT.craftIngredientMins, "$HB_CraftTallowMins", "$HLP_HB_CraftTallowMins", 10, 0, LTT.maxMins, "minutes" )	
+	ScrimshawBenches = new string[2]
+	ScrimshawBenches[0] = "_DS_KW_CraftingScrimshaw"
+	ScrimshawBenches[1] = "_Camp_CraftingSurvival"
+	LDH.addStation( ScrimshawBenches[0] )
+	LDH.addStation( ScrimshawBenches[1] )
 	isLoaded = Load()
-	DebugLog( "--OnGameReload(); success" )
+	DebugLog( "--OnGameReload(); success", 4 )
 endevent
 
 bool function Load()
-	DebugLog( "++Load()" )
+	DebugLog( "++Load()", 4 )
 	int Err = 0
 	int i = 0
+
 
 	HB_Leather		= Game.GetForm(0xDB5D2)
 	HB_Strips		= Game.GetForm(0x800E4)
@@ -135,11 +140,11 @@ bool function Load()
 	endif
 	
 	if Err > 0
-		DebugLog( "--Load(); failed to load items: Err="+Err )
+		DebugLog( "--Load(); failed to load items: Err="+Err, 0 )
 		return false
 	endif
 	
-	DebugLog( "--Load(); success" )
+	DebugLog( "--Load(); success", 4 )
 	return true
 endfunction
 
@@ -156,40 +161,43 @@ float function HB_Bonus(int Bonus)
 endFunction
 
 float function ItemAdded( form BaseItem, int Qty, form ItemRef, form Container, int Type, int Prefix )
-	DebugLog( "++ItemAdded()" )
+	DebugLog( "++ItemAdded()", 4 )
 	float t = -1.0
-	if ( Prefix != LTT.LDH.getModPrefix( modID ) ) && ( HB_Vanilla.Find(BaseItem) < 0 )
-		DebugLog( "--ItemAdded() t="+t+"; not our item" )
+	if ( Prefix != LDH.getModPrefix( modID ) ) && ( HB_Vanilla.Find(BaseItem) < 0 )
+		DebugLog( "--ItemAdded() t="+t+"; not our item", 4 )
 		return t
 	endif
 	
-	if BaseItem == HB_Leather && LTT.LDH.getStringState( LTT.LDH.state_CraftingStation ) == Scrimshaw
-		t = LTT.LDH.getIntProp( LTT.Skyrim.prop_CraftLeatherHrs ) * Qty * SkinBonus()
-	elseif BaseItem == HB_Strips && LTT.LDH.getStringState( LTT.LDH.state_CraftingStation ) == Scrimshaw
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( LTT.Skyrim.prop_CraftStripMins ) ) * Qty * SkinBonus() / 4
+	; If the player if processing an animal carcass then everything is free...
+	; Check the Countainer it came from maybe?
+	
+	if BaseItem == HB_Leather && ScrimshawBenches.find( LDH.getStringState( LTT.state_CraftingStation ) ) > -1
+		t = LDH.getIntProp( LTT.Skyrim.prop_CraftLeatherHrs ) * Qty * SkinBonus()
+	elseif BaseItem == HB_Strips && ScrimshawBenches.find( LDH.getStringState( LTT.state_CraftingStation ) ) > -1
+		t = LDH.convertMinsToHrs( LDH.getIntProp( LTT.Skyrim.prop_CraftStripMins ) ) * Qty * SkinBonus() / 4
 	elseif BaseItem == HB_ScrimBits
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_HBCraftTallowMins ) ) * Qty * HarvestBonus()
+		t = LDH.convertMinsToHrs( LDH.getIntProp( prop_HBCraftTallowMins ) ) * Qty * HarvestBonus()
 	elseif HB_ScrimIdols.Find(BaseItem) > -1
-		t = LTT.LDH.getFloatProp( prop_HBScrimIdolHrs ) * Qty * HarvestBonus()
+		t = LDH.getFloatProp( prop_HBScrimIdolHrs ) * Qty * HarvestBonus()
 	elseif BaseItem == HB_Candles
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_HBScrimBitsMins ) ) * Qty
+		t = LDH.convertMinsToHrs( LDH.getIntProp( prop_HBScrimBitsMins ) ) * Qty
 	elseif HB_ScrimTools.Find( BaseItem ) > -1
-		t = LTT.LDH.getFloatProp( prop_HBScrimToolHrs ) * Qty * HarvestBonus()
+		t = LDH.getFloatProp( prop_HBScrimToolHrs ) * Qty * HarvestBonus()
 	elseif BaseItem == HB_Bedroll
-		t = LTT.LDH.getFloatProp( LTT.Skyrim.prop_CraftBeddingHrs ) * Qty * SkinBonus()
-	elseif Type == LTT.LDH.kIngredient
-		t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( prop_HBCraftIngrMins ) ) * Qty * HarvestBonus()
-	elseif Type == LTT.LDH.kPotion
+		t = LDH.getFloatProp( LTT.Skyrim.prop_CraftBeddingHrs ) * Qty * SkinBonus()
+	elseif Type == LTT.kIngredient
+		t = LDH.convertMinsToHrs( LDH.getIntProp( prop_HBCraftIngrMins ) ) * Qty * HarvestBonus()
+	elseif Type == LTT.kPotion
 		Potion p = BaseItem as Potion
 		if !p.IsFood() || HB_PetLures.HasForm(BaseItem)
-			t = LTT.LDH.convertMinsToHrs( LTT.LDH.getIntProp( LTT.Skyrim.prop_CraftDrinkMins ) ) * Qty
+			t = LDH.convertMinsToHrs( LDH.getIntProp( LTT.Skyrim.prop_CraftDrinkMins ) ) * Qty
 		endif
 	elseif BaseItem == HB_CacheMarker
 		t = 0.0 ; free
-;Skyrim	elseif Type == LTT.LDH.kArmor
-;Skyrim	elseif Type == LTT.LDH.kWeapon
+;Skyrim	elseif Type == LTT.kArmor
+;Skyrim	elseif Type == LTT.kWeapon
 	endif
 	
-	DebugLog( "--ItemAdded() t="+t )
+	DebugLog( "--ItemAdded() t="+t, 4 )
 	return t
 endfunction
